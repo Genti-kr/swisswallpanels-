@@ -1,0 +1,480 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  phone             String?
+  companyName       String?
+  vatNumber         String?
+  role              Role      @default(USER)
+  preferredLanguage Language  @default(DE)
+  newsletterOptIn   Boolean   @default(false)
+  emailVerified     Boolean   @default(false)
+  emailVerifyToken  String?
+  emailVerifyExpires DateTime?
+  isLocked             Boolean   @default(false)
+  failedAttempts       Int       @default(0)
+  lockUntil          DateTime?
+  lockReason         String?
+  country            String?   // CH/DE/FR/IT
+  unlockToken          String?   @unique
+  unlockTokenExpires   DateTime?
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  addresses         Address[]
+  orders            Order[]
+  cart              Cart?
+  wishlist          Wishlist?
+  reviews           Review[]
+  quotes            Quote[]
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id           String  @id @default(cuid())
+  userId       String
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  company      String?
+  street       String
+  houseNumber  String
+  postCode     String  // 4-digit Swiss PLZ
+  city         String
+  canton       String  // 2-letter canton code e.g. ZH, BE, GE
+  country      String  @default("CH")
+  type         String  @default("shipping") // shipping | billing
+  isDefault    Boolean @default(false)
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  nameJson    Json       // { de: "Akustikpaneele", fr: "Panneaux acoustiques", en: "Acoustic panels", sq: "Panele akustike" }
+  descJson    Json?
+  imageUrl    String?
+  sortOrder   Int        @default(0)
+  parentId    String?
+  parent      Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children    Category[] @relation("SubCategories")
+  products    Product[]
+  createdAt   DateTime   @default(now())
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  sku              String           @unique
+  nameJson         Json             // { de: "...", fr: "...", en: "...", sq: "..." }
+  descJson         Json
+  specsJson        Json             // { thickness_mm: 12, width_mm: 600, height_mm: 2400, weight_kg: 4.2 }
+  acousticRating   Float?           // NRC value 0.0 - 1.0
+  fireRatingClass  String?          // e.g. "B-s1,d0" (European fire classification)
+  material         String?
+  priceChf         Decimal          @db.Decimal(10, 2)
+  priceBtwChf      Decimal          @db.Decimal(10, 2)  // B2B net price
+  vatRate          Decimal          @default(0.081) @db.Decimal(5, 3)
+  stockQuantity    Int              @default(0)
+  lowStockAlert    Int              @default(5)
+  isFeatured       Boolean          @default(false)
+  isActive         Boolean          @default(true)
+  sortOrder        Int              @default(0)
+  categoryId       String
+  category         Category         @relation(fields: [categoryId], references: [id])
+  images           ProductImage[]
+  variants         ProductVariant[]
+  orderItems       OrderItem[]
+  cartItems        CartItem[]
+  wishlistItems    WishlistItem[]
+  reviews          Review[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id            String     @id @default(cuid())
+  productId     String
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  nameJson      Json       // { de: "Eiche hell 60x240cm", ... }
+  sku           String     @unique
+  priceChf      Decimal    @db.Decimal(10, 2)
+  stockQuantity Int        @default(0)
+  attributes    Json       // { color: "oak-light", size: "60x240" }
+  isActive      Boolean    @default(true)
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altJson   Json?
+  isPrimary Boolean @default(false)
+  sortOrder Int     @default(0)
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String?    @unique  // For guest carts
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  variantId String?
+  quantity  Int
+}
+
+model Order {
+  id                   String      @id @default(cuid())
+  orderNumber          String      @unique  // e.g. "SWP-2024-00142"
+  userId               String?
+  user                 User?       @relation(fields: [userId], references: [id])
+  guestEmail           String?
+  guestName            String?
+  status               OrderStatus @default(PENDING)
+  paymentStatus        PaymentStatus @default(PENDING)
+  deliveryStatus       DeliveryStatus @default(NEW)
+  country              String      @default("CH")
+  currency             String      @default("CHF")
+  couponCode           String?
+  items                OrderItem[]
+  shippingAddressJson  Json
+  billingAddressJson   Json
+  subtotalChf          Decimal     @db.Decimal(10, 2)
+  vatAmountChf         Decimal     @db.Decimal(10, 2)
+  shippingCostChf      Decimal     @db.Decimal(10, 2)
+  discountAmountChf    Decimal     @default(0) @db.Decimal(10, 2)
+  totalChf             Decimal     @db.Decimal(10, 2)
+  discountCodeId       String?
+  discountCode         DiscountCode? @relation(fields: [discountCodeId], references: [id])
+  paymentMethod        String      // stripe/twint/card/transfer/paypal/klarna/sepa
+  stripePaymentIntent  String?
+  datatransReference   String?
+  shippingMethod       String?
+  shippingCarrier      String?
+  trackingNumber       String?
+  estimatedDelivery    DateTime?
+  refundAmount         Decimal?    @db.Decimal(10, 2)
+  refundReason         String?
+  refundedAt           DateTime?
+  invoiceUrl           String?
+  notes                String?
+  idempotencyKey       String?     @unique
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  statusHistory        OrderStatusHistory[]
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  productName  String
+  productSku   String?
+  variantName  String?
+  imageUrl     String?
+  quantity     Int
+  unitPriceChf Decimal @db.Decimal(10, 2)
+  totalChf     Decimal @db.Decimal(10, 2)
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  adminId   String?
+  createdAt DateTime    @default(now())
+}
+
+model ShippingRate {
+  id          String   @id @default(cuid())
+  country     String   // CH/DE/FR/IT
+  carrier     String
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String
+  minDays     Int
+  maxDays     Int
+  freeAbove   Decimal? @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AppSetting {
+  id                 String   @id @default("global")
+  maintenanceMode    Boolean  @default(false)
+  maintenanceMessage String?  @db.Text
+  updatedAt          DateTime @updatedAt
+}
+
+model Quote {
+  id              String      @id @default(cuid())
+  quoteNumber     String      @unique  // e.g. "Q-2024-0089"
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id])
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  company         String?
+  projectDesc     String      @db.Text
+  roomDimensions  Json?       // { width_m: 4.5, height_m: 2.8, length_m: 6.0 }
+  items           QuoteItem[]
+  status          QuoteStatus @default(SUBMITTED)
+  adminNote       String?     @db.Text
+  quotePdfUrl     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model QuoteItem {
+  id          String  @id @default(cuid())
+  quoteId     String
+  quote       Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  productId   String?
+  productName String
+  quantity    Int
+  note        String?
+}
+
+model Wishlist {
+  id     String         @id @default(cuid())
+  userId String         @unique
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  WishlistItem[]
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  addedAt    DateTime @default(now())
+}
+
+model Review {
+  id        String        @id @default(cuid())
+  productId String
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  rating    Int           // 1-5
+  title     String?
+  body      String        @db.Text
+  status    ReviewStatus  @default(PENDING)
+  createdAt DateTime      @default(now())
+}
+
+model DiscountCode {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  type          DiscountType
+  value         Decimal      @db.Decimal(10, 2)  // % or CHF
+  minOrderChf   Decimal?     @db.Decimal(10, 2)
+  maxUsesTotal  Int?
+  usesCount     Int          @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean      @default(true)
+  orders        Order[]
+  createdAt     DateTime     @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  language  Language @default(DE)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  language       Language  @default(DE)
+  subscribedAt   DateTime  @default(now())
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  event      String
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+}
+
+model FailedAttempt {
+  id        String   @id @default(cuid())
+  ip        String   @unique
+  attempts  Int      @default(0)
+  blockedAt DateTime?
+}
+
+model SiteImage {
+  id        String            @id @default(cuid())
+  section   SiteImageSection
+  url       String
+  altJson   Json?
+  sortOrder Int               @default(0)
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ColorCatalog {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  nameJson  Json
+  descJson  Json
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  swatches  ColorSwatch[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ColorSwatch {
+  id           String       @id @default(cuid())
+  catalogId    String
+  catalog      ColorCatalog @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+  code         String
+  nameJson     Json
+  imageUrl     String
+  thumbnailUrl String
+  sortOrder    Int          @default(0)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([catalogId, code])
+}
+
+// Enums
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum DeliveryStatus {
+  NEW
+  PROCESSING
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum Language {
+  DE
+  FR
+  EN
+  SQ
+}
+
+enum OrderStatus {
+  PENDING
+  PAYMENT_CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum QuoteStatus {
+  SUBMITTED
+  VIEWED
+  QUOTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED_CHF
+}
+
+enum SiteImageSection {
+  GALLERY
+  ABOUT
+}
+
+model ConsentLog {
+  id         String   @id @default(cuid())
+  consentId  String
+  necessary  Boolean  @default(true)
+  analytics  Boolean  @default(false)
+  marketing  Boolean  @default(false)
+  ipHash     String?
+  userAgent  String?  @db.Text
+  locale     String?
+  createdAt  DateTime @default(now())
+
+  @@index([consentId])
+  @@index([createdAt])
+}

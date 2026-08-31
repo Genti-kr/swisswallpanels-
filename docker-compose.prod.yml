@@ -1,0 +1,46 @@
+# Production stack — API + automatic HTTPS (Caddy)
+# Usage:
+#   1. Copy apps/api/.env.production.example → apps/api/.env
+#   2. Fill DATABASE_URL, Stripe live, JWT secrets, COMPANY_* (in web env on Vercel)
+#   3. docker compose -f docker-compose.prod.yml up -d
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - apps/api/.env
+    volumes:
+      - api_uploads:/app/apps/api/uploads
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-api.swisswallpanels.ch}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@swisswallpanels.ch}
+
+volumes:
+  api_uploads:
+  caddy_data:
+  caddy_config:

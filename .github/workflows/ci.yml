@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: swisswallpanels_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      AUTH_SECRET: ci-test-secret-minimum-32-characters-long
+      JWT_SECRET: ci-test-secret-minimum-32-characters-long
+      NEXTAUTH_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:3000
+      API_URL: http://localhost:3001
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      INTERNAL_API_URL: http://localhost:3001
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/swisswallpanels_test?charset=utf8mb4
+      CONSENT_LOG_SALT: ci-consent-log-salt
+      NODE_ENV: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter api exec prisma generate
+
+      - name: Apply database migrations
+        run: pnpm --filter api exec prisma migrate deploy
+
+      - name: Seed test data
+        run: pnpm --filter api seed
+
+      - name: API unit tests
+        run: pnpm --filter api test
+
+      - name: Web unit tests
+        run: pnpm --filter web test
+
+      - name: API typecheck build
+        run: pnpm --filter api build
+
+      - name: Web lint
+        run: pnpm --filter web lint -- --max-warnings 100
+
+      - name: Web production build
+        run: pnpm --filter web build
+
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: E2E smoke tests
+        run: pnpm --filter web test:e2e

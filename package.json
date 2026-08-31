@@ -1,0 +1,28 @@
+{
+  "name": "swisswallpanels-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev": "pnpm --parallel dev",
+    "build": "pnpm --recursive build",
+    "build:prod": "pnpm --filter api build && pnpm --filter web build",
+    "lint": "pnpm --recursive lint",
+    "typecheck": "pnpm --filter @swisswall/types build && pnpm --filter api exec tsc --noEmit && pnpm --filter web exec tsc --noEmit",
+    "test": "pnpm --recursive test",
+    "test:e2e-checkout": "pnpm --filter api test:e2e-checkout",
+    "validate:company": "pnpm --filter api exec tsx ../../scripts/validate-company-env.ts",
+    "generate:secrets": "pnpm --filter api exec tsx ../../scripts/generate-secrets.ts",
+    "deploy:migrate": "pnpm --filter api exec prisma migrate deploy",
+    "deploy:api": "bash scripts/deploy-api.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": ">=7.5.11"
+    }
+  }
+}
