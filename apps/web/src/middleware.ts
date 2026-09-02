@@ -8,6 +8,16 @@ import { isAdminRole } from './lib/user-mapper';
 
 const intlMiddleware = createMiddleware(routing);
 
+/** Public assets in apps/web/public — must not get a locale prefix (/de/...). */
+const STATIC_PUBLIC_FILE = /\.(webp|jpg|jpeg|png|gif|svg|ico)$/i;
+
+function isStaticPublicAsset(pathname: string): boolean {
+  return (
+    pathname.startsWith('/catalogs/') ||
+    STATIC_PUBLIC_FILE.test(pathname)
+  );
+}
+
 export default auth((req) => {
   const { pathname, searchParams } = req.nextUrl;
   const session = req.auth;
@@ -21,8 +31,8 @@ export default auth((req) => {
     return NextResponse.redirect(new URL(adminPath, req.url));
   }
 
-  // Uploaded files — skip locale middleware (must stay at /uploads/*)
-  if (pathname.startsWith('/uploads/')) {
+  // Static public files — skip locale middleware (/uploads/*, /catalogs/*, *.webp, etc.)
+  if (pathname.startsWith('/uploads/') || isStaticPublicAsset(pathname)) {
     return NextResponse.next();
   }
 
@@ -150,5 +160,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|public|uploads).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|uploads|catalogs|.*\\.(?:webp|jpg|jpeg|png|gif|svg|ico)).*)',
+  ],
 };
