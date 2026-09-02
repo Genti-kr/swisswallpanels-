@@ -3,7 +3,7 @@ import { UserDTO } from '@swisswall/types';
 import { signIn, signOut } from 'next-auth/react';
 import { authFetch } from './auth-fetch';
 import { isAdminRole } from './user-mapper';
-import { resolveAuthErrorMessage, getAuthErrorCode, authErrorTranslationKey } from './auth-errors';
+import { resolveAuthErrorMessage, getAuthErrorCode } from './auth-errors';
 
 interface AuthState {
   user: UserDTO | null;
