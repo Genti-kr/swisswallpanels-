@@ -52,7 +52,7 @@ export function SiteHeader() {
             href="/"
             className="text-xl font-bold tracking-tight text-[#1A1A1A] hover:opacity-90 transition-opacity"
           >
-            Swiss<span className="font-light text-[#C8B89A]">Wall</span>
+            Wall<span className="font-light text-[#C8B89A]">Design</span>
           </Link>
         </div>
 
