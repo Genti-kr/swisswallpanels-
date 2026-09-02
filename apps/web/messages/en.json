@@ -141,7 +141,13 @@
     "emailActivationNotice": "After registration you will receive an activation email. Your account is active only after clicking the link.",
     "registerSubtitle": "Register to enjoy the full shopping experience.",
     "emailAlreadyRegistered": "This email is already registered",
-    "passwordsDoNotMatch": "Passwords do not match"
+    "passwordsDoNotMatch": "Passwords do not match",
+    "errorInvalidCredentials": "Incorrect email or password",
+    "errorRateLimited": "Too many attempts. Please try again in 15 minutes.",
+    "errorAccountLocked": "Your account is locked. Please check your email for unlock instructions.",
+    "errorEmailNotVerified": "Please verify your email before signing in.",
+    "errorNoAdminAccess": "You do not have admin access.",
+    "errorSessionExpired": "Your session has expired. Please sign in again."
   },
   "Cart": {
     "title": "Shopping Cart",

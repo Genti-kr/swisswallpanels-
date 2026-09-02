@@ -3,12 +3,20 @@ import { UserDTO } from '@swisswall/types';
 import { signIn, signOut } from 'next-auth/react';
 import { authFetch } from './auth-fetch';
 import { isAdminRole } from './user-mapper';
-import { resolveAuthErrorMessage } from './auth-errors';
+import { resolveAuthErrorMessage, getAuthErrorCode, authErrorTranslationKey } from './auth-errors';
 
 interface AuthState {
   user: UserDTO | null;
   loading: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean,
+    options?: {
+      locale?: import('@/i18n/routing').AppLocale;
+      translateError?: (code: import('./auth-errors').AuthErrorCode) => string;
+    }
+  ) => Promise<void>;
   register: (data: Record<string, unknown>) => Promise<{
     message: string;
     email: string;
@@ -23,7 +31,15 @@ export const useAuth = create<AuthState>((set) => ({
   user: null,
   loading: false,
 
-  login: async (email, password, rememberMe = false) => {
+  login: async (
+    email: string,
+    password: string,
+    rememberMe = false,
+    options?: {
+      locale?: import('@/i18n/routing').AppLocale;
+      translateError?: (code: ReturnType<typeof getAuthErrorCode>) => string;
+    }
+  ) => {
     set({ loading: true });
     try {
       const res = await signIn('credentials', {
@@ -34,7 +50,11 @@ export const useAuth = create<AuthState>((set) => ({
       });
 
       if (res?.error) {
-        throw new Error(resolveAuthErrorMessage(res.error, res.code));
+        const code = getAuthErrorCode(res.error, res.code);
+        const message = options?.translateError
+          ? options.translateError(code)
+          : resolveAuthErrorMessage(res.error, res.code, options?.locale ?? 'sq');
+        throw new Error(message);
       }
 
       await useAuth.getState().fetchMe();

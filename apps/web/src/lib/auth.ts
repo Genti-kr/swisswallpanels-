@@ -85,6 +85,8 @@ export const authConfig: NextAuthConfig = {
           Date.now() - ipBlock.blockedAt.getTime() < 15 * 60 * 1000
         ) {
           credentialsError('rate_limited');
+        } else if (ipBlock?.blockedAt) {
+          await prisma.failedAttempt.deleteMany({ where: { ip: hashedIP } }).catch(() => {});
         }
 
         const user = await prisma.user.findUnique({
@@ -113,7 +115,8 @@ export const authConfig: NextAuthConfig = {
         }
 
         if (!user.emailVerified) {
-          if (isDev) {
+          const isAdminUser = user.role === 'ADMIN' || user.role === 'SUPERADMIN';
+          if (isDev || isAdminUser) {
             await prisma.user.update({
               where: { id: user.id },
               data: { emailVerified: true },

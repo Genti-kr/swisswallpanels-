@@ -1,32 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, Lock, Mail } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
+import { isAdminRole } from '@/lib/user-mapper';
+import {
+  getAuthErrorCode,
+  resolveAuthErrorMessage,
+} from '@/lib/auth-errors';
+import type { AppLocale } from '@/i18n/routing';
+
+const ADMIN_LOCALES: AppLocale[] = ['de', 'fr', 'en', 'sq'];
+
+function readAdminLocale(): AppLocale {
+  if (typeof document === 'undefined') return 'sq';
+  const match = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
+  const value = match?.[1];
+  return ADMIN_LOCALES.includes(value as AppLocale) ? (value as AppLocale) : 'sq';
+}
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [locale, setLocale] = useState<AppLocale>('sq');
   const { login, loading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setLocale(readAdminLocale());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      await login(email, password);
+      await login(email, password, false, { locale });
       const user = useAuth.getState().user;
-      if (user?.role !== 'ADMIN' && user?.role !== 'SUPERADMIN') {
-        setError('Nuk keni akses admin.');
+      if (!user || !isAdminRole(user.role)) {
+        setError(resolveAuthErrorMessage('no_admin_access', 'no_admin_access', locale));
         await useAuth.getState().logout();
         return;
       }
       router.push('/admin/orders');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      if (err instanceof Error) {
+        setError(err.message);
+        return;
+      }
+      setError(resolveAuthErrorMessage(null, 'invalid_credentials', locale));
     }
   };
 
@@ -49,7 +73,7 @@ export default function AdminLoginPage() {
         <div className="text-center mb-8">
           <Link href="/de" className="inline-block">
             <div className="text-2xl font-bold tracking-tight text-[#1A1A1A]">
-              Swiss<span className="font-light text-[#C8B89A]">Wall</span>
+              Wall<span className="font-light text-[#C8B89A]">Design</span>
             </div>
           </Link>
           <span className="block text-[#C8B89A] text-[10px] font-bold uppercase tracking-[0.2em] mt-3">
@@ -57,7 +81,7 @@ export default function AdminLoginPage() {
           </span>
           <h1 className="text-3xl font-light tracking-tight text-zinc-900 mt-2">Hyrje</h1>
           <p className="text-zinc-500 text-sm font-light mt-2">
-            Menaxho porositë dhe produktet e Swiss Wall Panels
+            Menaxho porositë dhe produktet
           </p>
         </div>
 

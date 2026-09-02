@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-store';
 import { useCart } from '@/lib/cart-store';
 import { isAdminRole } from '@/lib/user-mapper';
-import { resolveAuthErrorMessage } from '@/lib/auth-errors';
+import { getAuthErrorCode, authErrorTranslationKey } from '@/lib/auth-errors';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 function LoginContent() {
@@ -26,19 +26,23 @@ function LoginContent() {
 
   useEffect(() => {
     if (searchParams.get('expired') === '1') {
-      setError('Sesioni juaj skadoi. Ju lutemi hyni përsëri.');
+      setError(tAuth('errorSessionExpired'));
     }
     const authError = searchParams.get('error');
     if (authError) {
-      setError(resolveAuthErrorMessage(authError, searchParams.get('code')));
+      const code = getAuthErrorCode(authError, searchParams.get('code'));
+      setError(tAuth(authErrorTranslationKey(code) as 'errorInvalidCredentials'));
     }
-  }, [searchParams]);
+  }, [searchParams, tAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      await login(email, password, rememberMe);
+      await login(email, password, rememberMe, {
+        locale: locale as import('@/i18n/routing').AppLocale,
+        translateError: (code) => tAuth(authErrorTranslationKey(code) as 'errorInvalidCredentials'),
+      });
       await mergeCart();
 
       const user = useAuth.getState().user;

@@ -141,7 +141,13 @@
     "emailActivationNotice": "Après l'inscription, vous recevrez un e-mail d'activation. Le compte n'est actif qu'après avoir cliqué sur le lien.",
     "registerSubtitle": "Inscrivez-vous pour profiter pleinement de votre expérience d'achat.",
     "emailAlreadyRegistered": "Cet e-mail est déjà enregistré",
-    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas"
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "errorInvalidCredentials": "E-mail ou mot de passe incorrect",
+    "errorRateLimited": "Trop de tentatives. Réessayez dans 15 minutes.",
+    "errorAccountLocked": "Votre compte est verrouillé. Consultez votre e-mail pour les instructions de déverrouillage.",
+    "errorEmailNotVerified": "Veuillez vérifier votre e-mail avant de vous connecter.",
+    "errorNoAdminAccess": "Vous n'avez pas accès à l'administration.",
+    "errorSessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
   },
   "Cart": {
     "title": "Panier",

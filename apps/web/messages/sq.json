@@ -141,7 +141,13 @@
     "emailActivationNotice": "Pas regjistrimit do të merrni një email aktivizimi. Llogaria aktivizohet vetëm pas klikimit të linkut.",
     "registerSubtitle": "Regjistrohuni për të shijuar eksperiencën e plotë të blerjeve.",
     "emailAlreadyRegistered": "Ky email është i regjistruar tashmë",
-    "passwordsDoNotMatch": "Fjalëkalimet nuk përputhen"
+    "passwordsDoNotMatch": "Fjalëkalimet nuk përputhen",
+    "errorInvalidCredentials": "Email ose fjalëkalim i pasaktë",
+    "errorRateLimited": "Shumë përpjekje. Provo përsëri pas 15 minutash.",
+    "errorAccountLocked": "Llogaria juaj është e bllokuar. Kontrolloni email-in për udhëzime zhbllokimi.",
+    "errorEmailNotVerified": "Verifikoni email-in para se të hyni.",
+    "errorNoAdminAccess": "Nuk keni akses admin.",
+    "errorSessionExpired": "Sesioni skadoi. Hyni përsëri."
   },
   "Cart": {
     "title": "Shporta",

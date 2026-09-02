@@ -141,7 +141,13 @@
     "emailActivationNotice": "Nach der Registrierung erhalten Sie eine Aktivierungs-E-Mail. Das Konto wird erst nach Klick auf den Link aktiviert.",
     "registerSubtitle": "Registrieren Sie sich für das volle Einkaufserlebnis.",
     "emailAlreadyRegistered": "Diese E-Mail ist bereits registriert",
-    "passwordsDoNotMatch": "Passwörter stimmen nicht überein"
+    "passwordsDoNotMatch": "Passwörter stimmen nicht überein",
+    "errorInvalidCredentials": "E-Mail oder Passwort ist falsch",
+    "errorRateLimited": "Zu viele Versuche. Bitte versuchen Sie es in 15 Minuten erneut.",
+    "errorAccountLocked": "Ihr Konto ist gesperrt. Bitte prüfen Sie Ihre E-Mail für Anweisungen zur Entsperrung.",
+    "errorEmailNotVerified": "Bitte verifizieren Sie Ihre E-Mail, bevor Sie sich anmelden.",
+    "errorNoAdminAccess": "Kein Admin-Zugriff.",
+    "errorSessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
   },
   "Cart": {
     "title": "Warenkorb",
