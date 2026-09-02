@@ -21,6 +21,9 @@ function readAdminLocale(): AppLocale {
   return ADMIN_LOCALES.includes(value as AppLocale) ? (value as AppLocale) : 'sq';
 }
 
+const inputClass =
+  'w-full bg-white border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-sm text-[#1A1A1A] placeholder:text-zinc-400 caret-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C8B89A]/40 focus:border-[#C8B89A] transition-all [color-scheme:light]';
+
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -105,7 +108,8 @@ export default function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8B89A]/40 focus:border-[#C8B89A] transition-all"
+                className={inputClass}
+                autoComplete="email"
                 required
               />
             </div>
@@ -121,7 +125,8 @@ export default function AdminLoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8B89A]/40 focus:border-[#C8B89A] transition-all"
+                className={inputClass}
+                autoComplete="current-password"
                 required
               />
             </div>
