@@ -9,6 +9,13 @@ function normalizeUrl(url: string): string {
   return url.replace(/\/$/, '');
 }
 
+/** Skip server-side API calls when the API URL still points at local dev. */
+export function isLocalApiUrl(url?: string | null): boolean {
+  const value = url?.trim();
+  if (!value) return true;
+  return /localhost|127\.0\.0\.1/i.test(value);
+}
+
 /** Server-side API URL (Next.js → Express). Prefer INTERNAL_API_URL in production. */
 export function getInternalApiUrl(): string {
   const value =

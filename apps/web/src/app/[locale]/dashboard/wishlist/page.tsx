@@ -19,6 +19,7 @@ type WishlistItem = {
 export default function WishlistPage() {
   const locale = useLocale();
   const t = useTranslations('Dashboard');
+  const tProducts = useTranslations('Products');
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,7 +100,7 @@ export default function WishlistPage() {
                   </div>
                   <div className="text-sm font-semibold text-zinc-900 mt-1">
                     {formatDashboardMoney(item.product.priceChf, 'CHF', locale)}
-                    <span className="text-xs text-zinc-400 font-normal"> /m²</span>
+                    <span className="text-xs text-zinc-400 font-normal">{tProducts('priceUnitShort')}</span>
                   </div>
                 </div>
                 <div className="flex flex-col justify-between items-end shrink-0">

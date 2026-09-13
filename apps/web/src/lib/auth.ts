@@ -19,6 +19,48 @@ function credentialsError(code: keyof typeof AUTH_ERROR_MESSAGES | string): neve
 
 const EIGHT_HOURS = 60 * 60 * 8;
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
+const LOGIN_IP_BLOCK_THRESHOLD = 15;
+const LOGIN_IP_BLOCK_MS = 15 * 60 * 1000;
+
+type IpBlockRecord = { attempts: number; blockedAt: Date | null };
+
+async function getIpBlock(hashedIP: string): Promise<IpBlockRecord | null> {
+  try {
+    return await prisma.failedAttempt.findUnique({ where: { ip: hashedIP } });
+  } catch (error) {
+    console.warn('Login IP rate-limit lookup skipped:', error);
+    return null;
+  }
+}
+
+async function recordFailedLoginIp(
+  hashedIP: string,
+  ipBlock: IpBlockRecord | null
+): Promise<void> {
+  try {
+    await prisma.failedAttempt.upsert({
+      where: { ip: hashedIP },
+      create: { ip: hashedIP, attempts: 1 },
+      update: {
+        attempts: { increment: 1 },
+        blockedAt:
+          (ipBlock ? ipBlock.attempts + 1 : 1) >= LOGIN_IP_BLOCK_THRESHOLD
+            ? new Date()
+            : undefined,
+      },
+    });
+  } catch (error) {
+    console.warn('Login IP rate-limit record skipped:', error);
+  }
+}
+
+async function clearIpBlock(hashedIP: string): Promise<void> {
+  try {
+    await prisma.failedAttempt.deleteMany({ where: { ip: hashedIP } });
+  } catch {
+    /* optional table / connection */
+  }
+}
 
 export const authConfig: NextAuthConfig = {
   secret: authSecret,
@@ -52,6 +94,7 @@ export const authConfig: NextAuthConfig = {
         rememberMe: { label: 'Remember Me', type: 'text' },
       },
       async authorize(credentials, req) {
+        try {
         if (!credentials) return null;
 
         const parsed = loginSchema.safeParse(credentials);
@@ -72,21 +115,19 @@ export const authConfig: NextAuthConfig = {
         const userAgent = req.headers.get('user-agent') || null;
 
         if (isDev) {
-          await prisma.failedAttempt.deleteMany({ where: { ip: hashedIP } }).catch(() => {});
+          await clearIpBlock(hashedIP);
         }
 
-        const ipBlock = await prisma.failedAttempt.findUnique({
-          where: { ip: hashedIP },
-        });
+        const ipBlock = await getIpBlock(hashedIP);
 
         if (
           !isDev &&
           ipBlock?.blockedAt &&
-          Date.now() - ipBlock.blockedAt.getTime() < 15 * 60 * 1000
+          Date.now() - ipBlock.blockedAt.getTime() < LOGIN_IP_BLOCK_MS
         ) {
           credentialsError('rate_limited');
         } else if (ipBlock?.blockedAt) {
-          await prisma.failedAttempt.deleteMany({ where: { ip: hashedIP } }).catch(() => {});
+          await clearIpBlock(hashedIP);
         }
 
         const user = await prisma.user.findUnique({
@@ -94,17 +135,7 @@ export const authConfig: NextAuthConfig = {
         });
 
         if (!user) {
-          await prisma.failedAttempt.upsert({
-            where: { ip: hashedIP },
-            create: { ip: hashedIP, attempts: 1 },
-            update: {
-              attempts: { increment: 1 },
-              blockedAt:
-                (ipBlock ? ipBlock.attempts + 1 : 1) >= 5
-                  ? new Date()
-                  : undefined,
-            },
-          });
+          await recordFailedLoginIp(hashedIP, ipBlock);
           await createAuditLog('LOGIN_FAILED', null, ipStr, userAgent);
           credentialsError('invalid_credentials');
         }
@@ -157,17 +188,7 @@ export const authConfig: NextAuthConfig = {
             data: userUpdate,
           });
 
-          await prisma.failedAttempt.upsert({
-            where: { ip: hashedIP },
-            create: { ip: hashedIP, attempts: 1 },
-            update: {
-              attempts: { increment: 1 },
-              blockedAt:
-                (ipBlock ? ipBlock.attempts + 1 : 1) >= 5
-                  ? new Date()
-                  : undefined,
-            },
-          });
+          await recordFailedLoginIp(hashedIP, ipBlock);
 
           if (isLocking) {
             await authEmailService.sendAccountLocked(
@@ -191,7 +212,7 @@ export const authConfig: NextAuthConfig = {
           data: { failedAttempts: 0 },
         });
 
-        await prisma.failedAttempt.deleteMany({ where: { ip: hashedIP } }).catch(() => {});
+        await clearIpBlock(hashedIP);
 
         await resetRateLimit('login', ipStr);
 
@@ -204,6 +225,13 @@ export const authConfig: NextAuthConfig = {
           name: `${user.firstName} ${user.lastName}`,
           rememberMe,
         };
+        } catch (error) {
+          if (error instanceof CredentialsSignin) {
+            throw error;
+          }
+          console.error('Login authorize error:', error);
+          credentialsError('server_error');
+        }
       },
     }),
   ],

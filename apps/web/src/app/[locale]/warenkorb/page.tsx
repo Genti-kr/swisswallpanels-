@@ -149,7 +149,8 @@ export default function CartPage() {
                           {name}
                         </h3>
                         <div className="text-sm text-zinc-400 font-light">
-                          CHF {item.product.priceChf.toFixed(2)}/m²
+                          CHF {item.product.priceChf.toFixed(2)}
+                          {t('Products.priceUnitShort')}
                         </div>
                         <div className="text-sm font-semibold text-zinc-800 pt-1">
                           {t('Common.total')}: {itemTotalFormatted}

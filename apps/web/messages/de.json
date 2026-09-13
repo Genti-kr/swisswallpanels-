@@ -26,7 +26,7 @@
   },
   "Hero": {
     "title": "Premium Wandpaneele",
-    "subtitle": "Dekorativ & Akustisch — berechnet nach m²",
+    "subtitle": "Dekorativ & Akustisch — Preis pro Panel",
     "viewProducts": "Produkte ansehen",
     "getQuote": "Offerte anfragen",
     "badge": "Schweizer Qualitätspaneele"
@@ -41,7 +41,7 @@
     "quality": "Premium-Qualität",
     "qualityDesc": "Hochwertige akustische und dekorative Wandpaneele für anspruchsvolle Räume.",
     "delivery": "Lieferung Schweiz",
-    "deliveryDesc": "Transparente Preise pro m² inkl. MWST und zuverlässige Lieferung.",
+    "deliveryDesc": "Transparente Preise pro Panel inkl. MWST und zuverlässige Lieferung.",
     "expertise": "Beratung & Planung",
     "expertiseDesc": "Persönliche Offerten und Unterstützung bei der Materialauswahl.",
     "swiss": "Schweizer Markt",
@@ -52,7 +52,9 @@
   },
   "Products": {
     "featured": "Ausgewählte Produkte",
-    "pricePerM2": "Preis pro m²",
+    "pricePerM2": "Preis pro Panel",
+    "priceUnitShort": " / Panel",
+    "quantityPanels": "Anzahl Panels",
     "addToCart": "In den Warenkorb",
     "details": "Details ansehen",
     "title": "Unsere Produkte",
@@ -60,14 +62,14 @@
   },
   "Calculator": {
     "title": "Berechnen Sie Ihren Preis",
-    "subtitle": "Wählen Sie ein Panel und geben Sie die Fläche ein, um Materialkosten und MWST sofort zu berechnen.",
+    "subtitle": "Wählen Sie ein Panel und die Stückzahl, um Kosten und MWST sofort zu berechnen.",
     "selectProduct": "Produkt auswählen...",
     "selectPanelLabel": "Wandpanel auswählen",
-    "quantityLabel": "Geben Sie die m² / m ein",
+    "quantityLabel": "Anzahl Panels",
     "total": "Gesamtpreis inkl. MWST",
     "formula": "Formel",
     "breakdownTitle": "Formel & Aufschlüsselung",
-    "materialBase": "Materialbasis ({quantity} m² × {price})",
+    "materialBase": "Panels ({quantity} × {price})",
     "vatLabel": "MWST (8.1%)",
     "totalCost": "Gesamtkosten",
     "vat": "inkl. MWST",
@@ -147,7 +149,8 @@
     "errorAccountLocked": "Ihr Konto ist gesperrt. Bitte prüfen Sie Ihre E-Mail für Anweisungen zur Entsperrung.",
     "errorEmailNotVerified": "Bitte verifizieren Sie Ihre E-Mail, bevor Sie sich anmelden.",
     "errorNoAdminAccess": "Kein Admin-Zugriff.",
-    "errorSessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+    "errorSessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "errorServerError": "Login-Dienst vorübergehend nicht verfügbar. Bitte später erneut versuchen."
   },
   "Cart": {
     "title": "Warenkorb",

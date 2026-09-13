@@ -39,6 +39,7 @@ function CheckoutContent() {
   const tCommon = useTranslations('Common');
   const tAuth = useTranslations('Auth');
   const tCheckout = useTranslations('Checkout');
+  const tProducts = useTranslations('Products');
   const t = useTranslations();
 
   const [error, setError] = useState('');
@@ -746,7 +747,8 @@ function CheckoutContent() {
                           {name}
                         </h4>
                         <div className="text-[10px] text-zinc-400 font-light mt-0.5">
-                          {item.quantity} m² × CHF {item.product.priceChf.toFixed(2)}
+                          {item.quantity} × CHF {item.product.priceChf.toFixed(2)}
+                          {tProducts('priceUnitShort')}
                         </div>
                       </div>
 

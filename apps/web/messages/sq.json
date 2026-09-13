@@ -26,7 +26,7 @@
   },
   "Hero": {
     "title": "Panele Muri Premium",
-    "subtitle": "Dekorative & Akustike — të llogaritura për m²",
+    "subtitle": "Dekorative & Akustike — çmim për copë paneli",
     "viewProducts": "Shiko Produktet",
     "getQuote": "Kërko Ofertë",
     "badge": "Panele me cilësi zvicerane"
@@ -41,7 +41,7 @@
     "quality": "Cilësi premium",
     "qualityDesc": "Panele muri akustike dhe dekorative me standarde të larta.",
     "delivery": "Dërgesë në Zvicër",
-    "deliveryDesc": "Çmime transparente për m² me TVSH dhe dërgesë e besueshme.",
+    "deliveryDesc": "Çmime transparente për copë me TVSH dhe dërgesë e besueshme.",
     "expertise": "Këshillim & planifikim",
     "expertiseDesc": "Oferta personale dhe ndihmë në zgjedhjen e materialeve.",
     "swiss": "Tregu zviceran",
@@ -52,7 +52,9 @@
   },
   "Products": {
     "featured": "Produktet e zgjedhura",
-    "pricePerM2": "Çmimi për m²",
+    "pricePerM2": "Çmimi për copë",
+    "priceUnitShort": " / copë",
+    "quantityPanels": "Numri i copave",
     "addToCart": "Shto në Shportë",
     "details": "Shiko Detajet",
     "title": "Produktet tona",
@@ -60,14 +62,14 @@
   },
   "Calculator": {
     "title": "Llogaritni çmimin tuaj",
-    "subtitle": "Zgjidhni një panel dhe shkruani sipërfaqen për të llogaritur menjëherë koston e materialit dhe TVSH-në.",
+    "subtitle": "Zgjidhni një panel dhe numrin e copave për të llogaritur menjëherë koston dhe TVSH-në.",
     "selectProduct": "Zgjidh produktin...",
     "selectPanelLabel": "Zgjidh panelin e murit",
-    "quantityLabel": "Shkruaj m² / m",
+    "quantityLabel": "Numri i copave",
     "total": "Totali me TVSH",
     "formula": "Formula",
     "breakdownTitle": "Formula dhe detajet",
-    "materialBase": "Baza e materialit ({quantity} m² × {price})",
+    "materialBase": "Copë paneli ({quantity} × {price})",
     "vatLabel": "TVSH (8.1%)",
     "totalCost": "Kostoja totale",
     "vat": "me TVSH",
@@ -147,7 +149,8 @@
     "errorAccountLocked": "Llogaria juaj është e bllokuar. Kontrolloni email-in për udhëzime zhbllokimi.",
     "errorEmailNotVerified": "Verifikoni email-in para se të hyni.",
     "errorNoAdminAccess": "Nuk keni akses admin.",
-    "errorSessionExpired": "Sesioni skadoi. Hyni përsëri."
+    "errorSessionExpired": "Sesioni skadoi. Hyni përsëri.",
+    "errorServerError": "Shërbimi i login-it nuk është i disponueshëm. Provo përsëri pas pak."
   },
   "Cart": {
     "title": "Shporta",

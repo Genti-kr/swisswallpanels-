@@ -26,7 +26,7 @@
   },
   "Hero": {
     "title": "Premium Wall Panels",
-    "subtitle": "Decorative & Acoustic — calculated by m²",
+    "subtitle": "Decorative & Acoustic — priced per panel",
     "viewProducts": "View Products",
     "getQuote": "Get Quote",
     "badge": "Swiss Quality Panels"
@@ -41,7 +41,7 @@
     "quality": "Premium quality",
     "qualityDesc": "High-quality acoustic and decorative wall panels for demanding spaces.",
     "delivery": "Swiss delivery",
-    "deliveryDesc": "Transparent m² pricing incl. VAT and reliable shipping.",
+    "deliveryDesc": "Transparent per-panel pricing incl. VAT and reliable shipping.",
     "expertise": "Advice & planning",
     "expertiseDesc": "Personal quotes and support choosing the right materials.",
     "swiss": "Swiss market",
@@ -52,7 +52,9 @@
   },
   "Products": {
     "featured": "Featured Products",
-    "pricePerM2": "Price per m²",
+    "pricePerM2": "Price per panel",
+    "priceUnitShort": " / panel",
+    "quantityPanels": "Number of panels",
     "addToCart": "Add to Cart",
     "details": "View Details",
     "title": "Our Products",
@@ -60,14 +62,14 @@
   },
   "Calculator": {
     "title": "Calculate your price",
-    "subtitle": "Select a panel and enter the area to calculate material cost and VAT instantly.",
+    "subtitle": "Select a panel and enter how many pieces you need to calculate cost and VAT instantly.",
     "selectProduct": "Select product...",
     "selectPanelLabel": "Select wall panel",
-    "quantityLabel": "Enter m² / m",
+    "quantityLabel": "Number of panels",
     "total": "Total incl. VAT",
     "formula": "Formula",
     "breakdownTitle": "Formula & breakdown",
-    "materialBase": "Material base ({quantity} m² × {price})",
+    "materialBase": "Panels ({quantity} × {price})",
     "vatLabel": "VAT (8.1%)",
     "totalCost": "Total cost",
     "vat": "incl. VAT",
@@ -147,7 +149,8 @@
     "errorAccountLocked": "Your account is locked. Please check your email for unlock instructions.",
     "errorEmailNotVerified": "Please verify your email before signing in.",
     "errorNoAdminAccess": "You do not have admin access.",
-    "errorSessionExpired": "Your session has expired. Please sign in again."
+    "errorSessionExpired": "Your session has expired. Please sign in again.",
+    "errorServerError": "Login service is temporarily unavailable. Please try again shortly."
   },
   "Cart": {
     "title": "Shopping Cart",

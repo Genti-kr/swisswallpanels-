@@ -8,7 +8,7 @@ import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { useCart } from '@/lib/cart-store';
-import { ArrowLeft, Plus, Minus, Volume2, Sparkles, ShieldCheck, Truck, Ruler, Scale, Maximize2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, ShieldCheck, Ruler, Maximize2, ShoppingBag } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ColorCatalogGrid } from '@/components/ColorCatalogGrid';
 import { fetchColorCatalogBySlug } from '@/lib/color-catalog';
@@ -69,7 +69,6 @@ export default function ProductDetailPage() {
     thickness_mm?: number;
     width_mm?: number;
     height_mm?: number;
-    weight_kg?: number;
     catalogSeries?: string;
   } | null;
 
@@ -84,7 +83,6 @@ export default function ProductDetailPage() {
     thickness: { sq: 'Trashësia', de: 'Stärke', en: 'Thickness', fr: 'Épaisseur' },
     width: { sq: 'Gjerësia', de: 'Breite', en: 'Width', fr: 'Largeur' },
     height: { sq: 'Lartësia', de: 'Höhe', en: 'Height', fr: 'Hauteur' },
-    weight: { sq: 'Pesha', de: 'Gewicht', en: 'Weight', fr: 'Poids' }
   };
 
   const currentLabel = (key: keyof typeof specLabels) => {
@@ -168,7 +166,7 @@ export default function ProductDetailPage() {
                   <span className="text-3xl font-bold text-zinc-900">
                     CHF {product.priceChf.toFixed(2)}
                   </span>
-                  <span className="text-sm text-zinc-500 font-light">/ m²</span>
+                  <span className="text-sm text-zinc-500 font-light">{tProducts('priceUnitShort')}</span>
                 </div>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1 font-semibold">
                   {locale === 'sq' ? 'Çmimi përfshin TVSH-në (8.1%)' : 'Price incl. 8.1% VAT'}
@@ -210,29 +208,6 @@ export default function ProductDetailPage() {
                     </div>
                   )}
 
-                  {/* Weight */}
-                  {specs?.weight_kg && (
-                    <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
-                      <Scale className="w-5 h-5 text-[#C8B89A] shrink-0" />
-                      <div>
-                        <span className="text-[10px] text-zinc-400 block font-light leading-none">{currentLabel('weight')}</span>
-                        <span className="text-xs font-semibold text-zinc-800">{specs.weight_kg} kg</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Acoustic Rating / NRC */}
-                  {product.acousticRating && (
-                    <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
-                      <Volume2 className="w-5 h-5 text-[#C8B89A] shrink-0" />
-                      <div>
-                        <span className="text-[10px] text-zinc-400 block font-light leading-none">
-                          {locale === 'sq' ? 'Përthithja' : 'Acoustics'}
-                        </span>
-                        <span className="text-xs font-semibold text-zinc-800">NRC {product.acousticRating.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -268,7 +243,10 @@ export default function ProductDetailPage() {
             <div className="space-y-6 pt-6 border-t border-zinc-100">
               
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    {tProducts('quantityPanels')}
+                  </span>
                 {/* Custom Quantity Buttons */}
                 <div className="flex items-center border border-zinc-200 bg-zinc-50 rounded-xl p-1 shrink-0 w-fit">
                   <button 
@@ -289,6 +267,7 @@ export default function ProductDetailPage() {
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
+                </div>
 
                 {/* Add to Cart Button */}
                 <button
@@ -299,33 +278,6 @@ export default function ProductDetailPage() {
                   <ShoppingBag className="w-4.5 h-4.5" />
                   {tProducts('addToCart')}
                 </button>
-              </div>
-
-              {/* Trust Badges Bar */}
-              <div className="grid grid-cols-2 gap-4 border-t border-zinc-100 pt-6">
-                <div className="flex items-start gap-2.5">
-                  <Truck className="w-5 h-5 text-[#C8B89A] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-xs font-semibold text-zinc-800 block leading-tight">
-                      {locale === 'sq' ? 'Transport i Shpejtë' : 'Fast Delivery'}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 font-light block mt-0.5">
-                      {locale === 'sq' ? 'Falas mbi 500 CHF në Zvicër' : 'Free above CHF 500 in CH'}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-[#C8B89A] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-xs font-semibold text-zinc-800 block leading-tight">
-                      {locale === 'sq' ? 'Kthim i Lehtë' : 'Easy Returns'}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 font-light block mt-0.5">
-                      {locale === 'sq' ? 'Garantuar brenda 14 ditëve' : 'Guaranteed for 14 days'}
-                    </span>
-                  </div>
-                </div>
               </div>
 
             </div>

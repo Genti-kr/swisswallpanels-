@@ -6,7 +6,8 @@ export type AuthErrorCode =
   | 'account_locked'
   | 'email_not_verified'
   | 'no_admin_access'
-  | 'session_expired';
+  | 'session_expired'
+  | 'server_error';
 
 const AUTH_ERROR_CODES: AuthErrorCode[] = [
   'invalid_credentials',
@@ -15,6 +16,7 @@ const AUTH_ERROR_CODES: AuthErrorCode[] = [
   'email_not_verified',
   'no_admin_access',
   'session_expired',
+  'server_error',
 ];
 
 function isAuthErrorCode(value: string): value is AuthErrorCode {
@@ -30,6 +32,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   email_not_verified: 'Ju lutemi verifikoni email-in tuaj para se të hyni.',
   no_admin_access: 'Nuk keni akses admin.',
   session_expired: 'Sesioni juaj skadoi. Ju lutemi hyni përsëri.',
+  server_error: 'Shërbimi i login-it nuk është i disponueshëm. Provo përsëri pas pak.',
 };
 
 export function getAuthErrorCode(
@@ -43,7 +46,7 @@ export function getAuthErrorCode(
     return error;
   }
   if (error === 'Configuration') {
-    return 'rate_limited';
+    return 'server_error';
   }
   return 'invalid_credentials';
 }
@@ -64,6 +67,7 @@ export function resolveAuthErrorMessage(
       email_not_verified: 'Bitte verifizieren Sie Ihre E-Mail, bevor Sie sich anmelden.',
       no_admin_access: 'Kein Admin-Zugriff.',
       session_expired: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
+      server_error: 'Login-Dienst vorübergehend nicht verfügbar. Bitte später erneut versuchen.',
     },
     en: {
       invalid_credentials: 'Incorrect email or password',
@@ -73,6 +77,7 @@ export function resolveAuthErrorMessage(
       email_not_verified: 'Please verify your email before signing in.',
       no_admin_access: 'You do not have admin access.',
       session_expired: 'Your session has expired. Please sign in again.',
+      server_error: 'Login service is temporarily unavailable. Please try again shortly.',
     },
     fr: {
       invalid_credentials: 'E-mail ou mot de passe incorrect',
@@ -82,6 +87,7 @@ export function resolveAuthErrorMessage(
       email_not_verified: 'Veuillez vérifier votre e-mail avant de vous connecter.',
       no_admin_access: "Vous n'avez pas accès à l'administration.",
       session_expired: 'Votre session a expiré. Veuillez vous reconnecter.',
+      server_error: 'Service de connexion temporairement indisponible. Réessayez dans un instant.',
     },
     sq: AUTH_ERROR_MESSAGES,
   };
@@ -97,6 +103,7 @@ export function authErrorTranslationKey(code: AuthErrorCode): string {
     email_not_verified: 'errorEmailNotVerified',
     no_admin_access: 'errorNoAdminAccess',
     session_expired: 'errorSessionExpired',
+    server_error: 'errorServerError',
   };
   return keys[code];
 }

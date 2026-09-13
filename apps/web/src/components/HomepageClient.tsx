@@ -150,7 +150,7 @@ export default function HomepageClient() {
           contactName: quoteName.trim(),
           contactEmail: quoteEmail.trim().toLowerCase(),
           contactPhone: quotePhone.trim() || null,
-          projectDesc: `Homepage calculator quote — ${quantity} m²`,
+          projectDesc: `Homepage calculator quote — ${quantity} panels`,
           productId: selectedProductId.startsWith('fallback') ? undefined : selectedProductId,
           productName: getSelectedProductName(),
           quantity,
@@ -307,7 +307,7 @@ export default function HomepageClient() {
           </div>
         </section>
 
-        {/* Section 4: Live m² Price Calculator */}
+        {/* Section 4: Live panel price calculator */}
         <section id="calculator" className="bg-zinc-50 py-24 px-6 border-y border-zinc-100">
           <div className="max-w-5xl mx-auto space-y-12">
             <div className="text-center space-y-4">
@@ -334,7 +334,7 @@ export default function HomepageClient() {
                         : (p.name[locale as keyof typeof p.name] || p.name.de);
                       return (
                         <option key={p.id} value={p.id}>
-                          {name} ({formatCHF(Number(p.priceChf))} / m²)
+                          {name} ({formatCHF(Number(p.priceChf))} / panel)
                         </option>
                       );
                     })}

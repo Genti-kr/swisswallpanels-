@@ -26,7 +26,7 @@
   },
   "Hero": {
     "title": "Panneaux Muraux Premium",
-    "subtitle": "Décoratifs & Acoustiques — calculés par m²",
+    "subtitle": "Décoratifs & Acoustiques — prix par panneau",
     "viewProducts": "Voir les produits",
     "getQuote": "Demander un devis",
     "badge": "Panneaux de qualité suisse"
@@ -41,7 +41,7 @@
     "quality": "Qualité premium",
     "qualityDesc": "Panneaux muraux acoustiques et décoratifs de haute qualité.",
     "delivery": "Livraison Suisse",
-    "deliveryDesc": "Prix transparents au m² TTC et livraison fiable.",
+    "deliveryDesc": "Prix transparents par panneau TTC et livraison fiable.",
     "expertise": "Conseil & planification",
     "expertiseDesc": "Devis personnalisés et aide au choix des matériaux.",
     "swiss": "Marché suisse",
@@ -52,7 +52,9 @@
   },
   "Products": {
     "featured": "Produits phares",
-    "pricePerM2": "Prix par m²",
+    "pricePerM2": "Prix par panneau",
+    "priceUnitShort": " / panneau",
+    "quantityPanels": "Nombre de panneaux",
     "addToCart": "Ajouter au panier",
     "details": "Voir les détails",
     "title": "Nos Produits",
@@ -60,14 +62,14 @@
   },
   "Calculator": {
     "title": "Calculez votre prix",
-    "subtitle": "Sélectionnez un panneau et saisissez la surface pour calculer instantanément le coût du matériau et la TVA.",
+    "subtitle": "Sélectionnez un panneau et la quantité pour calculer instantanément le coût et la TVA.",
     "selectProduct": "Sélectionner un produit...",
     "selectPanelLabel": "Sélectionner un panneau mural",
-    "quantityLabel": "Entrez les m² / m",
+    "quantityLabel": "Nombre de panneaux",
     "total": "Total TTC",
     "formula": "Formule",
     "breakdownTitle": "Formule et détail",
-    "materialBase": "Base matériau ({quantity} m² × {price})",
+    "materialBase": "Panneaux ({quantity} × {price})",
     "vatLabel": "TVA (8,1 %)",
     "totalCost": "Coût total",
     "vat": "TVA incluse",
@@ -147,7 +149,8 @@
     "errorAccountLocked": "Votre compte est verrouillé. Consultez votre e-mail pour les instructions de déverrouillage.",
     "errorEmailNotVerified": "Veuillez vérifier votre e-mail avant de vous connecter.",
     "errorNoAdminAccess": "Vous n'avez pas accès à l'administration.",
-    "errorSessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+    "errorSessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "errorServerError": "Service de connexion temporairement indisponible. Réessayez dans un instant."
   },
   "Cart": {
     "title": "Panier",

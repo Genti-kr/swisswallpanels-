@@ -32,6 +32,9 @@ type FormState = {
   priceChf: number;
   priceBtwChf: number;
   stockQuantity: number;
+  thickness_mm: number;
+  width_mm: number;
+  height_mm: number;
   isFeatured: boolean;
   isActive: boolean;
 };
@@ -45,6 +48,9 @@ const defaultForm = (categoryId = ''): FormState => ({
   priceChf: 0,
   priceBtwChf: 0,
   stockQuantity: 0,
+  thickness_mm: 12,
+  width_mm: 600,
+  height_mm: 2400,
   isFeatured: false,
   isActive: true,
 });
@@ -114,12 +120,29 @@ export default function AdminProductsPage() {
         if (!descJson[loc]) descJson[loc] = descJson.de;
       }
 
+      const existingProduct = editingId
+        ? products.find((p) => p.id === editingId)
+        : undefined;
+      const priorSpecs =
+        (existingProduct?.specsJson as Record<string, unknown> | undefined) ?? {};
+
       const payload = {
-        ...form,
+        slug: form.slug,
+        sku: form.sku,
+        categoryId: form.categoryId,
         nameJson,
         descJson,
+        priceChf: form.priceChf,
         priceBtwChf: form.priceBtwChf || form.priceChf,
-        specsJson: { thickness_mm: 12, width_mm: 600, height_mm: 2400, weight_kg: 4 },
+        stockQuantity: form.stockQuantity,
+        isFeatured: form.isFeatured,
+        isActive: form.isActive,
+        specsJson: {
+          ...priorSpecs,
+          thickness_mm: form.thickness_mm,
+          width_mm: form.width_mm,
+          height_mm: form.height_mm,
+        },
       };
 
       if (editingId) {
@@ -144,6 +167,11 @@ export default function AdminProductsPage() {
   };
 
   const startEdit = (p: ProductDTO) => {
+    const specs = (p.specsJson ?? {}) as {
+      thickness_mm?: number;
+      width_mm?: number;
+      height_mm?: number;
+    };
     setEditingId(p.id);
     setEditingImages(p.images);
     setForm({
@@ -155,6 +183,9 @@ export default function AdminProductsPage() {
       priceChf: p.priceChf,
       priceBtwChf: p.priceBtwChf,
       stockQuantity: p.stockQuantity,
+      thickness_mm: specs.thickness_mm ?? 12,
+      width_mm: specs.width_mm ?? 600,
+      height_mm: specs.height_mm ?? 2400,
       isFeatured: p.isFeatured,
       isActive: p.isActive,
     });
@@ -354,7 +385,7 @@ export default function AdminProductsPage() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Çmimi (CHF/m²)" required>
+                <Field label="Çmimi për copë (CHF)" required>
                   <input
                     type="number"
                     step="0.01"
@@ -390,6 +421,50 @@ export default function AdminProductsPage() {
                     className={inputClass}
                   />
                 </Field>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">
+                  Dimensionet e panelit
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Field label="Trashësia (mm)" required>
+                    <input
+                      type="number"
+                      min="1"
+                      value={form.thickness_mm}
+                      onChange={(e) =>
+                        setForm({ ...form, thickness_mm: Number(e.target.value) })
+                      }
+                      className={inputClass}
+                      required
+                    />
+                  </Field>
+                  <Field label="Gjerësia (mm)" required>
+                    <input
+                      type="number"
+                      min="1"
+                      value={form.width_mm}
+                      onChange={(e) =>
+                        setForm({ ...form, width_mm: Number(e.target.value) })
+                      }
+                      className={inputClass}
+                      required
+                    />
+                  </Field>
+                  <Field label="Lartësia (mm)" required>
+                    <input
+                      type="number"
+                      min="1"
+                      value={form.height_mm}
+                      onChange={(e) =>
+                        setForm({ ...form, height_mm: Number(e.target.value) })
+                      }
+                      className={inputClass}
+                      required
+                    />
+                  </Field>
+                </div>
               </div>
 
               {/* Multilingual tabs */}
@@ -664,7 +739,7 @@ export default function AdminProductsPage() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-zinc-900 font-semibold">
                       {formatCHF(p.priceChf)}
-                      <span className="text-zinc-400 font-normal"> /m²</span>
+                      <span className="text-zinc-400 font-normal"> / copë</span>
                     </span>
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded-full ${
