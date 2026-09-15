@@ -94,6 +94,7 @@ export default function AdminProductsPage() {
   const [activeLocale, setActiveLocale] = useState<(typeof locales)[number]>('de');
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [form, setForm] = useState<FormState>(defaultForm());
   const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,22 +139,27 @@ export default function AdminProductsPage() {
     }
   };
 
+  const refreshCatalog = useCallback(async () => {
+    const [prodRes, catRes] = await Promise.all([
+      apiFetch<{ items: ProductDTO[] }>('/api/admin/products'),
+      apiFetch<{ items: CategoryDTO[] }>('/api/categories'),
+    ]);
+    setProducts(prodRes.items);
+    setCategories(catRes.items);
+    return prodRes.items;
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [prodRes, catRes] = await Promise.all([
-        apiFetch<{ items: ProductDTO[] }>('/api/admin/products'),
-        apiFetch<{ items: CategoryDTO[] }>('/api/categories'),
-      ]);
-      setProducts(prodRes.items);
-      setCategories(catRes.items);
+      await refreshCatalog();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ngarkimi i produkteve');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshCatalog]);
 
   useEffect(() => {
     load();
@@ -173,6 +179,8 @@ export default function AdminProductsPage() {
     e.preventDefault();
     setSaving(true);
     setError('');
+    setSuccess('');
+    const isEdit = Boolean(editingId);
     try {
       if (!form.panel1.priceChf || form.panel1.priceChf <= 0) {
         setError('Vendos çmimin për panelin 1 (1 copë).');
@@ -220,11 +228,22 @@ export default function AdminProductsPage() {
         form.panel1,
         form.panel2,
         form.panelOption2Enabled
+      ).map((o) => ({
+        ...o,
+        thickness_mm: Math.round(Number(o.thickness_mm)),
+        width_mm: Math.round(Number(o.width_mm)),
+        height_mm: Math.round(Number(o.height_mm)),
+        priceChf: Number(o.priceChf),
+      }));
+
+      const categoryLabelNorm = form.categoryName.trim().toLowerCase();
+      const existingCategory = categories.find(
+        (c) => categoryLabel(c).trim().toLowerCase() === categoryLabelNorm
       );
 
-      const payload = {
-        slug: form.slug,
-        sku: form.sku,
+      const payload: Record<string, unknown> = {
+        slug: form.slug.trim(),
+        sku: form.sku.trim(),
         categoryName: form.categoryName.trim(),
         nameJson,
         descJson,
@@ -242,6 +261,10 @@ export default function AdminProductsPage() {
         },
         panelOptions: panelPayload,
       };
+
+      if (existingCategory) {
+        payload.categoryId = existingCategory.id;
+      }
 
       let productId = editingId;
 
@@ -273,17 +296,18 @@ export default function AdminProductsPage() {
         }
       }
 
-      await load();
-      if (productId) {
-        const refreshed = (await apiFetch<{ items: ProductDTO[] }>('/api/admin/products')).items.find(
-          (p) => p.id === productId
-        );
+      try {
+        const items = await refreshCatalog();
+        const refreshed = productId ? items.find((p) => p.id === productId) : undefined;
         if (refreshed) setEditingImages(refreshed.images);
+      } catch {
+        setSuccess('Produkti u ruajt, por lista nuk u rifreskua — rifresko faqen.');
       }
 
       if (uploadWarning) {
         setError(`Produkti u ruajt, por: ${uploadWarning}`);
       }
+      setSuccess(isEdit ? 'Produkti u përditësua.' : 'Produkti u shtua me sukses.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ruajtja');
     } finally {
@@ -500,6 +524,13 @@ export default function AdminProductsPage() {
           </div>
         ))}
       </div>
+
+      {success && (
+        <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-100 rounded-xl text-green-800 text-sm">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
+          <p>{success}</p>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">

@@ -1,6 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { mapProduct, mapProductVariant } from '../../lib/mappers';
 import { requireAuth, AuthenticatedRequest } from '../../middleware/auth';
@@ -61,8 +62,19 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
     }
     res.status(201).json({ product: mapProduct(product) });
   } catch (error) {
+    if (error instanceof Error && error.message === 'CATEGORY_REQUIRED') {
+      return res.status(400).json({ error: 'Kategoria është e detyrueshme' });
+    }
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return res.status(409).json({
+        error: 'Slug ose SKU ekziston tashmë. Përdor slug/SKU tjetër.',
+      });
     }
     next(error);
   }
@@ -93,8 +105,19 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
     }
     res.json({ product: mapProduct(product) });
   } catch (error) {
+    if (error instanceof Error && error.message === 'CATEGORY_REQUIRED') {
+      return res.status(400).json({ error: 'Kategoria është e detyrueshme' });
+    }
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return res.status(409).json({
+        error: 'Slug ose SKU ekziston tashmë. Përdor slug/SKU tjetër.',
+      });
     }
     next(error);
   }
@@ -102,13 +125,43 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
 
 router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const images = await prisma.productImage.findMany({ where: { productId: req.params.id } });
-    await prisma.product.delete({ where: { id: req.params.id } });
+    const productId = req.params.id;
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const orderItemCount = await prisma.orderItem.count({ where: { productId } });
+    if (orderItemCount > 0) {
+      return res.status(409).json({
+        error:
+          'Ky produkt ka porosi dhe nuk mund të fshihet. Çaktivizoje (Aktiv = off) në vend të fshirjes.',
+      });
+    }
+
+    const images = await prisma.productImage.findMany({ where: { productId } });
+
+    await prisma.$transaction([
+      prisma.cartItem.deleteMany({ where: { productId } }),
+      prisma.wishlistItem.deleteMany({ where: { productId } }),
+      prisma.product.delete({ where: { id: productId } }),
+    ]);
+
     for (const img of images) {
       await deleteImageByUrl(img.url);
     }
     res.json({ message: 'Product deleted' });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2003'
+    ) {
+      return res.status(409).json({
+        error:
+          'Produkti lidhet me të dhëna të tjera (shportë/porosi). Çaktivizoje në vend të fshirjes.',
+      });
+    }
     next(error);
   }
 });
