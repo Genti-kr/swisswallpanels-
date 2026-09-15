@@ -271,14 +271,10 @@ export default function HomepageClient() {
 
         {/* Section 2: Trust pillars (no unverified statistics) */}
         <section className="bg-[#1A1A1A] text-white py-12 px-6">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 text-center">
             <div className="space-y-2">
               <div className="text-sm font-semibold uppercase tracking-widest text-[#C8B89A]">{t('TrustPillars.quality')}</div>
               <p className="text-xs text-white/50 leading-relaxed">{t('TrustPillars.qualityDesc')}</p>
-            </div>
-            <div className="space-y-2">
-              <div className="text-sm font-semibold uppercase tracking-widest text-[#C8B89A]">{t('TrustPillars.delivery')}</div>
-              <p className="text-xs text-white/50 leading-relaxed">{t('TrustPillars.deliveryDesc')}</p>
             </div>
             <div className="space-y-2">
               <div className="text-sm font-semibold uppercase tracking-widest text-[#C8B89A]">{t('TrustPillars.expertise')}</div>
