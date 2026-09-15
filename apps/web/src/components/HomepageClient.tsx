@@ -218,44 +218,50 @@ export default function HomepageClient() {
       {/* Main Content */}
       <main className="flex-grow">
         {/* Section 1: Hero */}
-        <section className="relative min-h-[90vh] flex flex-col justify-center items-center px-6 py-20 text-center overflow-hidden bg-zinc-950">
+        <section className="relative min-h-[90vh] flex flex-col justify-center items-center px-6 py-20 text-center overflow-hidden bg-[#F8F8F6]">
           <div className="absolute inset-0 z-0 pointer-events-none">
             {heroBgVisible && (
               <img
                 src={heroBg}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover object-center"
+                className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.38] saturate-[0.7]"
                 onError={() => setHeroBgVisible(false)}
               />
             )}
-            <div className="hero-sunlight-overlay absolute inset-0" aria-hidden />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'radial-gradient(ellipse at 50% 145%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.99) 50%, rgba(255, 255, 255, 0.95) 80%, rgba(248, 248, 246, 0.92) 100%)',
+              }}
+            />
           </div>
 
-          <div className="absolute inset-0 opacity-[0.07] pointer-events-none z-[1]">
-            <div className="absolute left-1/4 top-0 w-px h-full bg-white" />
-            <div className="absolute right-1/4 top-0 w-px h-full bg-white" />
+          <div className="absolute inset-0 opacity-5 pointer-events-none z-10">
+            <div className="absolute left-1/4 top-0 w-px h-full bg-[#1A1A1A]" />
+            <div className="absolute right-1/4 top-0 w-px h-full bg-[#1A1A1A]" />
           </div>
 
           <div className="relative z-10 max-w-4xl mx-auto space-y-8">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#C8B89A] drop-shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#C8B89A]">
               {t('Hero.badge')}
             </span>
-            <h1 className="text-5xl md:text-7xl font-light tracking-tight text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)]">
+            <h1 className="text-5xl md:text-7xl font-light tracking-tight text-[#1A1A1A]">
               {t('Hero.title')}
             </h1>
-            <p className="text-lg md:text-xl text-white/85 max-w-2xl mx-auto font-light leading-relaxed drop-shadow-[0_1px_12px_rgba(0,0,0,0.35)]">
+            <p className="text-lg md:text-xl text-[#1A1A1A]/60 max-w-2xl mx-auto font-light leading-relaxed">
               {t('Hero.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
               <Link
                 href="/produkte"
-                className="bg-[#C8B89A] hover:bg-white text-[#1A1A1A] px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300 shadow-lg"
+                className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300"
               >
                 {t('Hero.viewProducts')}
               </Link>
               <Link
                 href="#calculator"
-                className="border border-white/90 text-white hover:bg-white hover:text-[#1A1A1A] px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300 backdrop-blur-[2px] bg-black/10"
+                className="border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300"
               >
                 {t('Hero.getQuote')}
               </Link>
