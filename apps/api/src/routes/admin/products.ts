@@ -47,13 +47,17 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
       include: { images: true, variants: true },
     });
     if (panelOptionsRaw !== undefined) {
-      const { options } = syncPanelOptionsSchema.parse({ options: panelOptionsRaw });
-      await syncPanelOptionsForProduct(product.id, options);
-      const refreshed = await prisma.product.findUnique({
-        where: { id: product.id },
-        include: { images: true, variants: true },
-      });
-      if (refreshed) product = refreshed;
+      try {
+        const { options } = syncPanelOptionsSchema.parse({ options: panelOptionsRaw });
+        await syncPanelOptionsForProduct(product.id, options);
+        const refreshed = await prisma.product.findUnique({
+          where: { id: product.id },
+          include: { images: true, variants: true },
+        });
+        if (refreshed) product = refreshed;
+      } catch (syncErr) {
+        console.error('Panel options sync failed after product create:', syncErr);
+      }
     }
     res.status(201).json({ product: mapProduct(product) });
   } catch (error) {
@@ -75,13 +79,17 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
       include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
     });
     if (panelOptionsRaw !== undefined) {
-      const { options } = syncPanelOptionsSchema.parse({ options: panelOptionsRaw });
-      await syncPanelOptionsForProduct(product.id, options);
-      const refreshed = await prisma.product.findUnique({
-        where: { id: product.id },
-        include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
-      });
-      if (refreshed) product = refreshed;
+      try {
+        const { options } = syncPanelOptionsSchema.parse({ options: panelOptionsRaw });
+        await syncPanelOptionsForProduct(product.id, options);
+        const refreshed = await prisma.product.findUnique({
+          where: { id: product.id },
+          include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
+        });
+        if (refreshed) product = refreshed;
+      } catch (syncErr) {
+        console.error('Panel options sync failed after product update:', syncErr);
+      }
     }
     res.json({ product: mapProduct(product) });
   } catch (error) {

@@ -124,8 +124,12 @@ export async function processAndUploadImage(
     const ext = FORMAT_EXT[format] ?? '.jpg';
     const filename = `${id}${ext}`;
     const contentType = FORMAT_MIME[format] ?? 'image/jpeg';
-    // Auto-orient from EXIF only — no resize, no recompression to WebP
-    const processed = await sharp(fileBuffer).rotate().toBuffer();
+    let processed: Buffer;
+    try {
+      processed = await sharp(fileBuffer).rotate().toBuffer();
+    } catch {
+      processed = fileBuffer;
+    }
 
     if (isR2Configured()) {
       return uploadToR2(processed, `${folder}/${filename}`, contentType);

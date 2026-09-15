@@ -12,6 +12,9 @@ import {
   type PanelOptionForm,
 } from '@/lib/admin-panel-options';
 import { MAX_PRODUCT_IMAGES } from '@/lib/product-images';
+import { uploadProductImageDirect } from '@/lib/admin-product-image-upload';
+
+const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024;
 import {
   Plus,
   Pencil,
@@ -112,15 +115,26 @@ export default function AdminProductsPage() {
   const uploadPendingBatch = async (productId: string, batch: PendingProductImage[]) => {
     if (!batch.length) return;
     const primary = batch.find((p) => p.isPrimary)?.localId ?? batch[0].localId;
+    const errors: string[] = [];
     for (let i = 0; i < batch.length; i++) {
       const item = batch[i];
+      if (item.file.size > MAX_IMAGE_FILE_BYTES) {
+        errors.push(`${item.file.name}: më e madhe se 10MB`);
+        continue;
+      }
       const fd = new FormData();
       fd.append('image', item.file);
       fd.append('isPrimary', item.localId === primary ? 'true' : 'false');
-      await apiFetch(`/api/admin/products/${productId}/images`, {
-        method: 'POST',
-        body: fd,
-      });
+      try {
+        await uploadProductImageDirect(productId, fd);
+      } catch (err) {
+        errors.push(
+          `${item.file.name}: ${err instanceof Error ? err.message : 'dështoi ngarkimi'}`
+        );
+      }
+    }
+    if (errors.length) {
+      throw new Error(`Disa foto nuk u ngarkuan: ${errors.join(' · ')}`);
     }
   };
 
@@ -246,13 +260,30 @@ export default function AdminProductsPage() {
         productId = res.product.id;
         setEditingId(productId);
         setEditingImages(res.product.images);
-        if (pendingImages.length > 0) {
+      }
+
+      let uploadWarning = '';
+      if (productId && pendingImages.length > 0) {
+        try {
           await uploadPendingBatch(productId, pendingImages);
           clearPendingImages();
+        } catch (uploadErr) {
+          uploadWarning =
+            uploadErr instanceof Error ? uploadErr.message : 'Disa foto nuk u ngarkuan';
         }
       }
 
       await load();
+      if (productId) {
+        const refreshed = (await apiFetch<{ items: ProductDTO[] }>('/api/admin/products')).items.find(
+          (p) => p.id === productId
+        );
+        if (refreshed) setEditingImages(refreshed.images);
+      }
+
+      if (uploadWarning) {
+        setError(`Produkti u ruajt, por: ${uploadWarning}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ruajtja');
     } finally {
@@ -303,12 +334,24 @@ export default function AdminProductsPage() {
       setError(`Maksimumi është ${MAX_PRODUCT_IMAGES} foto për produkt.`);
       return;
     }
-    const toAdd = fileArray.slice(0, slotsLeft);
-    if (toAdd.length < fileArray.length) {
-      setError(`U shtuan vetëm ${toAdd.length} foto (maks. ${MAX_PRODUCT_IMAGES} për produkt).`);
+    const tooLarge = fileArray.filter((f) => f.size > MAX_IMAGE_FILE_BYTES);
+    const sizeOk = fileArray.filter((f) => f.size <= MAX_IMAGE_FILE_BYTES);
+    if (tooLarge.length) {
+      setError(
+        `${tooLarge.map((f) => f.name).join(', ')}: maks. 10MB për foto. Zgjidh foto më të vogla ose kompreso.`
+      );
     } else {
       setError('');
     }
+    const toAdd = sizeOk.slice(0, slotsLeft);
+    if (toAdd.length < sizeOk.length) {
+      setError((prev) =>
+        prev
+          ? prev
+          : `U shtuan vetëm ${toAdd.length} foto (maks. ${MAX_PRODUCT_IMAGES} për produkt).`
+      );
+    }
+    if (!toAdd.length) return;
 
     if (!editingId) {
       setPendingImages((prev) => {
@@ -328,20 +371,27 @@ export default function AdminProductsPage() {
     }
 
     setUploading(true);
+    const uploadErrors: string[] = [];
     try {
       for (let i = 0; i < toAdd.length; i++) {
         const fd = new FormData();
         fd.append('image', toAdd[i]);
         fd.append('isPrimary', i === 0 && editingImages.length === 0 ? 'true' : 'false');
-        await apiFetch(`/api/admin/products/${editingId}/images`, {
-          method: 'POST',
-          body: fd,
-        });
+        try {
+          await uploadProductImageDirect(editingId, fd);
+        } catch (err) {
+          uploadErrors.push(
+            `${toAdd[i].name}: ${err instanceof Error ? err.message : 'dështoi'}`
+          );
+        }
       }
       const res = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
       const updated = res.items.find((p) => p.id === editingId);
       if (updated) setEditingImages(updated.images);
       await load();
+      if (uploadErrors.length) {
+        setError(`Disa foto nuk u ngarkuan: ${uploadErrors.join(' · ')}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ngarkimi i fotografive');
     } finally {
