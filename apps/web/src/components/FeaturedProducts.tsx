@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
+import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import { useCart } from '@/lib/cart-store';
 
 export default function FeaturedProducts() {
@@ -93,15 +94,13 @@ export default function FeaturedProducts() {
           href={p.isFallback ? '/produkte' : `/produkte/${p.slug}`}
           className="group relative bg-white border border-zinc-100 rounded-lg p-6 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 block cursor-pointer"
         >
-          <div className="aspect-[4/3] w-full bg-zinc-50 rounded-md mb-6 overflow-hidden border border-zinc-100 flex items-center justify-center p-2">
-            {p.imageUrl && (
-              <img
-                src={p.imageUrl}
-                alt={p.name}
-                className="max-w-full max-h-full w-auto h-auto object-contain"
-              />
-            )}
-          </div>
+          <ProductPhotoFrame
+            src={p.imageUrl}
+            alt={p.name}
+            variant="card"
+            hoverZoom
+            className="mb-6 rounded-lg"
+          />
           <h3 className="text-lg font-medium group-hover:text-[#C8B89A] transition-colors">{p.name}</h3>
           <div className="mt-4 flex items-center justify-between gap-3">
             <div>

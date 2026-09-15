@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
+import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { useCart } from '@/lib/cart-store';
 import { ArrowLeft, Plus, Minus, ShieldCheck, Ruler, Maximize2, ShoppingBag } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [selectedColorCode, setSelectedColorCode] = useState<string | null>(null);
   const [selectedThicknessMm, setSelectedThicknessMm] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [colorCatalog, setColorCatalog] = useState<ColorCatalogDTO | null>(null);
   const { fetchCart, addItem } = useCart();
   
@@ -36,7 +38,10 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     apiFetch<{ product: ProductDTO }>(`/api/products/${slug}`)
-      .then((res) => setProduct(res.product))
+      .then((res) => {
+        setProduct(res.product);
+        setSelectedImageIndex(0);
+      })
       .catch(console.error);
   }, [slug]);
 
@@ -78,6 +83,17 @@ export default function ProductDetailPage() {
   }, [product, selectedColorCode, selectedThicknessMm]);
 
   const displayPriceChf = activeVariant?.priceChf ?? product?.priceChf ?? 0;
+
+  const galleryImages = useMemo(() => {
+    if (!product?.images?.length) return [];
+    return [...product.images].sort((a, b) => {
+      if (a.isPrimary && !b.isPrimary) return -1;
+      if (!a.isPrimary && b.isPrimary) return 1;
+      return a.sortOrder - b.sortOrder;
+    });
+  }, [product]);
+
+  const activeImageUrl = galleryImages[selectedImageIndex]?.url ?? galleryImages[0]?.url;
 
   if (!product) {
     return (
@@ -146,28 +162,47 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 bg-white rounded-3xl p-6 sm:p-10 md:p-12 border border-zinc-200/40 shadow-sm">
           
           {/* Left Column: Image Display */}
-          <div className="lg:col-span-6 space-y-6">
-            <div className="min-h-[280px] sm:min-h-[360px] lg:min-h-[420px] max-h-[75vh] bg-[#F8F8F6] rounded-2xl overflow-hidden border border-zinc-100 shadow-sm relative flex items-center justify-center p-4 sm:p-6">
-              {product.images[0] ? (
-                <img 
-                  src={resolveMediaUrl(product.images[0].url)} 
-                  alt={name} 
-                  className="max-w-full max-h-[min(75vh,560px)] w-auto h-auto object-contain" 
-                />
-              ) : (
-                <img 
-                  src="/Enhancing-Wood-Panel-Walls.webp" 
-                  alt="fallback wood panel" 
-                  className="max-w-full max-h-full w-auto h-auto object-contain opacity-60 mix-blend-multiply" 
-                />
-              )}
-
-              {/* Badges on image */}
-              <span className="absolute top-4 left-4 bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md flex items-center gap-1 select-none">
+          <div className="lg:col-span-6 space-y-4">
+            <div className="relative">
+              <ProductPhotoFrame
+                src={activeImageUrl}
+                alt={name}
+                variant="detail"
+                priority
+                className="shadow-sm"
+              />
+              <span className="absolute top-4 left-4 bg-zinc-900/95 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md flex items-center gap-1 select-none pointer-events-none">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#C8B89A]" />
                 Swiss Quality
               </span>
             </div>
+
+            {galleryImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                {galleryImages.map((img, index) => {
+                  const selected = index === selectedImageIndex;
+                  return (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all flex items-center justify-center bg-gradient-to-br from-[#FAFAF8] to-[#ECE8E1] ${
+                        selected
+                          ? 'border-[#C8B89A] ring-2 ring-[#C8B89A]/25'
+                          : 'border-zinc-200 hover:border-zinc-300 opacity-80 hover:opacity-100'
+                      }`}
+                      aria-label={`Image ${index + 1}`}
+                    >
+                      <img
+                        src={resolveMediaUrl(img.url)}
+                        alt=""
+                        className="max-w-[88%] max-h-[88%] object-contain"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Right Column: Information & Actions */}

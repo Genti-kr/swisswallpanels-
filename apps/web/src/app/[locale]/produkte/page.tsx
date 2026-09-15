@@ -5,7 +5,7 @@ import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
-import { resolveMediaUrl } from '@/lib/media-url';
+import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import { useCart } from '@/lib/cart-store';
 import { SlidersHorizontal, Layers, Volume2, Sparkles, Plus, Search } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -155,31 +155,21 @@ export default function ProductsPage() {
                     className="group bg-white border border-zinc-200/40 rounded-2xl p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer"
                   >
                     <div>
-                      {/* Product image container */}
-                      <div className="aspect-[4/3] bg-[#F8F8F6] rounded-xl overflow-hidden relative flex items-center justify-center p-2">
-                        {p.images[0] ? (
-                          <img 
-                            src={resolveMediaUrl(p.images[0].url)} 
-                            alt={name} 
-                            className="max-w-full max-h-full w-auto h-auto object-contain" 
-                          />
-                        ) : (
-                          <img 
-                            src="/Enhancing-Wood-Panel-Walls.webp" 
-                            alt="fallback wood panel" 
-                            className="w-full h-full object-cover opacity-60 mix-blend-multiply" 
-                          />
-                        )}
-                        
-                        {/* Tags / Badges */}
+                      <div className="relative">
+                        <ProductPhotoFrame
+                          src={p.images[0]?.url}
+                          alt={name}
+                          variant="card"
+                          hoverZoom
+                        />
                         {p.isFeatured && (
-                          <span className="absolute top-3 left-3 bg-[#C8B89A] text-zinc-950 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 select-none">
+                          <span className="absolute top-3 left-3 bg-[#C8B89A] text-zinc-950 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 select-none pointer-events-none">
                             <Sparkles className="w-3 h-3" />
                             Premium
                           </span>
                         )}
                         {p.acousticRating && (
-                          <span className="absolute top-3 right-3 bg-zinc-900/90 text-white text-[10px] font-medium tracking-wide px-2.5 py-1 rounded-full backdrop-blur flex items-center gap-1 select-none">
+                          <span className="absolute top-3 right-3 bg-zinc-900/90 text-white text-[10px] font-medium tracking-wide px-2.5 py-1 rounded-full backdrop-blur flex items-center gap-1 select-none pointer-events-none">
                             <Volume2 className="w-3 h-3 text-[#C8B89A]" />
                             NRC {p.acousticRating.toFixed(2)}
                           </span>
