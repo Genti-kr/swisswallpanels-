@@ -24,3 +24,40 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* Homepage hero — directional sunlight (mobile: 150deg, desktop: 135deg) */
+.hero-sunlight-overlay {
+  background:
+    linear-gradient(
+      150deg,
+      transparent 38%,
+      rgba(255, 220, 160, 0.06) 50%,
+      transparent 62%
+    ),
+    linear-gradient(
+      150deg,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.18) 42%,
+      rgba(0, 0, 0, 0.08) 55%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+}
+
+@media (min-width: 768px) {
+  .hero-sunlight-overlay {
+    background:
+      linear-gradient(
+        135deg,
+        transparent 38%,
+        rgba(255, 220, 160, 0.06) 50%,
+        transparent 62%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.72) 0%,
+        rgba(0, 0, 0, 0.18) 42%,
+        rgba(0, 0, 0, 0.08) 55%,
+        rgba(0, 0, 0, 0.55) 100%
+      );
+  }
+}
