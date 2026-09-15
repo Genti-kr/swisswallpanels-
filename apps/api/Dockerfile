@@ -26,10 +26,11 @@ COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./
 COPY --from=build /app/apps/api/prisma ./prisma
 COPY --from=build /app/apps/api/scripts/create-admin-standalone.mjs ./scripts/create-admin-standalone.mjs
+COPY --from=build /app/apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/api/node_modules ./node_modules
-RUN mkdir -p uploads/invoices uploads
+RUN mkdir -p uploads/invoices uploads && chmod +x docker-entrypoint.sh
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/index.js"]
+CMD ["./docker-entrypoint.sh"]
