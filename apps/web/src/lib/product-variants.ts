@@ -44,5 +44,14 @@ export function resolveProductVariant(
 }
 
 export function getCartItemUnitPrice(item: CartItemDTO): number {
-  return item.variant?.priceChf ?? item.product.priceChf;
+  if (!item.variant) return item.product.priceChf;
+  const a = item.variant.attributes as {
+    type?: string;
+    color?: string;
+    thickness_mm?: number;
+  };
+  const isThicknessOnly =
+    a.type === 'thickness' || (typeof a.thickness_mm === 'number' && !a.color);
+  if (isThicknessOnly) return item.product.priceChf;
+  return item.variant.priceChf;
 }

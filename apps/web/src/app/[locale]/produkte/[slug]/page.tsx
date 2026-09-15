@@ -14,7 +14,6 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { ColorCatalogGrid } from '@/components/ColorCatalogGrid';
 import { fetchColorCatalogBySlug } from '@/lib/color-catalog';
 import { ColorCatalogDTO } from '@swisswall/types';
-import { getThicknessVariants, resolveProductVariant } from '@/lib/product-variants';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -23,7 +22,6 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDTO | null>(null);
   const [qty, setQty] = useState(1);
   const [selectedColorCode, setSelectedColorCode] = useState<string | null>(null);
-  const [selectedThicknessMm, setSelectedThicknessMm] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [colorCatalog, setColorCatalog] = useState<ColorCatalogDTO | null>(null);
   const { fetchCart, addItem } = useCart();
@@ -55,34 +53,16 @@ export default function ProductDetailPage() {
     fetchColorCatalogBySlug(series).then(setColorCatalog);
   }, [product]);
 
-  const thicknessVariants = useMemo(
-    () => (product ? getThicknessVariants(product) : []),
-    [product]
-  );
+  const colorVariant = useMemo(() => {
+    if (!product || !selectedColorCode) return null;
+    return (
+      product.variants.find(
+        (v) => (v.attributes as { color?: string })?.color === selectedColorCode
+      ) ?? null
+    );
+  }, [product, selectedColorCode]);
 
-  useEffect(() => {
-    if (!product || thicknessVariants.length === 0) {
-      setSelectedThicknessMm(null);
-      return;
-    }
-    setSelectedThicknessMm((prev) => {
-      const values = thicknessVariants.map(
-        (v) => (v.attributes as { thickness_mm: number }).thickness_mm
-      );
-      if (prev != null && values.includes(prev)) return prev;
-      return values[0] ?? null;
-    });
-  }, [product, thicknessVariants]);
-
-  const activeVariant = useMemo(() => {
-    if (!product) return null;
-    return resolveProductVariant(product, {
-      colorCode: selectedColorCode,
-      thicknessMm: selectedThicknessMm,
-    });
-  }, [product, selectedColorCode, selectedThicknessMm]);
-
-  const displayPriceChf = activeVariant?.priceChf ?? product?.priceChf ?? 0;
+  const displayPriceChf = colorVariant?.priceChf ?? product?.priceChf ?? 0;
 
   const galleryImages = useMemo(() => {
     if (!product?.images?.length) return [];
@@ -119,9 +99,7 @@ export default function ProductDetailPage() {
     catalogSeries?: string;
   } | null;
 
-  const displayThicknessMm = selectedThicknessMm ?? specs?.thickness_mm ?? null;
   const mustSelectColor = Boolean(colorCatalog);
-  const mustSelectThickness = thicknessVariants.length > 0;
 
   // Translation helpers for technical specs
   const specLabels = {
@@ -249,12 +227,12 @@ export default function ProductDetailPage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Thickness */}
-                  {displayThicknessMm != null && !mustSelectThickness && (
+                  {specs?.thickness_mm != null && (
                     <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
                       <Ruler className="w-5 h-5 text-[#C8B89A] shrink-0" />
                       <div>
                         <span className="text-[10px] text-zinc-400 block font-light leading-none">{currentLabel('thickness')}</span>
-                        <span className="text-xs font-semibold text-zinc-800">{displayThicknessMm} mm</span>
+                        <span className="text-xs font-semibold text-zinc-800">{specs.thickness_mm} mm</span>
                       </div>
                     </div>
                   )}
@@ -275,34 +253,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             </div>
-
-            {mustSelectThickness && (
-              <div className="space-y-3 pt-2 border-t border-zinc-100">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  {tProducts('selectThickness')}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {thicknessVariants.map((v) => {
-                    const mm = (v.attributes as { thickness_mm: number }).thickness_mm;
-                    const selected = selectedThicknessMm === mm;
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setSelectedThicknessMm(mm)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
-                          selected
-                            ? 'border-[#C8B89A] bg-[#C8B89A]/15 text-zinc-900'
-                            : 'border-zinc-200 bg-white text-zinc-600 hover:border-[#C8B89A]/60'
-                        }`}
-                      >
-                        {mm} mm · CHF {v.priceChf.toFixed(2)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {colorCatalog && (
               <div className="space-y-3 pt-2 border-t border-zinc-100">
@@ -363,11 +313,8 @@ export default function ProductDetailPage() {
 
                 {/* Add to Cart Button */}
                 <button
-                  onClick={() => addItem(product.id, qty, activeVariant?.id)}
-                  disabled={
-                    (mustSelectColor && !selectedColorCode) ||
-                    (mustSelectThickness && selectedThicknessMm == null)
-                  }
+                  onClick={() => addItem(product.id, qty, colorVariant?.id)}
+                  disabled={mustSelectColor && !selectedColorCode}
                   className="flex-grow bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] py-3.5 px-8 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingBag className="w-4.5 h-4.5" />
