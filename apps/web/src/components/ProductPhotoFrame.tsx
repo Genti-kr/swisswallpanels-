@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PRODUCT_IMAGE_FALLBACK, resolveMediaUrl } from '@/lib/media-url';
 
 type ProductPhotoFrameProps = {
@@ -34,8 +34,12 @@ export function ProductPhotoFrame({
   hoverZoom = false,
   priority = false,
 }: ProductPhotoFrameProps) {
-  const initial = resolveMediaUrl(src) || PRODUCT_IMAGE_FALLBACK;
-  const [url, setUrl] = useState(initial);
+  const resolved = resolveMediaUrl(src) || PRODUCT_IMAGE_FALLBACK;
+  const [url, setUrl] = useState(resolved);
+
+  useEffect(() => {
+    setUrl(resolveMediaUrl(src) || PRODUCT_IMAGE_FALLBACK);
+  }, [src]);
 
   return (
     <div

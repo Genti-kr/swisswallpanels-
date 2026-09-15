@@ -168,6 +168,7 @@ export default function ProductDetailPage() {
           <div className="lg:col-span-6 space-y-4">
             <div className="relative w-full">
               <ProductPhotoFrame
+                key={activeImageUrl ?? 'main'}
                 src={activeImageUrl}
                 alt={name}
                 variant="detail"
