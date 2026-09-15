@@ -14,6 +14,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { getCartItemUnitPrice } from '@/lib/product-variants';
 
 export default function CartPage() {
   const { cart, fetchCart, updateItem, removeItem, loading } = useCart();
@@ -27,7 +28,10 @@ export default function CartPage() {
   }, [fetchCart]);
 
   const items = cart?.items || [];
-  const subtotal = items.reduce((sum, i) => sum + i.product.priceChf * i.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, i) => sum + getCartItemUnitPrice(i) * i.quantity,
+    0
+  );
   const shipping = subtotal >= 500 ? 0 : 29;
   const total = subtotal + shipping;
 
@@ -119,7 +123,8 @@ export default function CartPage() {
               <div className="lg:col-span-2 space-y-4">
                 {items.map((item) => {
                   const name = item.product.nameJson[locale as keyof typeof item.product.nameJson] || item.product.nameJson.de;
-                  const itemTotalFormatted = formatCHF(item.product.priceChf * item.quantity);
+                  const unitPrice = getCartItemUnitPrice(item);
+                  const itemTotalFormatted = formatCHF(unitPrice * item.quantity);
                   
                   return (
                     <div 
@@ -149,8 +154,14 @@ export default function CartPage() {
                           {name}
                         </h3>
                         <div className="text-sm text-zinc-400 font-light">
-                          CHF {item.product.priceChf.toFixed(2)}
+                          CHF {unitPrice.toFixed(2)}
                           {t('Products.priceUnitShort')}
+                          {item.variant?.nameJson?.de ? (
+                            <span className="block text-[10px] text-zinc-400 mt-0.5">
+                              {item.variant.nameJson[locale as keyof typeof item.variant.nameJson] ||
+                                item.variant.nameJson.de}
+                            </span>
+                          ) : null}
                         </div>
                         <div className="text-sm font-semibold text-zinc-800 pt-1">
                           {t('Common.total')}: {itemTotalFormatted}

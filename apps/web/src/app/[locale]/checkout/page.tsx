@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
+import { getCartItemUnitPrice } from '@/lib/product-variants';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useAuth } from '@/lib/auth-store';
 import { useCart } from '@/lib/cart-store';
@@ -126,7 +127,10 @@ function CheckoutContent() {
   }, [address.country]);
 
   const items = cart?.items || [];
-  const subtotal = items.reduce((sum, i) => sum + i.product.priceChf * i.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, i) => sum + getCartItemUnitPrice(i) * i.quantity,
+    0
+  );
   const selectedRate = shippingRates.find((r) => r.id === selectedRateId);
   const shipping = selectedRate
     ? (selectedRate.freeAbove && subtotal >= selectedRate.freeAbove ? 0 : selectedRate.price)
@@ -728,6 +732,7 @@ function CheckoutContent() {
               <div className="max-h-64 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
                 {items.map((item) => {
                   const name = item.product.nameJson[locale as keyof typeof item.product.nameJson] || item.product.nameJson.de;
+                  const unitPrice = getCartItemUnitPrice(item);
                   return (
                     <div key={item.id} className="flex items-center gap-3.5 group">
                       {/* Product Thumbnail */}
@@ -747,14 +752,14 @@ function CheckoutContent() {
                           {name}
                         </h4>
                         <div className="text-[10px] text-zinc-400 font-light mt-0.5">
-                          {item.quantity} × CHF {item.product.priceChf.toFixed(2)}
+                          {item.quantity} × CHF {unitPrice.toFixed(2)}
                           {tProducts('priceUnitShort')}
                         </div>
                       </div>
 
                       {/* Line Item total cost */}
                       <span className="text-xs font-bold text-zinc-900 flex-shrink-0 pl-2">
-                        {formatCHF(item.product.priceChf * item.quantity)}
+                        {formatCHF(unitPrice * item.quantity)}
                       </span>
                     </div>
                   );
