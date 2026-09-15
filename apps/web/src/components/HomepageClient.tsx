@@ -18,6 +18,9 @@ const fallbackGallery = [
 
 const fallbackAbout = '/balsa_02.webp';
 
+/** Set to true to show the homepage price calculator section again. */
+const SHOW_HOMEPAGE_CALCULATOR = false;
+
 const fallbackProducts = [
   {
     id: 'fallback-1',
@@ -99,6 +102,7 @@ export default function HomepageClient() {
   }, [locale]);
 
   useEffect(() => {
+    if (!SHOW_HOMEPAGE_CALCULATOR) return;
     apiFetch<{ items: any[] }>('/api/products')
       .then((res) => {
         if (res.items && res.items.length > 0) {
@@ -260,7 +264,7 @@ export default function HomepageClient() {
                 {t('Hero.viewProducts')}
               </Link>
               <Link
-                href="#calculator"
+                href="#contact"
                 className="border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300"
               >
                 {t('Hero.getQuote')}
@@ -303,7 +307,8 @@ export default function HomepageClient() {
           </div>
         </section>
 
-        {/* Section 4: Live panel price calculator */}
+        {/* Section 4: Live panel price calculator (disabled — set SHOW_HOMEPAGE_CALCULATOR) */}
+        {SHOW_HOMEPAGE_CALCULATOR && (
         <section id="calculator" className="bg-zinc-50 py-24 px-6 border-y border-zinc-100">
           <div className="max-w-5xl mx-auto space-y-12">
             <div className="text-center space-y-4">
@@ -446,6 +451,7 @@ export default function HomepageClient() {
             </div>
           </div>
         </section>
+        )}
 
         {/* Section 5: About Section */}
         <section id="about" className="py-24 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center bg-white">

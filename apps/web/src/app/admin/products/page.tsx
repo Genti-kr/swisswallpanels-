@@ -11,6 +11,7 @@ import {
   buildPanelOptionsPayload,
   type PanelOptionForm,
 } from '@/lib/admin-panel-options';
+import { MAX_PRODUCT_IMAGES } from '@/lib/product-images';
 import {
   Plus,
   Pencil,
@@ -105,6 +106,8 @@ export default function AdminProductsPage() {
       return [];
     });
   }, []);
+
+  const totalImageCount = editingId ? editingImages.length : pendingImages.length;
 
   const uploadPendingBatch = async (productId: string, batch: PendingProductImage[]) => {
     if (!batch.length) return;
@@ -294,12 +297,24 @@ export default function AdminProductsPage() {
     const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (!fileArray.length) return;
 
-    if (!editingId) {
+    const currentCount = editingId ? editingImages.length : pendingImages.length;
+    const slotsLeft = MAX_PRODUCT_IMAGES - currentCount;
+    if (slotsLeft <= 0) {
+      setError(`Maksimumi është ${MAX_PRODUCT_IMAGES} foto për produkt.`);
+      return;
+    }
+    const toAdd = fileArray.slice(0, slotsLeft);
+    if (toAdd.length < fileArray.length) {
+      setError(`U shtuan vetëm ${toAdd.length} foto (maks. ${MAX_PRODUCT_IMAGES} për produkt).`);
+    } else {
       setError('');
+    }
+
+    if (!editingId) {
       setPendingImages((prev) => {
         const hasPrimary = prev.some((p) => p.isPrimary);
         const next = [...prev];
-        fileArray.forEach((file, i) => {
+        toAdd.forEach((file, i) => {
           next.push({
             localId: crypto.randomUUID(),
             file,
@@ -313,11 +328,10 @@ export default function AdminProductsPage() {
     }
 
     setUploading(true);
-    setError('');
     try {
-      for (let i = 0; i < fileArray.length; i++) {
+      for (let i = 0; i < toAdd.length; i++) {
         const fd = new FormData();
-        fd.append('image', fileArray[i]);
+        fd.append('image', toAdd[i]);
         fd.append('isPrimary', i === 0 && editingImages.length === 0 ? 'true' : 'false');
         await apiFetch(`/api/admin/products/${editingId}/images`, {
           method: 'POST',
@@ -732,8 +746,9 @@ export default function AdminProductsPage() {
                 </div>
 
                 <p className="text-xs text-zinc-500 mb-4 font-light">
-                  Shto foto edhe para se të ruash produktin e ri — ngarkohen automatikisht kur
-                  klikon &quot;Ruaj produktin&quot;.
+                  Deri në {MAX_PRODUCT_IMAGES} foto për produkt, me cilësi origjinale (pa
+                  zvogëlim). Shto foto edhe para ruajtjes — ngarkohen kur klikon &quot;Ruaj
+                  produktin&quot;. ({totalImageCount}/{MAX_PRODUCT_IMAGES})
                 </p>
                   <div className="space-y-4">
                     {pendingImages.length > 0 && (
@@ -832,46 +847,49 @@ export default function AdminProductsPage() {
                       </div>
                     )}
 
-                    {/* Upload zone */}
-                    <div
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDragOver(true);
-                      }}
-                      onDragLeave={() => setDragOver(false)}
-                      onDrop={onDrop}
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-                        dragOver
-                          ? 'border-[#C8B89A] bg-[#C8B89A]/5'
-                          : 'border-zinc-200 hover:border-[#C8B89A] hover:bg-[#F8F8F6]'
-                      }`}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e) =>
-                          e.target.files && uploadImages(e.target.files)
-                        }
-                      />
-                      {uploading ? (
-                        <div className="flex flex-col items-center gap-2 text-zinc-500">
-                          <Loader2 className="w-8 h-8 animate-spin text-[#C8B89A]" />
-                          <span className="text-sm">Duke ngarkuar...</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 text-zinc-500">
-                          <Upload className="w-8 h-8 text-[#C8B89A]" />
-                          <span className="text-sm font-medium text-zinc-700">
-                            Kliko ose tërhiq fotografi këtu
-                          </span>
-                          <span className="text-xs">PNG, JPG, WEBP — max 10MB</span>
-                        </div>
-                      )}
-                    </div>
+                    {totalImageCount < MAX_PRODUCT_IMAGES && (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDragOver(true);
+                        }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={onDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                          dragOver
+                            ? 'border-[#C8B89A] bg-[#C8B89A]/5'
+                            : 'border-zinc-200 hover:border-[#C8B89A] hover:bg-[#F8F8F6]'
+                        }`}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          multiple
+                          className="hidden"
+                          onChange={(e) =>
+                            e.target.files && uploadImages(e.target.files)
+                          }
+                        />
+                        {uploading ? (
+                          <div className="flex flex-col items-center gap-2 text-zinc-500">
+                            <Loader2 className="w-8 h-8 animate-spin text-[#C8B89A]" />
+                            <span className="text-sm">Duke ngarkuar...</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 text-zinc-500">
+                            <Upload className="w-8 h-8 text-[#C8B89A]" />
+                            <span className="text-sm font-medium text-zinc-700">
+                              Kliko ose tërhiq fotografi këtu
+                            </span>
+                            <span className="text-xs">
+                              JPG, PNG, WEBP — max 10MB, cilësi origjinale
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
               </div>
 

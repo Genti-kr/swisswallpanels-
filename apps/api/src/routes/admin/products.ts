@@ -18,6 +18,7 @@ import {
   parseAdminProductCreateBody,
   parseAdminProductUpdateBody,
 } from '../../lib/parse-admin-product-body';
+import { MAX_PRODUCT_IMAGES } from '../../lib/product-images';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -118,7 +119,14 @@ router.post(
         return res.status(404).json({ error: 'Product not found' });
       }
 
-      const url = await processAndUploadImage(req.file.buffer, req.file.originalname);
+      const imageCount = await prisma.productImage.count({ where: { productId: product.id } });
+      if (imageCount >= MAX_PRODUCT_IMAGES) {
+        return res.status(400).json({
+          error: `Maximum ${MAX_PRODUCT_IMAGES} images per product`,
+        });
+      }
+
+      const url = await processAndUploadImage(req.file.buffer, req.file.originalname, 'products');
       const isPrimary = req.body.isPrimary === 'true' || req.body.isPrimary === true;
 
       if (isPrimary) {
@@ -128,7 +136,6 @@ router.post(
         });
       }
 
-      const imageCount = await prisma.productImage.count({ where: { productId: product.id } });
       const image = await prisma.productImage.create({
         data: {
           productId: product.id,

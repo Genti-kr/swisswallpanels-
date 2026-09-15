@@ -91,6 +91,24 @@ async function uploadLocally(buffer: Buffer, filename: string): Promise<string> 
   return `/uploads/${filename}`;
 }
 
+const FORMAT_EXT: Record<string, string> = {
+  jpeg: '.jpg',
+  png: '.png',
+  webp: '.webp',
+  gif: '.gif',
+  avif: '.avif',
+  tiff: '.tiff',
+};
+
+const FORMAT_MIME: Record<string, string> = {
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  avif: 'image/avif',
+  tiff: 'image/tiff',
+};
+
 export async function processAndUploadImage(
   fileBuffer: Buffer,
   originalName: string,
@@ -98,10 +116,24 @@ export async function processAndUploadImage(
 ): Promise<string> {
   await validateImageBuffer(fileBuffer);
 
-  const ext = path.extname(originalName).toLowerCase() || '.jpg';
   const id = crypto.randomBytes(16).toString('hex');
-  const filename = `${id}${ext === '.png' ? '.webp' : ext === '.webp' ? '.webp' : '.webp'}`;
 
+  if (folder === 'products') {
+    const meta = await sharp(fileBuffer).metadata();
+    const format = meta.format && FORMAT_EXT[meta.format] ? meta.format : 'jpeg';
+    const ext = FORMAT_EXT[format] ?? '.jpg';
+    const filename = `${id}${ext}`;
+    const contentType = FORMAT_MIME[format] ?? 'image/jpeg';
+    // Auto-orient from EXIF only — no resize, no recompression to WebP
+    const processed = await sharp(fileBuffer).rotate().toBuffer();
+
+    if (isR2Configured()) {
+      return uploadToR2(processed, `${folder}/${filename}`, contentType);
+    }
+    return uploadLocally(processed, filename);
+  }
+
+  const filename = `${id}.webp`;
   const processed = await sharp(fileBuffer)
     .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 85 })
