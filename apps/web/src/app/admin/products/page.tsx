@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { ProductDTO, CategoryDTO, ProductImageDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
+import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import {
   Plus,
   Pencil,
@@ -696,20 +697,20 @@ export default function AdminProductsPage() {
                 key={p.id}
                 className="bg-white rounded-2xl border border-zinc-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
               >
-                <div className="aspect-[4/3] bg-[#F8F8F6] relative overflow-hidden flex items-center justify-center p-3">
+                <div className="relative p-3 pb-0">
                   {primaryImage ? (
-                    <img
-                      src={resolveMediaUrl(primaryImage.url)}
+                    <ProductPhotoFrame
+                      src={primaryImage.url}
                       alt={p.nameJson.de}
-                      className="max-w-full max-h-full w-auto h-auto object-contain"
+                      variant="card"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 gap-2">
+                    <div className="aspect-[4/3] rounded-xl bg-[#F8F8F6] flex flex-col items-center justify-center text-zinc-400 gap-2 border border-zinc-100">
                       <ImagePlus className="w-10 h-10" />
                       <span className="text-xs">Pa foto</span>
                     </div>
                   )}
-                  <div className="absolute top-3 left-3 flex gap-2">
+                  <div className="absolute top-5 left-5 z-10 flex gap-2 pointer-events-none">
                     {p.isFeatured && (
                       <span className="bg-[#C8B89A] text-[#1A1A1A] text-[10px] font-bold uppercase px-2 py-1 rounded-full">
                         Featured

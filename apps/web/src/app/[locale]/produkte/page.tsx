@@ -155,7 +155,7 @@ export default function ProductsPage() {
                     className="group bg-white border border-zinc-200/40 rounded-2xl p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer"
                   >
                     <div>
-                      <div className="relative">
+                      <div className="relative w-full">
                         <ProductPhotoFrame
                           src={p.images[0]?.url}
                           alt={name}
@@ -163,13 +163,13 @@ export default function ProductsPage() {
                           hoverZoom
                         />
                         {p.isFeatured && (
-                          <span className="absolute top-3 left-3 bg-[#C8B89A] text-zinc-950 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 select-none pointer-events-none">
+                          <span className="absolute top-2.5 left-2.5 z-10 bg-[#C8B89A] text-zinc-950 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 select-none pointer-events-none">
                             <Sparkles className="w-3 h-3" />
                             Premium
                           </span>
                         )}
                         {p.acousticRating && (
-                          <span className="absolute top-3 right-3 bg-zinc-900/90 text-white text-[10px] font-medium tracking-wide px-2.5 py-1 rounded-full backdrop-blur flex items-center gap-1 select-none pointer-events-none">
+                          <span className="absolute top-2.5 right-2.5 z-10 bg-zinc-900/90 text-white text-[10px] font-medium tracking-wide px-2.5 py-1 rounded-full backdrop-blur flex items-center gap-1 select-none pointer-events-none">
                             <Volume2 className="w-3 h-3 text-[#C8B89A]" />
                             NRC {p.acousticRating.toFixed(2)}
                           </span>

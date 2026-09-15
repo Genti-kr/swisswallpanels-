@@ -13,10 +13,16 @@ type ProductPhotoFrameProps = {
   priority?: boolean;
 };
 
-const frameByVariant = {
-  card: 'aspect-[4/3] rounded-xl p-4 sm:p-5',
-  detail: 'aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] w-full min-h-[300px] max-h-[min(78vh,680px)] rounded-2xl p-6 sm:p-8 lg:p-10',
-  thumb: 'aspect-square rounded-xl p-1.5',
+const outerShell: Record<NonNullable<ProductPhotoFrameProps['variant']>, string> = {
+  card: 'aspect-[4/3] w-full rounded-xl',
+  detail: 'aspect-[4/3] w-full rounded-2xl sm:aspect-[5/4] lg:aspect-[4/3]',
+  thumb: 'aspect-square w-full h-full min-h-0 rounded-lg',
+};
+
+const insetPad: Record<NonNullable<ProductPhotoFrameProps['variant']>, string> = {
+  card: 'inset-2 sm:inset-2.5',
+  detail: 'inset-3 sm:inset-4',
+  thumb: 'inset-1',
 };
 
 export function ProductPhotoFrame({
@@ -33,18 +39,22 @@ export function ProductPhotoFrame({
 
   return (
     <div
-      className={`relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#FAFAF8] via-[#F6F4F0] to-[#ECE8E1] border border-zinc-200/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${frameByVariant[variant]} ${className}`}
+      className={`relative overflow-hidden border border-zinc-200/70 bg-[#F3F1EC] shadow-sm ${outerShell[variant]} ${className}`}
     >
-      <img
-        src={url}
-        alt={alt}
-        loading={priority ? 'eager' : 'lazy'}
-        decoding="async"
-        className={`max-w-[94%] max-h-[94%] w-auto h-auto object-contain drop-shadow-[0_8px_24px_rgba(26,26,26,0.12)] ${hoverZoom ? 'transition-transform duration-500 ease-out group-hover:scale-[1.04]' : ''} ${imageClassName}`}
-        onError={() => {
-          if (url !== PRODUCT_IMAGE_FALLBACK) setUrl(PRODUCT_IMAGE_FALLBACK);
-        }}
-      />
+      <div
+        className={`absolute ${insetPad[variant]} flex items-center justify-center rounded-lg bg-white border border-zinc-100/90 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]`}
+      >
+        <img
+          src={url}
+          alt={alt}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          className={`block w-full h-full object-contain object-center ${hoverZoom ? 'transition-transform duration-500 ease-out group-hover:scale-[1.03]' : ''} ${imageClassName}`}
+          onError={() => {
+            if (url !== PRODUCT_IMAGE_FALLBACK) setUrl(PRODUCT_IMAGE_FALLBACK);
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
-import { resolveMediaUrl } from '@/lib/media-url';
 import { useCart } from '@/lib/cart-store';
 import { ArrowLeft, Plus, Minus, ShieldCheck, Ruler, Maximize2, ShoppingBag } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -141,15 +140,14 @@ export default function ProductDetailPage() {
           
           {/* Left Column: Image Display */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="relative">
+            <div className="relative w-full">
               <ProductPhotoFrame
                 src={activeImageUrl}
                 alt={name}
                 variant="detail"
                 priority
-                className="shadow-sm"
               />
-              <span className="absolute top-4 left-4 bg-zinc-900/95 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md flex items-center gap-1 select-none pointer-events-none">
+              <span className="absolute top-3 left-3 z-10 bg-zinc-900/95 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md flex items-center gap-1 select-none pointer-events-none">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#C8B89A]" />
                 Swiss Quality
               </span>
@@ -164,17 +162,19 @@ export default function ProductDetailPage() {
                       key={img.id}
                       type="button"
                       onClick={() => setSelectedImageIndex(index)}
-                      className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all flex items-center justify-center bg-gradient-to-br from-[#FAFAF8] to-[#ECE8E1] ${
+                      className={`shrink-0 w-[4.25rem] h-[4.25rem] sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
                         selected
-                          ? 'border-[#C8B89A] ring-2 ring-[#C8B89A]/25'
-                          : 'border-zinc-200 hover:border-zinc-300 opacity-80 hover:opacity-100'
+                          ? 'border-[#C8B89A] ring-2 ring-[#C8B89A]/30'
+                          : 'border-zinc-200 hover:border-zinc-300 opacity-90 hover:opacity-100'
                       }`}
                       aria-label={`Image ${index + 1}`}
                     >
-                      <img
-                        src={resolveMediaUrl(img.url)}
+                      <ProductPhotoFrame
+                        src={img.url}
                         alt=""
-                        className="max-w-[88%] max-h-[88%] object-contain"
+                        variant="thumb"
+                        className="border-0 shadow-none rounded-none h-full"
+                        imageClassName="drop-shadow-none"
                       />
                     </button>
                   );

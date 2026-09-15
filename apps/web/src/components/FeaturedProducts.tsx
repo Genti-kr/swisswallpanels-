@@ -99,7 +99,7 @@ export default function FeaturedProducts() {
             alt={p.name}
             variant="card"
             hoverZoom
-            className="mb-6 rounded-lg"
+            className="mb-6"
           />
           <h3 className="text-lg font-medium group-hover:text-[#C8B89A] transition-colors">{p.name}</h3>
           <div className="mt-4 flex items-center justify-between gap-3">
