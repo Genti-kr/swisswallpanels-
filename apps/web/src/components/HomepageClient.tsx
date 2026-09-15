@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import { SiteHeader } from '@/components/SiteHeader';
+import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { SiteImageDTO } from '@swisswall/types';
@@ -263,12 +264,7 @@ export default function HomepageClient() {
               >
                 {t('Hero.viewProducts')}
               </Link>
-              <Link
-                href="#contact"
-                className="border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300"
-              >
-                {t('Hero.getQuote')}
-              </Link>
+              <LocaleSwitcher variant="hero" />
             </div>
           </div>
         </section>

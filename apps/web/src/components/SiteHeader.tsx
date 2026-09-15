@@ -7,6 +7,7 @@ import { ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useCart } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-store';
 import { isAdminRole } from '@/lib/user-mapper';
+import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 
 const mainNavItems = [
   { key: 'home', href: '/' as const, match: (path: string) => path === '/' },
@@ -65,7 +66,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        {/* Right — cart, login, get quote */}
+        {/* Right — cart, login, language */}
         <div className="justify-self-end flex items-center gap-2 sm:gap-3">
           <Link
             href="/warenkorb"
@@ -111,12 +112,7 @@ export function SiteHeader() {
             </Link>
           )}
 
-          <Link
-            href="/#calculator"
-            className="inline-flex items-center bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-sm whitespace-nowrap"
-          >
-            {tNav('getQuote')}
-          </Link>
+          <LocaleSwitcher variant="header" />
 
           <button
             type="button"
@@ -148,6 +144,9 @@ export function SiteHeader() {
               {tCommon('login')}
             </Link>
           )}
+          <div className="pt-3 px-1">
+            <LocaleSwitcher variant="header" className="w-full justify-center" />
+          </div>
         </nav>
       )}
     </header>
