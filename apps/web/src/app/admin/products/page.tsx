@@ -40,6 +40,13 @@ type FormState = {
   isActive: boolean;
 };
 
+type PendingProductImage = {
+  localId: string;
+  file: File;
+  previewUrl: string;
+  isPrimary: boolean;
+};
+
 const defaultForm = (categoryId = ''): FormState => ({
   slug: '',
   sku: '',
@@ -76,7 +83,30 @@ export default function AdminProductsPage() {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState<FormState>(defaultForm());
+  const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const clearPendingImages = useCallback(() => {
+    setPendingImages((prev) => {
+      for (const p of prev) URL.revokeObjectURL(p.previewUrl);
+      return [];
+    });
+  }, []);
+
+  const uploadPendingBatch = async (productId: string, batch: PendingProductImage[]) => {
+    if (!batch.length) return;
+    const primary = batch.find((p) => p.isPrimary)?.localId ?? batch[0].localId;
+    for (let i = 0; i < batch.length; i++) {
+      const item = batch[i];
+      const fd = new FormData();
+      fd.append('image', item.file);
+      fd.append('isPrimary', item.localId === primary ? 'true' : 'false');
+      await apiFetch(`/api/admin/products/${productId}/images`, {
+        method: 'POST',
+        body: fd,
+      });
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,6 +131,7 @@ export default function AdminProductsPage() {
   }, [load]);
 
   const resetForm = () => {
+    clearPendingImages();
     setForm(defaultForm(categories[0]?.id || ''));
     setEditingId(null);
     setEditingImages([]);
@@ -156,8 +187,15 @@ export default function AdminProductsPage() {
           method: 'POST',
           body: JSON.stringify(payload),
         });
-        setEditingId(res.product.id);
-        setEditingImages([]);
+        const newId = res.product.id;
+        setEditingId(newId);
+        if (pendingImages.length > 0) {
+          await uploadPendingBatch(newId, pendingImages);
+          clearPendingImages();
+        }
+        const list = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
+        const created = list.items.find((p) => p.id === newId);
+        if (created) setEditingImages(created.images);
       }
       await load();
     } catch (err) {
@@ -173,6 +211,7 @@ export default function AdminProductsPage() {
       width_mm?: number;
       height_mm?: number;
     };
+    clearPendingImages();
     setEditingId(p.id);
     setEditingImages(p.images);
     setForm({
@@ -205,13 +244,26 @@ export default function AdminProductsPage() {
   };
 
   const uploadImages = async (files: FileList | File[]) => {
-    if (!editingId) {
-      setError('Ruaj produktin fillimisht, pastaj shto fotografi.');
-      return;
-    }
-
     const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (!fileArray.length) return;
+
+    if (!editingId) {
+      setError('');
+      setPendingImages((prev) => {
+        const hasPrimary = prev.some((p) => p.isPrimary);
+        const next = [...prev];
+        fileArray.forEach((file, i) => {
+          next.push({
+            localId: crypto.randomUUID(),
+            file,
+            previewUrl: URL.createObjectURL(file),
+            isPrimary: !hasPrimary && prev.length === 0 && i === 0,
+          });
+        });
+        return next;
+      });
+      return;
+    }
 
     setUploading(true);
     setError('');
@@ -234,6 +286,24 @@ export default function AdminProductsPage() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const removePendingImage = (localId: string) => {
+    setPendingImages((prev) => {
+      const target = prev.find((p) => p.localId === localId);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      const rest = prev.filter((p) => p.localId !== localId);
+      if (rest.length && !rest.some((p) => p.isPrimary)) {
+        rest[0] = { ...rest[0], isPrimary: true };
+      }
+      return rest;
+    });
+  };
+
+  const setPrimaryPendingImage = (localId: string) => {
+    setPendingImages((prev) =>
+      prev.map((p) => ({ ...p, isPrimary: p.localId === localId }))
+    );
   };
 
   const handleDeleteImage = async (imageId: string) => {
@@ -576,12 +646,59 @@ export default function AdminProductsPage() {
                   </h3>
                 </div>
 
-                {!editingId ? (
-                  <p className="text-sm text-zinc-500 bg-[#F8F8F6] rounded-xl p-4">
-                    Ruaj produktin fillimisht, pastaj mund të shtosh fotografi.
-                  </p>
-                ) : (
+                <p className="text-xs text-zinc-500 mb-4 font-light">
+                  Shto foto edhe para se të ruash produktin e ri — ngarkohen automatikisht kur
+                  klikon &quot;Ruaj produktin&quot;.
+                </p>
                   <div className="space-y-4">
+                    {pendingImages.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {pendingImages.map((img) => (
+                          <div
+                            key={img.localId}
+                            className={`relative group rounded-xl overflow-hidden border-2 aspect-square bg-[#F8F8F6] flex items-center justify-center p-2 ${
+                              img.isPrimary ? 'border-[#C8B89A]' : 'border-amber-200/80'
+                            }`}
+                          >
+                            <img
+                              src={img.previewUrl}
+                              alt=""
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
+                            />
+                            <span className="absolute top-2 right-2 bg-amber-100 text-amber-900 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded">
+                              E re
+                            </span>
+                            {img.isPrimary && (
+                              <span className="absolute top-2 left-2 bg-[#C8B89A] text-[#1A1A1A] text-[10px] font-bold uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-current" />
+                                Kryesore
+                              </span>
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              {!img.isPrimary && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPrimaryPendingImage(img.localId)}
+                                  className="p-2 bg-white rounded-lg text-zinc-800 hover:bg-[#C8B89A] transition-colors"
+                                  title="Vendos si kryesore"
+                                >
+                                  <Star className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removePendingImage(img.localId)}
+                                className="p-2 bg-white rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                                title="Fshi"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Existing images */}
                     {editingImages.length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -671,7 +788,6 @@ export default function AdminProductsPage() {
                       )}
                     </div>
                   </div>
-                )}
               </div>
 
               {/* Actions */}
