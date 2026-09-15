@@ -386,32 +386,7 @@ export default function AdminProductsPage() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Çmimi për copë (CHF)" required>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.priceChf || ''}
-                    onChange={(e) =>
-                      setForm({ ...form, priceChf: Number(e.target.value) })
-                    }
-                    className={inputClass}
-                    required
-                  />
-                </Field>
-                <Field label="Çmimi B2B (CHF)">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.priceBtwChf || ''}
-                    onChange={(e) =>
-                      setForm({ ...form, priceBtwChf: Number(e.target.value) })
-                    }
-                    className={inputClass}
-                  />
-                </Field>
-                <Field label="Stoku">
+                <Field label="Stoku (copë paneli)">
                   <input
                     type="number"
                     min="0"
@@ -424,12 +399,18 @@ export default function AdminProductsPage() {
                 </Field>
               </div>
 
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">
-                  Dimensionet e panelit
-                </h3>
+              <div className="rounded-2xl border border-zinc-200/80 bg-[#F8F8F6]/60 p-5 sm:p-6 space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-800">
+                    Dimensionet e panelit
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-1.5 font-light leading-relaxed">
+                    Matjet e mëposhtme janë për <strong className="font-medium text-zinc-700">një copë</strong>{' '}
+                    panel (1 copë). Klienti porosit sa copë të duhen; totali = copë × çmimi për copë.
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Field label="Trashësia (mm)" required>
+                  <Field label="Trashësia (mm) — 1 copë" required>
                     <input
                       type="number"
                       min="1"
@@ -441,7 +422,7 @@ export default function AdminProductsPage() {
                       required
                     />
                   </Field>
-                  <Field label="Gjerësia (mm)" required>
+                  <Field label="Gjerësia (mm) — 1 copë" required>
                     <input
                       type="number"
                       min="1"
@@ -453,7 +434,7 @@ export default function AdminProductsPage() {
                       required
                     />
                   </Field>
-                  <Field label="Lartësia (mm)" required>
+                  <Field label="Lartësia (mm) — 1 copë" required>
                     <input
                       type="number"
                       min="1"
@@ -465,6 +446,54 @@ export default function AdminProductsPage() {
                       required
                     />
                   </Field>
+                </div>
+
+                <div className="border-t border-zinc-200/70 pt-5 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-800">
+                      Cakto çmimin
+                    </h4>
+                    <p className="text-xs text-zinc-500 mt-1.5 font-light">
+                      Vendos çmimin në CHF për <strong className="font-medium text-zinc-700">1 copë</strong> panel
+                      (me TVSH). Në shop dhe kalkulator: totali = numri i copave × ky çmim.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Çmimi për 1 copë (CHF)" required>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.priceChf || ''}
+                        onChange={(e) =>
+                          setForm({ ...form, priceChf: Number(e.target.value) })
+                        }
+                        className={inputClass}
+                        required
+                      />
+                    </Field>
+                    <Field label="Çmimi B2B për 1 copë (CHF)">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.priceBtwChf || ''}
+                        onChange={(e) =>
+                          setForm({ ...form, priceBtwChf: Number(e.target.value) })
+                        }
+                        className={inputClass}
+                        placeholder={form.priceChf ? String(form.priceChf) : ''}
+                      />
+                    </Field>
+                  </div>
+                  {form.priceChf > 0 && (
+                    <p className="text-xs text-zinc-600 bg-white/80 border border-zinc-100 rounded-xl px-4 py-3">
+                      Shembull:{' '}
+                      <span className="font-semibold text-zinc-900">
+                        3 copë × {formatCHF(form.priceChf)} = {formatCHF(form.priceChf * 3)}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 

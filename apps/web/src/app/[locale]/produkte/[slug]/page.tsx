@@ -211,8 +211,16 @@ export default function ProductDetailPage() {
                   <span className="text-sm text-zinc-500 font-light">{tProducts('priceUnitShort')}</span>
                 </div>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1 font-semibold">
-                  {locale === 'sq' ? 'Çmimi përfshin TVSH-në (8.1%)' : 'Price incl. 8.1% VAT'}
+                  {tProducts('pricePerPanelNote')}
                 </span>
+                {qty > 1 && (
+                  <p className="text-sm text-zinc-700 mt-3 pt-3 border-t border-zinc-200/50">
+                    {tProducts('lineTotalPanels', {
+                      quantity: qty,
+                      total: `CHF ${(displayPriceChf * qty).toFixed(2)}`,
+                    })}
+                  </p>
+                )}
               </div>
 
               {/* Description */}
@@ -243,7 +251,7 @@ export default function ProductDetailPage() {
                       <Maximize2 className="w-5 h-5 text-[#C8B89A] shrink-0" />
                       <div>
                         <span className="text-[10px] text-zinc-400 block font-light leading-none">
-                          {locale === 'sq' ? 'Dimensionet' : 'Dimensions'}
+                          {tProducts('dimensionsOnePanel')}
                         </span>
                         <span className="text-xs font-semibold text-zinc-800">{specs.width_mm} × {specs.height_mm} mm</span>
                       </div>
