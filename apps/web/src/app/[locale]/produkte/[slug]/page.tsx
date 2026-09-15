@@ -118,18 +118,18 @@ export default function ProductDetailPage() {
           
           {/* Left Column: Image Display */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="aspect-square bg-[#F8F8F6] rounded-2xl overflow-hidden border border-zinc-100 shadow-sm relative">
+            <div className="min-h-[280px] sm:min-h-[360px] lg:min-h-[420px] max-h-[75vh] bg-[#F8F8F6] rounded-2xl overflow-hidden border border-zinc-100 shadow-sm relative flex items-center justify-center p-4 sm:p-6">
               {product.images[0] ? (
                 <img 
                   src={resolveMediaUrl(product.images[0].url)} 
                   alt={name} 
-                  className="w-full h-full object-cover hover:scale-102 transition-transform duration-500" 
+                  className="max-w-full max-h-[min(75vh,560px)] w-auto h-auto object-contain" 
                 />
               ) : (
                 <img 
                   src="/Enhancing-Wood-Panel-Walls.webp" 
                   alt="fallback wood panel" 
-                  className="w-full h-full object-cover opacity-60 mix-blend-multiply" 
+                  className="max-w-full max-h-full w-auto h-auto object-contain opacity-60 mix-blend-multiply" 
                 />
               )}
 

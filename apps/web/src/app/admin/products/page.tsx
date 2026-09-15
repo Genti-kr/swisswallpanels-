@@ -558,7 +558,7 @@ export default function AdminProductsPage() {
                         {editingImages.map((img) => (
                           <div
                             key={img.id}
-                            className={`relative group rounded-xl overflow-hidden border-2 aspect-square ${
+                            className={`relative group rounded-xl overflow-hidden border-2 aspect-square bg-[#F8F8F6] flex items-center justify-center p-2 ${
                               img.isPrimary
                                 ? 'border-[#C8B89A]'
                                 : 'border-zinc-100'
@@ -567,7 +567,7 @@ export default function AdminProductsPage() {
                             <img
                               src={resolveMediaUrl(img.url)}
                               alt=""
-                              className="w-full h-full object-cover"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
                             />
                             {img.isPrimary && (
                               <span className="absolute top-2 left-2 bg-[#C8B89A] text-[#1A1A1A] text-[10px] font-bold uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -696,12 +696,12 @@ export default function AdminProductsPage() {
                 key={p.id}
                 className="bg-white rounded-2xl border border-zinc-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
               >
-                <div className="aspect-[4/3] bg-[#F8F8F6] relative overflow-hidden">
+                <div className="aspect-[4/3] bg-[#F8F8F6] relative overflow-hidden flex items-center justify-center p-3">
                   {primaryImage ? (
                     <img
                       src={resolveMediaUrl(primaryImage.url)}
                       alt={p.nameJson.de}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 gap-2">

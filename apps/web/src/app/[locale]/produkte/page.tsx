@@ -7,7 +7,7 @@ import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { useCart } from '@/lib/cart-store';
-import { SlidersHorizontal, Layers, Volume2, Sparkles, Plus, Search, ChevronRight } from 'lucide-react';
+import { SlidersHorizontal, Layers, Volume2, Sparkles, Plus, Search } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 
 export default function ProductsPage() {
@@ -19,7 +19,6 @@ export default function ProductsPage() {
   const { fetchCart, addItem } = useCart();
   const locale = useLocale();
   
-  const tCommon = useTranslations('Common');
   const tProducts = useTranslations('Products');
 
   useEffect(() => {
@@ -150,18 +149,19 @@ export default function ProductsPage() {
                 const categorySlug = p.category?.slug || '';
                 
                 return (
-                  <div 
-                    key={p.id} 
-                    className="group bg-white border border-zinc-200/40 rounded-2xl p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                  <Link
+                    key={p.id}
+                    href={`/produkte/${p.slug}`}
+                    className="group bg-white border border-zinc-200/40 rounded-2xl p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer"
                   >
                     <div>
                       {/* Product image container */}
-                      <div className="aspect-[4/3] bg-[#F8F8F6] rounded-xl overflow-hidden relative">
+                      <div className="aspect-[4/3] bg-[#F8F8F6] rounded-xl overflow-hidden relative flex items-center justify-center p-2">
                         {p.images[0] ? (
                           <img 
                             src={resolveMediaUrl(p.images[0].url)} 
                             alt={name} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                            className="max-w-full max-h-full w-auto h-auto object-contain" 
                           />
                         ) : (
                           <img 
@@ -216,25 +216,21 @@ export default function ProductsPage() {
                         </span>
                       </div>
                       
-                      <div className="flex items-center gap-3">
-                        <Link 
-                          href={`/produkte/${p.slug}`} 
-                          className="text-xs font-semibold text-zinc-500 hover:text-[#C8B89A] flex items-center gap-1 transition-colors"
-                        >
-                          {tCommon('details')}
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                        
-                        <button 
-                          onClick={() => addItem(p.id)} 
-                          className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] p-2.5 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center"
-                          title={tProducts('addToCart')}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          addItem(p.id);
+                        }}
+                        className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] p-2.5 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center"
+                        title={tProducts('addToCart')}
+                        aria-label={tProducts('addToCart')}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

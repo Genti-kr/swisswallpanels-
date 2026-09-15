@@ -88,38 +88,41 @@ export default function FeaturedProducts() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {itemsToRender.map((p) => (
-        <div
+        <Link
           key={p.id}
-          className="group relative bg-white border border-zinc-100 rounded-lg p-6 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2"
+          href={p.isFallback ? '/produkte' : `/produkte/${p.slug}`}
+          className="group relative bg-white border border-zinc-100 rounded-lg p-6 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 block cursor-pointer"
         >
-          <div className="aspect-[4/3] w-full bg-zinc-50 rounded-md mb-6 overflow-hidden border border-zinc-100">
+          <div className="aspect-[4/3] w-full bg-zinc-50 rounded-md mb-6 overflow-hidden border border-zinc-100 flex items-center justify-center p-2">
             {p.imageUrl && (
-              <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <img
+                src={p.imageUrl}
+                alt={p.name}
+                className="max-w-full max-h-full w-auto h-auto object-contain"
+              />
             )}
           </div>
-          <h3 className="text-lg font-medium">{p.name}</h3>
-          <div className="mt-4 flex items-center justify-between">
+          <h3 className="text-lg font-medium group-hover:text-[#C8B89A] transition-colors">{p.name}</h3>
+          <div className="mt-4 flex items-center justify-between gap-3">
             <div>
               <span className="text-xs text-[#1A1A1A]/50 block">{t('pricePerM2')}</span>
               <span className="text-sm font-semibold">CHF {p.priceChf.toFixed(2)}</span>
             </div>
-            {p.isFallback ? (
-              <Link
-                href="/produkte"
-                className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors"
-              >
-                {t('details')}
-              </Link>
-            ) : (
+            {!p.isFallback && (
               <button
-                onClick={() => addItem(p.id)}
-                className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addItem(p.id);
+                }}
+                className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider transition-colors shrink-0"
               >
                 {t('addToCart')}
               </button>
             )}
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
