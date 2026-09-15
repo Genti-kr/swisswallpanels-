@@ -11,6 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "tsx src/scripts/seed.ts",
+    "create-admin": "tsx src/scripts/create-admin.ts",
     "migrate:deploy": "prisma migrate deploy",
     "test": "vitest run",
     "test:watch": "vitest",

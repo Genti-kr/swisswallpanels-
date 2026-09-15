@@ -12,6 +12,8 @@ services:
     restart: unless-stopped
     env_file:
       - apps/api/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - api_uploads:/app/apps/api/uploads
     expose:

@@ -27,7 +27,7 @@ import categoriesRouter from './routes/categories';
 import stripeWebhookRouter from './routes/webhooks/stripe';
 import privacyRouter from './routes/privacy';
 import { validateProductionEnv, warnDevelopmentEnv } from './lib/env-check';
-import { getFrontendUrl } from './lib/urls';
+import { getCorsOrigins } from './lib/urls';
 import { prisma } from './lib/prisma';
 import { initApiMonitoring, captureApiException } from './lib/monitoring';
 import { globalApiLimiter } from './middleware/rateLimit';
@@ -50,8 +50,16 @@ app.disable('x-powered-by');
 app.use(securityHeaders);
 app.use(globalApiLimiter);
 
+const allowedOrigins = getCorsOrigins();
+
 app.use(cors({
-  origin: getFrontendUrl(),
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
   credentials: true,
   exposedHeaders: ['X-Cart-Session'],
 }));

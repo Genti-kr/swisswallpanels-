@@ -2,10 +2,16 @@ import { Router, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
-import { mapProduct } from '../../lib/mappers';
+import { mapProduct, mapProductVariant } from '../../lib/mappers';
 import { requireAuth, AuthenticatedRequest } from '../../middleware/auth';
 import { processAndUploadImage, deleteImageByUrl } from '../../services/storage';
 import { productSchema } from '../../lib/validators/product';
+import {
+  thicknessVariantSchema,
+  thicknessVariantUpdateSchema,
+  thicknessNameJson,
+  isThicknessVariant,
+} from '../../lib/validators/product-variant';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -129,6 +135,120 @@ router.delete(
     }
   }
 );
+
+async function uniqueVariantSku(productSku: string, thicknessMm: number): Promise<string> {
+  const base = `${productSku}-${thicknessMm}MM`.replace(/[^a-zA-Z0-9-]/g, '-').toUpperCase();
+  let candidate = base;
+  let n = 0;
+  while (await prisma.productVariant.findUnique({ where: { sku: candidate } })) {
+    n += 1;
+    candidate = `${base}-${n}`;
+  }
+  return candidate;
+}
+
+router.post('/:id/variants/thickness', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const data = thicknessVariantSchema.parse(req.body);
+    const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const siblingVariants = await prisma.productVariant.findMany({
+      where: { productId: product.id },
+    });
+    const duplicate = siblingVariants.some(
+      (v) =>
+        isThicknessVariant(v.attributes) &&
+        (v.attributes as { thickness_mm?: number }).thickness_mm === data.thickness_mm
+    );
+    if (duplicate) {
+      return res.status(400).json({ error: 'This thickness already exists for the product' });
+    }
+
+    const sku = await uniqueVariantSku(product.sku, data.thickness_mm);
+    const variant = await prisma.productVariant.create({
+      data: {
+        productId: product.id,
+        sku,
+        nameJson: thicknessNameJson(data.thickness_mm),
+        priceChf: data.priceChf,
+        stockQuantity: data.stockQuantity,
+        attributes: { type: 'thickness', thickness_mm: data.thickness_mm },
+        isActive: true,
+      },
+    });
+
+    res.status(201).json({ variant: mapProductVariant(variant) });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    next(error);
+  }
+});
+
+router.put('/:id/variants/:variantId', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const data = thicknessVariantUpdateSchema.parse(req.body);
+    const existing = await prisma.productVariant.findFirst({
+      where: { id: req.params.variantId, productId: req.params.id },
+    });
+    if (!existing || !isThicknessVariant(existing.attributes)) {
+      return res.status(404).json({ error: 'Thickness variant not found' });
+    }
+
+    const attrs = existing.attributes as { thickness_mm: number; type: string };
+    const nextMm = data.thickness_mm ?? attrs.thickness_mm;
+
+    if (data.thickness_mm != null && data.thickness_mm !== attrs.thickness_mm) {
+      const siblingVariants = await prisma.productVariant.findMany({
+        where: { productId: req.params.id, id: { not: existing.id } },
+      });
+      const duplicate = siblingVariants.some(
+        (v) =>
+          isThicknessVariant(v.attributes) &&
+          (v.attributes as { thickness_mm?: number }).thickness_mm === data.thickness_mm
+      );
+      if (duplicate) {
+        return res.status(400).json({ error: 'This thickness already exists for the product' });
+      }
+    }
+
+    const variant = await prisma.productVariant.update({
+      where: { id: existing.id },
+      data: {
+        priceChf: data.priceChf,
+        stockQuantity: data.stockQuantity,
+        nameJson: data.thickness_mm != null ? thicknessNameJson(nextMm) : undefined,
+        attributes: data.thickness_mm != null ? { type: 'thickness', thickness_mm: nextMm } : undefined,
+      },
+    });
+
+    res.json({ variant: mapProductVariant(variant) });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    next(error);
+  }
+});
+
+router.delete('/:id/variants/:variantId', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const existing = await prisma.productVariant.findFirst({
+      where: { id: req.params.variantId, productId: req.params.id },
+    });
+    if (!existing || !isThicknessVariant(existing.attributes)) {
+      return res.status(404).json({ error: 'Thickness variant not found' });
+    }
+    await prisma.productVariant.delete({ where: { id: existing.id } });
+    res.json({ message: 'Variant deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.patch(
   '/:id/images/:imageId/primary',

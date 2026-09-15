@@ -40,6 +40,12 @@ type FormState = {
   isActive: boolean;
 };
 
+type PendingThickness = {
+  localId: string;
+  thickness_mm: number;
+  priceChf: number;
+};
+
 const defaultForm = (categoryId = ''): FormState => ({
   slug: '',
   sku: '',
@@ -77,6 +83,7 @@ export default function AdminProductsPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState<FormState>(defaultForm());
   const [thicknessVariants, setThicknessVariants] = useState<ProductVariantDTO[]>([]);
+  const [pendingThickness, setPendingThickness] = useState<PendingThickness[]>([]);
   const [newThicknessMm, setNewThicknessMm] = useState('');
   const [newThicknessPrice, setNewThicknessPrice] = useState('');
   const [variantSaving, setVariantSaving] = useState(false);
@@ -109,6 +116,7 @@ export default function AdminProductsPage() {
     setEditingId(null);
     setEditingImages([]);
     setThicknessVariants([]);
+    setPendingThickness([]);
     setNewThicknessMm('');
     setNewThicknessPrice('');
     setShowForm(false);
@@ -153,6 +161,8 @@ export default function AdminProductsPage() {
         },
       };
 
+      let productId = editingId;
+
       if (editingId) {
         await apiFetch(`/api/admin/products/${editingId}`, {
           method: 'PUT',
@@ -163,10 +173,28 @@ export default function AdminProductsPage() {
           method: 'POST',
           body: JSON.stringify(payload),
         });
+        productId = res.product.id;
         setEditingId(res.product.id);
         setEditingImages([]);
+
+        for (const opt of pendingThickness) {
+          await apiFetch(`/api/admin/products/${productId}/variants/thickness`, {
+            method: 'POST',
+            body: JSON.stringify({
+              thickness_mm: opt.thickness_mm,
+              priceChf: opt.priceChf,
+              stockQuantity: 0,
+            }),
+          });
+        }
+        setPendingThickness([]);
       }
       await load();
+      if (productId) {
+        const res = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
+        const updated = res.items.find((p) => p.id === productId);
+        if (updated) setThicknessVariants(getThicknessVariants(updated));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ruajtja');
     } finally {
@@ -183,6 +211,7 @@ export default function AdminProductsPage() {
     setEditingId(p.id);
     setEditingImages(p.images);
     setThicknessVariants(getThicknessVariants(p));
+    setPendingThickness([]);
     setNewThicknessMm('');
     setNewThicknessPrice('');
     setForm({
@@ -288,17 +317,34 @@ export default function AdminProductsPage() {
     await load();
   };
 
-  const addThicknessVariant = async () => {
-    if (!editingId) {
-      setError('Ruaj produktin fillimisht, pastaj shto trashësi.');
-      return;
-    }
+  const addThicknessOption = async () => {
     const thickness_mm = Number(newThicknessMm);
     const priceChf = Number(newThicknessPrice);
     if (!thickness_mm || thickness_mm <= 0 || !priceChf || priceChf <= 0) {
       setError('Vendos trashësinë (mm) dhe çmimin për copë.');
       return;
     }
+
+    const duplicatePending = pendingThickness.some((p) => p.thickness_mm === thickness_mm);
+    const duplicateSaved = thicknessVariants.some(
+      (v) => (v.attributes as { thickness_mm?: number }).thickness_mm === thickness_mm
+    );
+    if (duplicatePending || duplicateSaved) {
+      setError('Kjo trashësi ekziston tashmë për këtë produkt.');
+      return;
+    }
+
+    if (!editingId) {
+      setPendingThickness((prev) => [
+        ...prev,
+        { localId: crypto.randomUUID(), thickness_mm, priceChf },
+      ]);
+      setNewThicknessMm('');
+      setNewThicknessPrice('');
+      setError('');
+      return;
+    }
+
     setVariantSaving(true);
     setError('');
     try {
@@ -314,6 +360,17 @@ export default function AdminProductsPage() {
     } finally {
       setVariantSaving(false);
     }
+  };
+
+  const updatePendingThicknessPrice = (localId: string, priceChf: number) => {
+    if (!priceChf || priceChf <= 0) return;
+    setPendingThickness((prev) =>
+      prev.map((p) => (p.localId === localId ? { ...p, priceChf } : p))
+    );
+  };
+
+  const removePendingThickness = (localId: string) => {
+    setPendingThickness((prev) => prev.filter((p) => p.localId !== localId));
   };
 
   const updateThicknessVariantPrice = async (variantId: string, priceChf: number) => {
@@ -617,97 +674,131 @@ export default function AdminProductsPage() {
                 </label>
               </div>
 
-              {/* Thickness variants (price per mm option) */}
+              {/* Thickness choices for storefront (6 mm / 8 mm …) */}
               <div className="border-t border-zinc-100 pt-6 space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-700">
-                    Trashësitë & çmimet (opsionale)
+                    Zgjedhje trashësie për klientin
                   </h3>
                   <p className="text-xs text-zinc-500 mt-1 font-light">
-                    Shto 6 mm, 8 mm, etj. me çmim të ndryshëm për copë. Klienti zgjedh në faqen e
-                    produktit. Çmimi bazë lart përdoret vetëm nëse nuk ka asnjë trashësi këtu.
+                    Shto opsione (p.sh. 6 mm dhe 8 mm), secila me çmim të vet për copë. Në shop
+                    klienti zgjedh trashësinë dhe çmimi llogaritet automatikisht. Mund t&apos;i
+                    shtosh edhe para se të ruash produktin e ri — ruhen së bashku me &quot;Ruaj
+                    produktin&quot;.
                   </p>
                 </div>
 
-                {!editingId ? (
-                  <p className="text-sm text-zinc-500 bg-[#F8F8F6] rounded-xl p-4">
-                    Ruaj produktin fillimisht, pastaj shto trashësi.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {thicknessVariants.length > 0 && (
-                      <ul className="space-y-2">
-                        {thicknessVariants.map((v) => {
-                          const mm = (v.attributes as { thickness_mm?: number }).thickness_mm;
-                          return (
-                            <li
-                              key={v.id}
-                              className="flex flex-wrap items-center gap-3 bg-[#F8F8F6] border border-zinc-100 rounded-xl px-4 py-3"
+                <div className="space-y-3">
+                  {(thicknessVariants.length > 0 || pendingThickness.length > 0) && (
+                    <ul className="space-y-2">
+                      {pendingThickness.map((p) => (
+                        <li
+                          key={p.localId}
+                          className="flex flex-wrap items-center gap-3 bg-amber-50/80 border border-amber-100 rounded-xl px-4 py-3"
+                        >
+                          <span className="text-sm font-semibold text-zinc-800 w-16">
+                            {p.thickness_mm} mm
+                          </span>
+                          <span className="text-[10px] uppercase tracking-wider text-amber-700/80 font-semibold">
+                            Do ruhet me produktin
+                          </span>
+                          <label className="flex items-center gap-2 text-xs text-zinc-500 ml-auto sm:ml-0">
+                            CHF / copë
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={p.priceChf}
+                              onChange={(e) =>
+                                updatePendingThicknessPrice(p.localId, Number(e.target.value))
+                              }
+                              className={`${inputClass} w-28 py-1.5`}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => removePendingThickness(p.localId)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Fshi"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </li>
+                      ))}
+                      {thicknessVariants.map((v) => {
+                        const mm = (v.attributes as { thickness_mm?: number }).thickness_mm;
+                        return (
+                          <li
+                            key={v.id}
+                            className="flex flex-wrap items-center gap-3 bg-[#F8F8F6] border border-zinc-100 rounded-xl px-4 py-3"
+                          >
+                            <span className="text-sm font-semibold text-zinc-800 w-16">{mm} mm</span>
+                            <label className="flex items-center gap-2 text-xs text-zinc-500">
+                              CHF / copë
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                defaultValue={v.priceChf}
+                                key={`${v.id}-${v.priceChf}`}
+                                onBlur={(e) =>
+                                  updateThicknessVariantPrice(v.id, Number(e.target.value))
+                                }
+                                className={`${inputClass} w-28 py-1.5`}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => deleteThicknessVariant(v.id)}
+                              disabled={variantSaving}
+                              className="ml-auto p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Fshi"
                             >
-                              <span className="text-sm font-semibold text-zinc-800 w-16">{mm} mm</span>
-                              <label className="flex items-center gap-2 text-xs text-zinc-500">
-                                CHF / copë
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  defaultValue={v.priceChf}
-                                  key={`${v.id}-${v.priceChf}`}
-                                  onBlur={(e) =>
-                                    updateThicknessVariantPrice(v.id, Number(e.target.value))
-                                  }
-                                  className={`${inputClass} w-28 py-1.5`}
-                                />
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => deleteThicknessVariant(v.id)}
-                                disabled={variantSaving}
-                                className="ml-auto p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Fshi"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                      <Field label="Trashësia e re (mm)">
-                        <input
-                          type="number"
-                          min="1"
-                          value={newThicknessMm}
-                          onChange={(e) => setNewThicknessMm(e.target.value)}
-                          className={inputClass}
-                          placeholder="8"
-                        />
-                      </Field>
-                      <Field label="Çmimi (CHF / copë)">
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={newThicknessPrice}
-                          onChange={(e) => setNewThicknessPrice(e.target.value)}
-                          className={inputClass}
-                          placeholder="129.00"
-                        />
-                      </Field>
-                      <button
-                        type="button"
-                        onClick={addThicknessVariant}
-                        disabled={variantSaving}
-                        className="inline-flex items-center justify-center gap-2 bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#C8B89A] hover:text-zinc-900 transition-colors disabled:opacity-50"
-                      >
-                        {variantSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                        Shto trashësi
-                      </button>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <Field label="Trashësia (mm)">
+                      <input
+                        type="number"
+                        min="1"
+                        value={newThicknessMm}
+                        onChange={(e) => setNewThicknessMm(e.target.value)}
+                        className={inputClass}
+                        placeholder="6"
+                      />
+                    </Field>
+                    <Field label="Çmimi për këtë trashësi (CHF / copë)">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newThicknessPrice}
+                        onChange={(e) => setNewThicknessPrice(e.target.value)}
+                        className={inputClass}
+                        placeholder="89.00"
+                      />
+                    </Field>
+                    <button
+                      type="button"
+                      onClick={addThicknessOption}
+                      disabled={variantSaving}
+                      className="inline-flex items-center justify-center gap-2 bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#C8B89A] hover:text-zinc-900 transition-colors disabled:opacity-50"
+                    >
+                      {variantSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                      Shto zgjedhje
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Images section */}
