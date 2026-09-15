@@ -232,7 +232,7 @@ export default function HomepageClient() {
               className="absolute inset-0"
               style={{
                 background:
-                  'radial-gradient(ellipse at 50% 145%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.99) 50%, rgba(255, 255, 255, 0.95) 80%, rgba(248, 248, 246, 0.92) 100%)',
+                  'radial-gradient(ellipse 115% 90% at 50% 200%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.99) 40%, rgba(255, 255, 255, 0.93) 62%, rgba(248, 248, 246, 0.78) 82%, rgba(248, 248, 246, 0.4) 100%)',
               }}
             />
           </div>
