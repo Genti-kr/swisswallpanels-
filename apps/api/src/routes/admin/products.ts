@@ -11,7 +11,9 @@ import {
   thicknessVariantUpdateSchema,
   thicknessNameJson,
   isThicknessVariant,
+  syncPanelOptionsSchema,
 } from '../../lib/validators/product-variant';
+import { syncPanelOptionsForProduct } from '../../lib/sync-panel-options';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -32,11 +34,21 @@ router.get('/', async (_req: AuthenticatedRequest, res: Response, next: NextFunc
 
 router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const data = productSchema.parse(req.body);
-    const product = await prisma.product.create({
+    const { panelOptions: panelOptionsRaw, ...body } = req.body as Record<string, unknown>;
+    const data = productSchema.parse(body);
+    let product = await prisma.product.create({
       data,
       include: { images: true, variants: true },
     });
+    if (panelOptionsRaw !== undefined) {
+      const { options } = syncPanelOptionsSchema.parse({ options: panelOptionsRaw });
+      await syncPanelOptionsForProduct(product.id, options);
+      const refreshed = await prisma.product.findUnique({
+        where: { id: product.id },
+        include: { images: true, variants: true },
+      });
+      if (refreshed) product = refreshed;
+    }
     res.status(201).json({ product: mapProduct(product) });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -48,12 +60,22 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
 
 router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const data = productSchema.partial().parse(req.body);
-    const product = await prisma.product.update({
+    const { panelOptions: panelOptionsRaw, ...body } = req.body as Record<string, unknown>;
+    const data = productSchema.partial().parse(body);
+    let product = await prisma.product.update({
       where: { id: req.params.id },
       data,
       include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
     });
+    if (panelOptionsRaw !== undefined) {
+      const { options } = syncPanelOptionsSchema.parse({ options: panelOptionsRaw });
+      await syncPanelOptionsForProduct(product.id, options);
+      const refreshed = await prisma.product.findUnique({
+        where: { id: product.id },
+        include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
+      });
+      if (refreshed) product = refreshed;
+    }
     res.json({ product: mapProduct(product) });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -228,6 +250,22 @@ router.put('/:id/variants/:variantId', async (req: AuthenticatedRequest, res: Re
 
     res.json({ variant: mapProductVariant(variant) });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    next(error);
+  }
+});
+
+router.put('/:id/panel-options', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { options } = syncPanelOptionsSchema.parse(req.body);
+    const variants = await syncPanelOptionsForProduct(req.params.id, options);
+    res.json({ variants });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Product not found') {
+      return res.status(404).json({ error: 'Product not found' });
+    }
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }

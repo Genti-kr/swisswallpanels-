@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { mapProduct } from '../lib/mappers';
+import { ensurePanelVariantsForProduct } from '../lib/ensure-panel-variants';
 import { searchLimiter } from '../middleware/rateLimit';
 import { validationErrorResponse } from '../lib/safe-response';
 
@@ -62,13 +63,24 @@ router.get('/', searchLimiter, async (req: Request, res: Response, next: NextFun
 
 router.get('/:slug', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const product = await prisma.product.findFirst({
+    let product = await prisma.product.findFirst({
       where: { slug: req.params.slug, isActive: true },
       include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
     });
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const backfilled = await ensurePanelVariantsForProduct(product);
+    if (backfilled) {
+      const refreshed = await prisma.product.findFirst({
+        where: { id: product.id },
+        include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
+      });
+      if (refreshed) {
+        product = refreshed;
+      }
     }
 
     res.json({ product: mapProduct(product) });

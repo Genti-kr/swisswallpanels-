@@ -9,8 +9,41 @@ export type PanelOptionAttributes = {
   color?: string;
 };
 
+type StoredPanelOption = {
+  optionIndex: 1 | 2;
+  thickness_mm: number;
+  width_mm: number;
+  height_mm: number;
+  priceChf: number;
+};
+
+function panelVariantsFromSpecsJson(product: ProductDTO): ProductVariantDTO[] {
+  const specs = product.specsJson as { panelOptions?: StoredPanelOption[] } | null;
+  const stored = specs?.panelOptions;
+  if (!stored?.length) return [];
+
+  return stored
+    .filter((o) => o.optionIndex === 1 || o.optionIndex === 2)
+    .sort((a, b) => a.optionIndex - b.optionIndex)
+    .map((o) => ({
+      id: `${product.id}-panel-${o.optionIndex}`,
+      sku: `${product.sku}-OPT${o.optionIndex}`,
+      nameJson: product.nameJson,
+      priceChf: o.priceChf,
+      stockQuantity: 0,
+      isActive: true,
+      attributes: {
+        type: 'panel_option',
+        optionIndex: o.optionIndex,
+        thickness_mm: o.thickness_mm,
+        width_mm: o.width_mm,
+        height_mm: o.height_mm,
+      },
+    }));
+}
+
 export function getPanelOptionVariants(product: ProductDTO): ProductVariantDTO[] {
-  return product.variants
+  const fromDb = product.variants
     .filter((v) => v.isActive)
     .filter((v) => {
       const a = v.attributes as PanelOptionAttributes;
@@ -27,6 +60,34 @@ export function getPanelOptionVariants(product: ProductDTO): ProductVariantDTO[]
         Number((a.attributes as PanelOptionAttributes).optionIndex ?? 0) -
         Number((b.attributes as PanelOptionAttributes).optionIndex ?? 0)
     );
+
+  if (fromDb.length > 0) return fromDb;
+
+  const fromSpecs = panelVariantsFromSpecsJson(product);
+  if (fromSpecs.length > 0) return fromSpecs;
+
+  const specs = product.specsJson as PanelOptionAttributes | null;
+  if (specs?.thickness_mm && specs?.width_mm && specs?.height_mm) {
+    return [
+      {
+        id: `${product.id}-panel-1`,
+        sku: `${product.sku}-OPT1`,
+        nameJson: product.nameJson,
+        priceChf: product.priceChf,
+        stockQuantity: 0,
+        isActive: true,
+        attributes: {
+          type: 'panel_option',
+          optionIndex: 1,
+          thickness_mm: specs.thickness_mm,
+          width_mm: specs.width_mm,
+          height_mm: specs.height_mm,
+        },
+      },
+    ];
+  }
+
+  return [];
 }
 
 /** @deprecated */
@@ -47,14 +108,13 @@ export function resolveProductVariant(
 
   if (hasPanelOptions) {
     if (optionIndex == null) return null;
+    const match = panelOptions.find(
+      (v) => (v.attributes as PanelOptionAttributes).optionIndex === optionIndex
+    );
+    if (match) return match;
     pool = pool.filter(
       (v) => (v.attributes as PanelOptionAttributes).optionIndex === optionIndex
     );
-    if (!pool.length) {
-      pool = panelOptions.filter(
-        (v) => (v.attributes as PanelOptionAttributes).optionIndex === optionIndex
-      );
-    }
   } else {
     pool = pool.filter((v) => !(v.attributes as PanelOptionAttributes).optionIndex);
   }

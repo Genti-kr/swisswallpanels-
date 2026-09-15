@@ -213,6 +213,7 @@ export default function AdminProductsPage() {
           thickness_mm: form.panel1.thickness_mm,
           width_mm: form.panel1.width_mm,
           height_mm: form.panel1.height_mm,
+          panelOptions: panelPayload,
         },
         panelOptions: panelPayload,
       };
