@@ -6,6 +6,12 @@ import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import {
+  defaultPanelOption,
+  panelOptionsFromProduct,
+  buildPanelOptionsPayload,
+  type PanelOptionForm,
+} from '@/lib/admin-panel-options';
+import {
   Plus,
   Pencil,
   Trash2,
@@ -30,12 +36,11 @@ type FormState = {
   categoryId: string;
   nameJson: typeof emptyMultilingual;
   descJson: typeof emptyMultilingual;
-  priceChf: number;
   priceBtwChf: number;
   stockQuantity: number;
-  thickness_mm: number;
-  width_mm: number;
-  height_mm: number;
+  panel1: PanelOptionForm;
+  panel2: PanelOptionForm;
+  panelOption2Enabled: boolean;
   isFeatured: boolean;
   isActive: boolean;
 };
@@ -53,12 +58,11 @@ const defaultForm = (categoryId = ''): FormState => ({
   categoryId,
   nameJson: { ...emptyMultilingual },
   descJson: { ...emptyMultilingual },
-  priceChf: 0,
   priceBtwChf: 0,
   stockQuantity: 0,
-  thickness_mm: 12,
-  width_mm: 600,
-  height_mm: 2400,
+  panel1: defaultPanelOption(),
+  panel2: { ...defaultPanelOption(), thickness_mm: 8 },
+  panelOption2Enabled: false,
   isFeatured: false,
   isActive: true,
 });
@@ -145,6 +149,24 @@ export default function AdminProductsPage() {
     setSaving(true);
     setError('');
     try {
+      if (!form.panel1.priceChf || form.panel1.priceChf <= 0) {
+        setError('Vendos çmimin për panelin 1 (1 copë).');
+        setSaving(false);
+        return;
+      }
+      if (
+        form.panelOption2Enabled &&
+        (!form.panel2.priceChf ||
+          form.panel2.priceChf <= 0 ||
+          !form.panel2.thickness_mm ||
+          !form.panel2.width_mm ||
+          !form.panel2.height_mm)
+      ) {
+        setError('Plotëso dimensionet dhe çmimin për panelin 2, ose çaktivizo opsionin 2.');
+        setSaving(false);
+        return;
+      }
+
       const nameJson = { ...form.nameJson };
       const descJson = { ...form.descJson };
       for (const loc of locales) {
@@ -164,39 +186,56 @@ export default function AdminProductsPage() {
         categoryId: form.categoryId,
         nameJson,
         descJson,
-        priceChf: form.priceChf,
-        priceBtwChf: form.priceBtwChf || form.priceChf,
+        priceChf: form.panel1.priceChf,
+        priceBtwChf: form.priceBtwChf || form.panel1.priceChf,
         stockQuantity: form.stockQuantity,
         isFeatured: form.isFeatured,
         isActive: form.isActive,
         specsJson: {
           ...priorSpecs,
-          thickness_mm: form.thickness_mm,
-          width_mm: form.width_mm,
-          height_mm: form.height_mm,
+          thickness_mm: form.panel1.thickness_mm,
+          width_mm: form.panel1.width_mm,
+          height_mm: form.panel1.height_mm,
         },
       };
+
+      const panelPayload = buildPanelOptionsPayload(
+        form.panel1,
+        form.panel2,
+        form.panelOption2Enabled
+      );
+
+      let productId = editingId;
 
       if (editingId) {
         await apiFetch(`/api/admin/products/${editingId}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
+        productId = editingId;
       } else {
         const res = await apiFetch<{ product: ProductDTO }>('/api/admin/products', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
-        const newId = res.product.id;
-        setEditingId(newId);
+        productId = res.product.id;
+        setEditingId(productId);
         if (pendingImages.length > 0) {
-          await uploadPendingBatch(newId, pendingImages);
+          await uploadPendingBatch(productId, pendingImages);
           clearPendingImages();
         }
-        const list = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
-        const created = list.items.find((p) => p.id === newId);
-        if (created) setEditingImages(created.images);
       }
+
+      if (productId) {
+        await apiFetch(`/api/admin/products/${productId}/panel-options`, {
+          method: 'PUT',
+          body: JSON.stringify({ options: panelPayload }),
+        });
+        const list = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
+        const updated = list.items.find((p) => p.id === productId);
+        if (updated) setEditingImages(updated.images);
+      }
+
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ruajtja');
@@ -206,11 +245,7 @@ export default function AdminProductsPage() {
   };
 
   const startEdit = (p: ProductDTO) => {
-    const specs = (p.specsJson ?? {}) as {
-      thickness_mm?: number;
-      width_mm?: number;
-      height_mm?: number;
-    };
+    const panels = panelOptionsFromProduct(p);
     clearPendingImages();
     setEditingId(p.id);
     setEditingImages(p.images);
@@ -220,12 +255,11 @@ export default function AdminProductsPage() {
       categoryId: p.categoryId,
       nameJson: p.nameJson,
       descJson: p.descJson,
-      priceChf: p.priceChf,
       priceBtwChf: p.priceBtwChf,
       stockQuantity: p.stockQuantity,
-      thickness_mm: specs.thickness_mm ?? 12,
-      width_mm: specs.width_mm ?? 600,
-      height_mm: specs.height_mm ?? 2400,
+      panel1: panels.panel1,
+      panel2: panels.panel2,
+      panelOption2Enabled: panels.panelOption2Enabled,
       isFeatured: p.isFeatured,
       isActive: p.isActive,
     });
@@ -469,101 +503,132 @@ export default function AdminProductsPage() {
                 </Field>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200/80 bg-[#F8F8F6]/60 p-5 sm:p-6 space-y-6">
+              <div className="rounded-2xl border border-zinc-200/80 bg-[#F8F8F6]/60 p-5 sm:p-6 space-y-5">
                 <div>
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-800">
-                    Dimensionet e panelit
+                    Opsionet e panelit (1 copë)
                   </h3>
                   <p className="text-xs text-zinc-500 mt-1.5 font-light leading-relaxed">
-                    Matjet e mëposhtme janë për <strong className="font-medium text-zinc-700">një copë</strong>{' '}
-                    panel (1 copë). Klienti porosit sa copë të duhen; totali = copë × çmimi për copë.
+                    Opsioni 1 është i detyrueshëm. Aktivizo opsionin 2 nëse klienti zgjedh midis dy
+                    trashësive/dimensioneve me çmime të ndryshme. Totali në shop = copë × çmimi i
+                    opsionit të zgjedhur.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Field label="Trashësia (mm) — 1 copë" required>
-                    <input
-                      type="number"
-                      min="1"
-                      value={form.thickness_mm}
-                      onChange={(e) =>
-                        setForm({ ...form, thickness_mm: Number(e.target.value) })
-                      }
-                      className={inputClass}
-                      required
-                    />
-                  </Field>
-                  <Field label="Gjerësia (mm) — 1 copë" required>
-                    <input
-                      type="number"
-                      min="1"
-                      value={form.width_mm}
-                      onChange={(e) =>
-                        setForm({ ...form, width_mm: Number(e.target.value) })
-                      }
-                      className={inputClass}
-                      required
-                    />
-                  </Field>
-                  <Field label="Lartësia (mm) — 1 copë" required>
-                    <input
-                      type="number"
-                      min="1"
-                      value={form.height_mm}
-                      onChange={(e) =>
-                        setForm({ ...form, height_mm: Number(e.target.value) })
-                      }
-                      className={inputClass}
-                      required
-                    />
-                  </Field>
-                </div>
 
-                <div className="border-t border-zinc-200/70 pt-5 space-y-4">
-                  <div>
-                    <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-800">
-                      Cakto çmimin
-                    </h4>
-                    <p className="text-xs text-zinc-500 mt-1.5 font-light">
-                      Vendos çmimin në CHF për <strong className="font-medium text-zinc-700">1 copë</strong> panel
-                      (me TVSH). Në shop dhe kalkulator: totali = numri i copave × ky çmim.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Çmimi për 1 copë (CHF)" required>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={form.priceChf || ''}
-                        onChange={(e) =>
-                          setForm({ ...form, priceChf: Number(e.target.value) })
-                        }
-                        className={inputClass}
-                        required
-                      />
-                    </Field>
-                    <Field label="Çmimi B2B për 1 copë (CHF)">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={form.priceBtwChf || ''}
-                        onChange={(e) =>
-                          setForm({ ...form, priceBtwChf: Number(e.target.value) })
-                        }
-                        className={inputClass}
-                        placeholder={form.priceChf ? String(form.priceChf) : ''}
-                      />
-                    </Field>
-                  </div>
-                  {form.priceChf > 0 && (
-                    <p className="text-xs text-zinc-600 bg-white/80 border border-zinc-100 rounded-xl px-4 py-3">
-                      Shembull:{' '}
-                      <span className="font-semibold text-zinc-900">
-                        3 copë × {formatCHF(form.priceChf)} = {formatCHF(form.priceChf * 3)}
-                      </span>
-                    </p>
-                  )}
+                {(['panel1', 'panel2'] as const).map((key, idx) => {
+                  const optionNum = (idx + 1) as 1 | 2;
+                  const isSecond = key === 'panel2';
+                  if (isSecond && !form.panelOption2Enabled) {
+                    return (
+                      <label
+                        key={key}
+                        className="flex items-center gap-3 cursor-pointer select-none rounded-xl border border-dashed border-zinc-300 bg-white/60 px-4 py-3"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.panelOption2Enabled}
+                          onChange={(e) =>
+                            setForm({ ...form, panelOption2Enabled: e.target.checked })
+                          }
+                          className="rounded border-zinc-300 text-[#C8B89A] focus:ring-[#C8B89A]"
+                        />
+                        <span className="text-sm text-zinc-700">
+                          Shto <strong>Dimensionet e panelit 2</strong> (opsion i dytë për klientin)
+                        </span>
+                      </label>
+                    );
+                  }
+
+                  const panel = form[key];
+                  const setPanel = (patch: Partial<PanelOptionForm>) =>
+                    setForm({ ...form, [key]: { ...panel, ...patch } });
+
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-xl border border-zinc-200/80 bg-white/90 p-4 sm:p-5 space-y-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <h4 className="text-sm font-semibold text-zinc-800">
+                          Dimensionet e panelit {optionNum}
+                        </h4>
+                        {isSecond && (
+                          <label className="flex items-center gap-2 text-xs text-zinc-500 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={form.panelOption2Enabled}
+                              onChange={(e) =>
+                                setForm({ ...form, panelOption2Enabled: e.target.checked })
+                              }
+                              className="rounded border-zinc-300 text-[#C8B89A]"
+                            />
+                            Aktiv
+                          </label>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Field label="Trashësia (mm)" required={!isSecond}>
+                          <input
+                            type="number"
+                            min="1"
+                            value={panel.thickness_mm}
+                            onChange={(e) => setPanel({ thickness_mm: Number(e.target.value) })}
+                            className={inputClass}
+                            required={!isSecond}
+                          />
+                        </Field>
+                        <Field label="Gjerësia (mm)" required={!isSecond}>
+                          <input
+                            type="number"
+                            min="1"
+                            value={panel.width_mm}
+                            onChange={(e) => setPanel({ width_mm: Number(e.target.value) })}
+                            className={inputClass}
+                            required={!isSecond}
+                          />
+                        </Field>
+                        <Field label="Lartësia (mm)" required={!isSecond}>
+                          <input
+                            type="number"
+                            min="1"
+                            value={panel.height_mm}
+                            onChange={(e) => setPanel({ height_mm: Number(e.target.value) })}
+                            className={inputClass}
+                            required={!isSecond}
+                          />
+                        </Field>
+                      </div>
+                      <Field label={`Cakto çmimin — panel ${optionNum} (CHF / 1 copë)`} required={!isSecond}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={panel.priceChf || ''}
+                          onChange={(e) => setPanel({ priceChf: Number(e.target.value) })}
+                          className={inputClass}
+                          required={!isSecond}
+                        />
+                      </Field>
+                    </div>
+                  );
+                })}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <Field label="Çmimi B2B (CHF / copë, opsional)">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.priceBtwChf || ''}
+                      onChange={(e) =>
+                        setForm({ ...form, priceBtwChf: Number(e.target.value) })
+                      }
+                      className={inputClass}
+                      placeholder={
+                        form.panel1.priceChf ? String(form.panel1.priceChf) : undefined
+                      }
+                    />
+                  </Field>
                 </div>
               </div>
 

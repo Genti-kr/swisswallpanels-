@@ -13,6 +13,11 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { ColorCatalogGrid } from '@/components/ColorCatalogGrid';
 import { fetchColorCatalogBySlug } from '@/lib/color-catalog';
 import { ColorCatalogDTO } from '@swisswall/types';
+import {
+  getPanelOptionVariants,
+  resolveProductVariant,
+  PanelOptionAttributes,
+} from '@/lib/product-variants';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -22,6 +27,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [selectedColorCode, setSelectedColorCode] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<1 | 2>(1);
   const [colorCatalog, setColorCatalog] = useState<ColorCatalogDTO | null>(null);
   const { fetchCart, addItem } = useCart();
   
@@ -52,16 +58,43 @@ export default function ProductDetailPage() {
     fetchColorCatalogBySlug(series).then(setColorCatalog);
   }, [product]);
 
-  const colorVariant = useMemo(() => {
-    if (!product || !selectedColorCode) return null;
-    return (
-      product.variants.find(
-        (v) => (v.attributes as { color?: string })?.color === selectedColorCode
-      ) ?? null
-    );
-  }, [product, selectedColorCode]);
+  const panelOptions = useMemo(
+    () => (product ? getPanelOptionVariants(product) : []),
+    [product]
+  );
 
-  const displayPriceChf = colorVariant?.priceChf ?? product?.priceChf ?? 0;
+  useEffect(() => {
+    if (!product || panelOptions.length === 0) return;
+    const indices = panelOptions
+      .map((v) => (v.attributes as PanelOptionAttributes).optionIndex)
+      .filter((n): n is 1 | 2 => n === 1 || n === 2);
+    if (indices.length && !indices.includes(selectedOptionIndex)) {
+      setSelectedOptionIndex(indices[0] ?? 1);
+    }
+  }, [product, panelOptions, selectedOptionIndex]);
+
+  const activeVariant = useMemo(() => {
+    if (!product) return null;
+    let optionIndex: 1 | 2 | null = null;
+    if (panelOptions.length === 1) {
+      const idx = (panelOptions[0].attributes as PanelOptionAttributes).optionIndex;
+      optionIndex = idx === 2 ? 2 : 1;
+    } else if (panelOptions.length > 1) {
+      optionIndex = selectedOptionIndex;
+    }
+    return resolveProductVariant(product, {
+      colorCode: selectedColorCode,
+      optionIndex,
+    });
+  }, [product, selectedColorCode, selectedOptionIndex, panelOptions]);
+
+  const displayPriceChf = activeVariant?.priceChf ?? product?.priceChf ?? 0;
+
+  const displaySpecs = useMemo((): PanelOptionAttributes => {
+    if (activeVariant) return activeVariant.attributes as PanelOptionAttributes;
+    const specs = product?.specsJson as PanelOptionAttributes | undefined;
+    return specs ?? {};
+  }, [activeVariant, product]);
 
   const galleryImages = useMemo(() => {
     if (!product?.images?.length) return [];
@@ -99,6 +132,7 @@ export default function ProductDetailPage() {
   } | null;
 
   const mustSelectColor = Boolean(colorCatalog);
+  const mustSelectPanelOption = panelOptions.length > 1;
 
   // Translation helpers for technical specs
   const specLabels = {
@@ -235,25 +269,25 @@ export default function ProductDetailPage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Thickness */}
-                  {specs?.thickness_mm != null && (
+                  {displaySpecs.thickness_mm != null && (
                     <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
                       <Ruler className="w-5 h-5 text-[#C8B89A] shrink-0" />
                       <div>
                         <span className="text-[10px] text-zinc-400 block font-light leading-none">{currentLabel('thickness')}</span>
-                        <span className="text-xs font-semibold text-zinc-800">{specs.thickness_mm} mm</span>
+                        <span className="text-xs font-semibold text-zinc-800">{displaySpecs.thickness_mm} mm</span>
                       </div>
                     </div>
                   )}
 
                   {/* Width & Height */}
-                  {specs?.width_mm && specs?.height_mm && (
+                  {displaySpecs.width_mm && displaySpecs.height_mm && (
                     <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
                       <Maximize2 className="w-5 h-5 text-[#C8B89A] shrink-0" />
                       <div>
                         <span className="text-[10px] text-zinc-400 block font-light leading-none">
                           {tProducts('dimensionsOnePanel')}
                         </span>
-                        <span className="text-xs font-semibold text-zinc-800">{specs.width_mm} × {specs.height_mm} mm</span>
+                        <span className="text-xs font-semibold text-zinc-800">{displaySpecs.width_mm} × {displaySpecs.height_mm} mm</span>
                       </div>
                     </div>
                   )}
@@ -261,6 +295,41 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             </div>
+
+            {mustSelectPanelOption && (
+              <div className="space-y-3 pt-2 border-t border-zinc-100">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  {tProducts('selectPanelOption')}
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {panelOptions.map((v) => {
+                    const a = v.attributes as PanelOptionAttributes;
+                    const idx = (a.optionIndex === 2 ? 2 : 1) as 1 | 2;
+                    const selected = selectedOptionIndex === idx;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedOptionIndex(idx)}
+                        className={`text-left px-4 py-3 rounded-xl border text-xs transition-all ${
+                          selected
+                            ? 'border-[#C8B89A] bg-[#C8B89A]/10 text-zinc-900'
+                            : 'border-zinc-200 bg-white text-zinc-600 hover:border-[#C8B89A]/50'
+                        }`}
+                      >
+                        <span className="font-semibold block">
+                          {tProducts('panelOptionLabel', { number: idx })}
+                        </span>
+                        <span className="text-zinc-500 mt-0.5 block">
+                          {a.thickness_mm} mm · {a.width_mm} × {a.height_mm} mm · CHF{' '}
+                          {v.priceChf.toFixed(2)} / {tProducts('priceUnitShort').trim()}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {colorCatalog && (
               <div className="space-y-3 pt-2 border-t border-zinc-100">
@@ -321,8 +390,11 @@ export default function ProductDetailPage() {
 
                 {/* Add to Cart Button */}
                 <button
-                  onClick={() => addItem(product.id, qty, colorVariant?.id)}
-                  disabled={mustSelectColor && !selectedColorCode}
+                  onClick={() => addItem(product.id, qty, activeVariant?.id)}
+                  disabled={
+                    (mustSelectColor && !selectedColorCode) ||
+                    (mustSelectPanelOption && !selectedOptionIndex)
+                  }
                   className="flex-grow bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] py-3.5 px-8 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingBag className="w-4.5 h-4.5" />

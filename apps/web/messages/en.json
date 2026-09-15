@@ -59,6 +59,8 @@
     "pricePerPanelNote": "Price for one panel (incl. VAT)",
     "lineTotalPanels": "Total for {quantity} panels: {total}",
     "dimensionsOnePanel": "Dimensions (one panel)",
+    "selectPanelOption": "Choose panel option (thickness)",
+    "panelOptionLabel": "Option {number}",
     "addToCart": "Add to Cart",
     "details": "View Details",
     "title": "Our Products",

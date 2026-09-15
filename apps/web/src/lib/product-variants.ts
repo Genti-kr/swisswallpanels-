@@ -1,43 +1,68 @@
 import { CartItemDTO, ProductDTO, ProductVariantDTO } from '@swisswall/types';
 
-export function getThicknessVariants(product: ProductDTO): ProductVariantDTO[] {
+export type PanelOptionAttributes = {
+  type?: string;
+  optionIndex?: number;
+  thickness_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
+  color?: string;
+};
+
+export function getPanelOptionVariants(product: ProductDTO): ProductVariantDTO[] {
   return product.variants
     .filter((v) => v.isActive)
     .filter((v) => {
-      const a = v.attributes as { type?: string; thickness_mm?: number; color?: string };
+      const a = v.attributes as PanelOptionAttributes;
       if (a.color) return false;
-      return a.type === 'thickness' || typeof a.thickness_mm === 'number';
+      return (
+        a.type === 'panel_option' ||
+        a.type === 'thickness' ||
+        a.optionIndex === 1 ||
+        a.optionIndex === 2
+      );
     })
     .sort(
       (a, b) =>
-        Number((a.attributes as { thickness_mm?: number }).thickness_mm ?? 0) -
-        Number((b.attributes as { thickness_mm?: number }).thickness_mm ?? 0)
+        Number((a.attributes as PanelOptionAttributes).optionIndex ?? 0) -
+        Number((b.attributes as PanelOptionAttributes).optionIndex ?? 0)
     );
+}
+
+/** @deprecated */
+export function getThicknessVariants(product: ProductDTO): ProductVariantDTO[] {
+  return getPanelOptionVariants(product);
 }
 
 export function resolveProductVariant(
   product: ProductDTO,
-  options: { colorCode?: string | null; thicknessMm?: number | null }
+  options: { colorCode?: string | null; optionIndex?: number | null }
 ): ProductVariantDTO | null {
-  const { colorCode, thicknessMm } = options;
+  const { colorCode, optionIndex } = options;
   let pool = product.variants.filter((v) => v.isActive);
 
-  const hasThicknessOptions = getThicknessVariants(product).length > 0;
-  const hasColorOptions = pool.some((v) => (v.attributes as { color?: string }).color);
+  const panelOptions = getPanelOptionVariants(product);
+  const hasPanelOptions = panelOptions.length > 0;
+  const hasColorOptions = pool.some((v) => (v.attributes as PanelOptionAttributes).color);
 
-  if (hasThicknessOptions) {
-    if (thicknessMm == null) return null;
+  if (hasPanelOptions) {
+    if (optionIndex == null) return null;
     pool = pool.filter(
-      (v) => (v.attributes as { thickness_mm?: number }).thickness_mm === thicknessMm
+      (v) => (v.attributes as PanelOptionAttributes).optionIndex === optionIndex
     );
+    if (!pool.length) {
+      pool = panelOptions.filter(
+        (v) => (v.attributes as PanelOptionAttributes).optionIndex === optionIndex
+      );
+    }
   } else {
-    pool = pool.filter((v) => (v.attributes as { thickness_mm?: number }).thickness_mm == null);
+    pool = pool.filter((v) => !(v.attributes as PanelOptionAttributes).optionIndex);
   }
 
   if (hasColorOptions && colorCode) {
-    pool = pool.filter((v) => (v.attributes as { color?: string }).color === colorCode);
+    pool = pool.filter((v) => (v.attributes as PanelOptionAttributes).color === colorCode);
   } else if (hasColorOptions) {
-    pool = pool.filter((v) => !(v.attributes as { color?: string }).color);
+    pool = pool.filter((v) => !(v.attributes as PanelOptionAttributes).color);
   }
 
   return pool[0] ?? null;
@@ -45,13 +70,31 @@ export function resolveProductVariant(
 
 export function getCartItemUnitPrice(item: CartItemDTO): number {
   if (!item.variant) return item.product.priceChf;
-  const a = item.variant.attributes as {
-    type?: string;
-    color?: string;
+  const a = item.variant.attributes as PanelOptionAttributes;
+  if (a.color) return item.variant.priceChf;
+  if (
+    a.type === 'panel_option' ||
+    a.type === 'thickness' ||
+    a.optionIndex === 1 ||
+    a.optionIndex === 2
+  ) {
+    return item.variant.priceChf;
+  }
+  return item.product.priceChf;
+}
+
+export function panelOptionFromSpecs(product: ProductDTO, optionIndex: 1 | 2) {
+  const specs = product.specsJson as {
     thickness_mm?: number;
+    width_mm?: number;
+    height_mm?: number;
+  } | null;
+  if (optionIndex !== 1 || !specs) return null;
+  return {
+    optionIndex: 1 as const,
+    thickness_mm: specs.thickness_mm ?? 0,
+    width_mm: specs.width_mm ?? 0,
+    height_mm: specs.height_mm ?? 0,
+    priceChf: product.priceChf,
   };
-  const isThicknessOnly =
-    a.type === 'thickness' || (typeof a.thickness_mm === 'number' && !a.color);
-  if (isThicknessOnly) return item.product.priceChf;
-  return item.variant.priceChf;
 }

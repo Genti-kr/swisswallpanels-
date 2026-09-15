@@ -59,6 +59,8 @@
     "pricePerPanelNote": "Preis für ein Panel (inkl. MWST)",
     "lineTotalPanels": "Total für {quantity} Panels: {total}",
     "dimensionsOnePanel": "Abmessungen (ein Panel)",
+    "selectPanelOption": "Paneloption wählen (Stärke)",
+    "panelOptionLabel": "Option {number}",
     "addToCart": "In den Warenkorb",
     "details": "Details ansehen",
     "title": "Unsere Produkte",
