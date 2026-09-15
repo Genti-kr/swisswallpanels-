@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import authRouter from './routes/auth';
 import productsRouter from './routes/products';
 import cartRouter from './routes/cart';
@@ -145,6 +147,31 @@ app.use((err: unknown, req: express.Request, res: express.Response, _next: expre
     method: req.method,
     path: req.path,
   });
+
+  if (err instanceof z.ZodError) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: process.env.NODE_ENV === 'production' ? undefined : err.errors,
+    });
+  }
+
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
+      return res.status(409).json({
+        error: 'Të dhëna të dyfishta (slug, SKU ose fushë unike).',
+      });
+    }
+    if (err.code === 'P2003') {
+      return res.status(409).json({
+        error:
+          'Veprimi u bllokua nga të dhëna të lidhura (porosi, shportë). Çaktivizo produktin në vend të fshirjes.',
+      });
+    }
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+  }
+
   const status = typeof err === 'object' && err !== null && 'status' in err
     ? Number((err as { status?: number }).status) || 500
     : 500;

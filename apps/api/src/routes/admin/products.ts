@@ -141,26 +141,36 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: Nex
 
     const images = await prisma.productImage.findMany({ where: { productId } });
 
-    await prisma.$transaction([
-      prisma.cartItem.deleteMany({ where: { productId } }),
-      prisma.wishlistItem.deleteMany({ where: { productId } }),
-      prisma.product.delete({ where: { id: productId } }),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      await tx.review.deleteMany({ where: { productId } });
+      await tx.cartItem.deleteMany({ where: { productId } });
+      await tx.wishlistItem.deleteMany({ where: { productId } });
+      await tx.quoteItem.updateMany({
+        where: { productId },
+        data: { productId: null },
+      });
+      await tx.product.delete({ where: { id: productId } });
+    });
 
     for (const img of images) {
-      await deleteImageByUrl(img.url);
+      try {
+        await deleteImageByUrl(img.url);
+      } catch {
+        /* DB row already removed; ignore missing files */
+      }
     }
     res.json({ message: 'Product deleted' });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      'code' in error &&
-      (error as { code?: string }).code === 'P2003'
-    ) {
-      return res.status(409).json({
-        error:
-          'Produkti lidhet me të dhëna të tjera (shportë/porosi). Çaktivizoje në vend të fshirjes.',
-      });
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2003') {
+        return res.status(409).json({
+          error:
+            'Produkti lidhet me porosi ose shportë. Hiqe nga shportat, ose çaktivizoje (Aktiv = off) në vend të fshirjes.',
+        });
+      }
+      if (error.code === 'P2025') {
+        return res.status(404).json({ error: 'Product not found' });
+      }
     }
     next(error);
   }

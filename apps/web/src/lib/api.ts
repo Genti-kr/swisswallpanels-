@@ -9,6 +9,7 @@ const NEXTJS_ONLY_ROUTES = [
   '/api/auth/verify-email',
   '/api/auth/resend-verification',
   '/api/auth/unlock-account',
+  '/api/admin/ensure-category',
 ];
 
 function isNextJsOnlyRoute(path: string): boolean {

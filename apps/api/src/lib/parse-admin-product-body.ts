@@ -24,7 +24,16 @@ function normalizeProductTextFields(rest: Record<string, unknown>) {
 
 async function applyCategoryFromBody(rest: Record<string, unknown>, categoryName: unknown) {
   if (typeof categoryName === 'string' && categoryName.trim()) {
-    rest.categoryId = await resolveCategoryIdByName(categoryName);
+    try {
+      rest.categoryId = await resolveCategoryIdByName(categoryName);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Category name is required') {
+        const err = new Error('CATEGORY_REQUIRED');
+        err.name = 'CategoryRequiredError';
+        throw err;
+      }
+      throw error;
+    }
   }
   if (typeof rest.categoryId !== 'string' || !rest.categoryId.trim()) {
     const err = new Error('CATEGORY_REQUIRED');

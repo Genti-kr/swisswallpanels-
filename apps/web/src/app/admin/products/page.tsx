@@ -241,10 +241,24 @@ export default function AdminProductsPage() {
         (c) => categoryLabel(c).trim().toLowerCase() === categoryLabelNorm
       );
 
+      let categoryId = existingCategory?.id;
+      if (!categoryId && form.categoryName.trim()) {
+        const catRes = await apiFetch<{ categoryId: string }>('/api/admin/ensure-category', {
+          method: 'POST',
+          body: JSON.stringify({ name: form.categoryName.trim() }),
+        });
+        categoryId = catRes.categoryId;
+      }
+      if (!categoryId) {
+        setError('Zgjidh ose shkruaj kategorinë e produktit.');
+        setSaving(false);
+        return;
+      }
+
       const payload: Record<string, unknown> = {
         slug: form.slug.trim(),
         sku: form.sku.trim(),
-        categoryName: form.categoryName.trim(),
+        categoryId,
         nameJson,
         descJson,
         priceChf: form.panel1.priceChf,
@@ -261,10 +275,6 @@ export default function AdminProductsPage() {
         },
         panelOptions: panelPayload,
       };
-
-      if (existingCategory) {
-        payload.categoryId = existingCategory.id;
-      }
 
       let productId = editingId;
 
@@ -338,12 +348,22 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Fshi këtë produkt?')) return;
+    if (
+      !confirm(
+        'Fshi këtë produkt?\n\nNëse ka porosi, fshirja nuk lejohet — çaktivizoje (Aktiv = off) nga forma e editimit.'
+      )
+    ) {
+      return;
+    }
+    setError('');
+    setSuccess('');
     try {
       await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
       if (editingId === id) resetForm();
+      setSuccess('Produkti u fshi.');
       await load();
     } catch (err) {
+      setSuccess('');
       setError(err instanceof Error ? err.message : 'Dështoi fshirja');
     }
   };
@@ -1091,6 +1111,7 @@ export default function AdminProductsPage() {
                       Ndrysho
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDelete(p.id)}
                       className="p-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
                       title="Fshi"
