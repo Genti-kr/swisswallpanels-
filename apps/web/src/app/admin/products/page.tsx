@@ -180,6 +180,23 @@ export default function AdminProductsPage() {
       const priorSpecs =
         (existingProduct?.specsJson as Record<string, unknown> | undefined) ?? {};
 
+      if (!form.categoryId) {
+        setError('Zgjidh një kategori.');
+        setSaving(false);
+        return;
+      }
+      if (!nameJson.de?.trim()) {
+        setError('Vendos emrin e produktit (DE).');
+        setSaving(false);
+        return;
+      }
+
+      const panelPayload = buildPanelOptionsPayload(
+        form.panel1,
+        form.panel2,
+        form.panelOption2Enabled
+      );
+
       const payload = {
         slug: form.slug,
         sku: form.sku,
@@ -197,22 +214,18 @@ export default function AdminProductsPage() {
           width_mm: form.panel1.width_mm,
           height_mm: form.panel1.height_mm,
         },
+        panelOptions: panelPayload,
       };
-
-      const panelPayload = buildPanelOptionsPayload(
-        form.panel1,
-        form.panel2,
-        form.panelOption2Enabled
-      );
 
       let productId = editingId;
 
       if (editingId) {
-        await apiFetch(`/api/admin/products/${editingId}`, {
+        const res = await apiFetch<{ product: ProductDTO }>(`/api/admin/products/${editingId}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
         productId = editingId;
+        setEditingImages(res.product.images);
       } else {
         const res = await apiFetch<{ product: ProductDTO }>('/api/admin/products', {
           method: 'POST',
@@ -220,20 +233,11 @@ export default function AdminProductsPage() {
         });
         productId = res.product.id;
         setEditingId(productId);
+        setEditingImages(res.product.images);
         if (pendingImages.length > 0) {
           await uploadPendingBatch(productId, pendingImages);
           clearPendingImages();
         }
-      }
-
-      if (productId) {
-        await apiFetch(`/api/admin/products/${productId}/panel-options`, {
-          method: 'PUT',
-          body: JSON.stringify({ options: panelPayload }),
-        });
-        const list = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
-        const updated = list.items.find((p) => p.id === productId);
-        if (updated) setEditingImages(updated.images);
       }
 
       await load();

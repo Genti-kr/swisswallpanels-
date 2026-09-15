@@ -60,6 +60,8 @@
     "lineTotalPanels": "Totali për {quantity} copë: {total}",
     "dimensionsOnePanel": "Dimensionet (1 copë panel)",
     "selectPanelOption": "Zgjidh trashësinë / opsionin e panelit",
+    "chooseThickness": "Zgjidh trashësinë",
+    "thicknessOptionLabel": "Trashësia {number}",
     "panelOptionLabel": "Opsioni {number}",
     "addToCart": "Shto në Shportë",
     "details": "Shiko Detajet",

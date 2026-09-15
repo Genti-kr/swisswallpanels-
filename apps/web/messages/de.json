@@ -60,6 +60,8 @@
     "lineTotalPanels": "Total für {quantity} Panels: {total}",
     "dimensionsOnePanel": "Abmessungen (ein Panel)",
     "selectPanelOption": "Paneloption wählen (Stärke)",
+    "chooseThickness": "Stärke wählen",
+    "thicknessOptionLabel": "Stärke {number}",
     "panelOptionLabel": "Option {number}",
     "addToCart": "In den Warenkorb",
     "details": "Details ansehen",

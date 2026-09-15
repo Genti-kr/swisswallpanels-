@@ -123,16 +123,8 @@ export default function ProductDetailPage() {
   const desc = product.descJson[locale as keyof typeof product.descJson] || product.descJson.de;
   const categorySlug = product.category?.slug || '';
 
-  // Extract specs from JSON safely
-  const specs = product.specsJson as {
-    thickness_mm?: number;
-    width_mm?: number;
-    height_mm?: number;
-    catalogSeries?: string;
-  } | null;
-
   const mustSelectColor = Boolean(colorCatalog);
-  const mustSelectPanelOption = panelOptions.length > 1;
+  const hasThicknessChoices = panelOptions.length > 0;
 
   // Translation helpers for technical specs
   const specLabels = {
@@ -236,50 +228,91 @@ export default function ProductDetailPage() {
                 </h1>
               </div>
 
-              {/* Price card */}
-              <div className="bg-[#F8F8F6]/80 border border-zinc-200/40 rounded-2xl p-5 flex flex-col justify-center">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-zinc-900">
-                    CHF {displayPriceChf.toFixed(2)}
+              {/* Price card (products without thickness variants) */}
+              {!hasThicknessChoices && (
+                <div className="bg-[#F8F8F6]/80 border border-zinc-200/40 rounded-2xl p-5 flex flex-col justify-center">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-zinc-900">
+                      CHF {displayPriceChf.toFixed(2)}
+                    </span>
+                    <span className="text-sm text-zinc-500 font-light">{tProducts('priceUnitShort')}</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1 font-semibold">
+                    {tProducts('pricePerPanelNote')}
                   </span>
-                  <span className="text-sm text-zinc-500 font-light">{tProducts('priceUnitShort')}</span>
+                  {qty > 1 && (
+                    <p className="text-sm text-zinc-700 mt-3 pt-3 border-t border-zinc-200/50">
+                      {tProducts('lineTotalPanels', {
+                        quantity: qty,
+                        total: `CHF ${(displayPriceChf * qty).toFixed(2)}`,
+                      })}
+                    </p>
+                  )}
                 </div>
-                <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1 font-semibold">
-                  {tProducts('pricePerPanelNote')}
-                </span>
-                {qty > 1 && (
-                  <p className="text-sm text-zinc-700 mt-3 pt-3 border-t border-zinc-200/50">
-                    {tProducts('lineTotalPanels', {
-                      quantity: qty,
-                      total: `CHF ${(displayPriceChf * qty).toFixed(2)}`,
-                    })}
-                  </p>
-                )}
-              </div>
+              )}
 
               {/* Description */}
               <p className="text-zinc-500 font-light text-sm leading-relaxed">
                 {desc}
               </p>
 
-              {/* Technical Specifications Grid */}
+              {hasThicknessChoices && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    {tProducts('chooseThickness')}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {panelOptions.map((v) => {
+                      const a = v.attributes as PanelOptionAttributes;
+                      const idx = (a.optionIndex === 2 ? 2 : 1) as 1 | 2;
+                      const selected = selectedOptionIndex === idx;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => setSelectedOptionIndex(idx)}
+                          className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                            selected
+                              ? 'border-[#C8B89A] bg-[#C8B89A]/10 ring-2 ring-[#C8B89A]/25 shadow-sm'
+                              : 'bg-zinc-50 border-zinc-200/30 hover:border-[#C8B89A]/40'
+                          }`}
+                        >
+                          <Ruler className="w-5 h-5 text-[#C8B89A] shrink-0" />
+                          <div>
+                            <span className="text-[10px] text-zinc-400 block font-light leading-none">
+                              {tProducts('thicknessOptionLabel', { number: idx })}
+                            </span>
+                            <span className="text-xs font-semibold text-zinc-800">
+                              {a.thickness_mm} mm
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Technical Specifications (+ price when thickness is chosen) */}
               <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                   {locale === 'sq' ? 'Specifikimet Teknike' : 'Technical Specifications'}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Thickness */}
                   {displaySpecs.thickness_mm != null && (
                     <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
                       <Ruler className="w-5 h-5 text-[#C8B89A] shrink-0" />
                       <div>
-                        <span className="text-[10px] text-zinc-400 block font-light leading-none">{currentLabel('thickness')}</span>
-                        <span className="text-xs font-semibold text-zinc-800">{displaySpecs.thickness_mm} mm</span>
+                        <span className="text-[10px] text-zinc-400 block font-light leading-none">
+                          {currentLabel('thickness')}
+                        </span>
+                        <span className="text-xs font-semibold text-zinc-800">
+                          {displaySpecs.thickness_mm} mm
+                        </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Width & Height */}
                   {displaySpecs.width_mm && displaySpecs.height_mm && (
                     <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200/30 rounded-xl">
                       <Maximize2 className="w-5 h-5 text-[#C8B89A] shrink-0" />
@@ -287,49 +320,37 @@ export default function ProductDetailPage() {
                         <span className="text-[10px] text-zinc-400 block font-light leading-none">
                           {tProducts('dimensionsOnePanel')}
                         </span>
-                        <span className="text-xs font-semibold text-zinc-800">{displaySpecs.width_mm} × {displaySpecs.height_mm} mm</span>
+                        <span className="text-xs font-semibold text-zinc-800">
+                          {displaySpecs.width_mm} × {displaySpecs.height_mm} mm
+                        </span>
                       </div>
                     </div>
                   )}
-
                 </div>
+
+                {hasThicknessChoices && (
+                  <div className="bg-[#F8F8F6]/80 border border-zinc-200/40 rounded-2xl p-5 flex flex-col justify-center mt-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-zinc-900">
+                        CHF {displayPriceChf.toFixed(2)}
+                      </span>
+                      <span className="text-sm text-zinc-500 font-light">{tProducts('priceUnitShort')}</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1 font-semibold">
+                      {tProducts('pricePerPanelNote')}
+                    </span>
+                    {qty > 1 && (
+                      <p className="text-sm text-zinc-700 mt-3 pt-3 border-t border-zinc-200/50">
+                        {tProducts('lineTotalPanels', {
+                          quantity: qty,
+                          total: `CHF ${(displayPriceChf * qty).toFixed(2)}`,
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-
-            {mustSelectPanelOption && (
-              <div className="space-y-3 pt-2 border-t border-zinc-100">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  {tProducts('selectPanelOption')}
-                </h3>
-                <div className="flex flex-col gap-2">
-                  {panelOptions.map((v) => {
-                    const a = v.attributes as PanelOptionAttributes;
-                    const idx = (a.optionIndex === 2 ? 2 : 1) as 1 | 2;
-                    const selected = selectedOptionIndex === idx;
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setSelectedOptionIndex(idx)}
-                        className={`text-left px-4 py-3 rounded-xl border text-xs transition-all ${
-                          selected
-                            ? 'border-[#C8B89A] bg-[#C8B89A]/10 text-zinc-900'
-                            : 'border-zinc-200 bg-white text-zinc-600 hover:border-[#C8B89A]/50'
-                        }`}
-                      >
-                        <span className="font-semibold block">
-                          {tProducts('panelOptionLabel', { number: idx })}
-                        </span>
-                        <span className="text-zinc-500 mt-0.5 block">
-                          {a.thickness_mm} mm · {a.width_mm} × {a.height_mm} mm · CHF{' '}
-                          {v.priceChf.toFixed(2)} / {tProducts('priceUnitShort').trim()}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {colorCatalog && (
               <div className="space-y-3 pt-2 border-t border-zinc-100">
@@ -391,10 +412,7 @@ export default function ProductDetailPage() {
                 {/* Add to Cart Button */}
                 <button
                   onClick={() => addItem(product.id, qty, activeVariant?.id)}
-                  disabled={
-                    (mustSelectColor && !selectedColorCode) ||
-                    (mustSelectPanelOption && !selectedOptionIndex)
-                  }
+                  disabled={mustSelectColor && !selectedColorCode}
                   className="flex-grow bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] py-3.5 px-8 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingBag className="w-4.5 h-4.5" />

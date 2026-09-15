@@ -60,6 +60,8 @@
     "lineTotalPanels": "Total pour {quantity} panneaux : {total}",
     "dimensionsOnePanel": "Dimensions (un panneau)",
     "selectPanelOption": "Choisir l’option de panneau (épaisseur)",
+    "chooseThickness": "Choisir l’épaisseur",
+    "thicknessOptionLabel": "Épaisseur {number}",
     "panelOptionLabel": "Option {number}",
     "addToCart": "Ajouter au panier",
     "details": "Voir les détails",
