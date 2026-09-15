@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { ProductDTO, CategoryDTO, ProductImageDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
@@ -33,7 +33,7 @@ const localeLabels = { de: 'Deutsch', fr: 'Français', en: 'English', sq: 'Shqip
 type FormState = {
   slug: string;
   sku: string;
-  categoryId: string;
+  categoryName: string;
   nameJson: typeof emptyMultilingual;
   descJson: typeof emptyMultilingual;
   priceBtwChf: number;
@@ -52,10 +52,14 @@ type PendingProductImage = {
   isPrimary: boolean;
 };
 
-const defaultForm = (categoryId = ''): FormState => ({
+function categoryLabel(c: CategoryDTO): string {
+  return c.nameJson.de || c.nameJson.en || c.nameJson.sq || c.slug;
+}
+
+const defaultForm = (categoryName = ''): FormState => ({
   slug: '',
   sku: '',
-  categoryId,
+  categoryName,
   nameJson: { ...emptyMultilingual },
   descJson: { ...emptyMultilingual },
   priceBtwChf: 0,
@@ -90,6 +94,11 @@ export default function AdminProductsPage() {
   const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const savedCategoryNames = useMemo(() => {
+    const names = categories.map(categoryLabel).filter(Boolean);
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'de'));
+  }, [categories]);
+
   const clearPendingImages = useCallback(() => {
     setPendingImages((prev) => {
       for (const p of prev) URL.revokeObjectURL(p.previewUrl);
@@ -122,7 +131,6 @@ export default function AdminProductsPage() {
       ]);
       setProducts(prodRes.items);
       setCategories(catRes.items);
-      setForm((f) => ({ ...f, categoryId: f.categoryId || catRes.items[0]?.id || '' }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ngarkimi i produkteve');
     } finally {
@@ -136,7 +144,7 @@ export default function AdminProductsPage() {
 
   const resetForm = () => {
     clearPendingImages();
-    setForm(defaultForm(categories[0]?.id || ''));
+    setForm(defaultForm());
     setEditingId(null);
     setEditingImages([]);
     setShowForm(false);
@@ -180,8 +188,8 @@ export default function AdminProductsPage() {
       const priorSpecs =
         (existingProduct?.specsJson as Record<string, unknown> | undefined) ?? {};
 
-      if (!form.categoryId) {
-        setError('Zgjidh një kategori.');
+      if (!form.categoryName.trim()) {
+        setError('Shkruaj emrin e kategorisë.');
         setSaving(false);
         return;
       }
@@ -200,7 +208,7 @@ export default function AdminProductsPage() {
       const payload = {
         slug: form.slug,
         sku: form.sku,
-        categoryId: form.categoryId,
+        categoryName: form.categoryName.trim(),
         nameJson,
         descJson,
         priceChf: form.panel1.priceChf,
@@ -257,7 +265,7 @@ export default function AdminProductsPage() {
     setForm({
       slug: p.slug,
       sku: p.sku,
-      categoryId: p.categoryId,
+      categoryName: p.category ? categoryLabel(p.category) : '',
       nameJson: p.nameJson,
       descJson: p.descJson,
       priceBtwChf: p.priceBtwChf,
@@ -483,17 +491,24 @@ export default function AdminProductsPage() {
                   />
                 </Field>
                 <Field label="Kategoria" required>
-                  <select
-                    value={form.categoryId}
-                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                  <input
+                    list="admin-product-categories"
+                    value={form.categoryName}
+                    onChange={(e) => setForm({ ...form, categoryName: e.target.value })}
                     className={inputClass}
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nameJson.de}
-                      </option>
+                    placeholder="p.sh. Panele akustike"
+                    required
+                    autoComplete="off"
+                  />
+                  <datalist id="admin-product-categories">
+                    {savedCategoryNames.map((name) => (
+                      <option key={name} value={name} />
                     ))}
-                  </select>
+                  </datalist>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    Shkruaj emrin e kategorisë ose zgjidh nga lista. Kategoritë e ruajtura shfaqen
+                    përsëri këtu.
+                  </p>
                 </Field>
                 <Field label="Stoku (copë paneli)">
                   <input

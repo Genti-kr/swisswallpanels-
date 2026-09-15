@@ -14,6 +14,10 @@ import {
   syncPanelOptionsSchema,
 } from '../../lib/validators/product-variant';
 import { syncPanelOptionsForProduct } from '../../lib/sync-panel-options';
+import {
+  parseAdminProductCreateBody,
+  parseAdminProductUpdateBody,
+} from '../../lib/parse-admin-product-body';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -34,8 +38,9 @@ router.get('/', async (_req: AuthenticatedRequest, res: Response, next: NextFunc
 
 router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { panelOptions: panelOptionsRaw, ...body } = req.body as Record<string, unknown>;
-    const data = productSchema.parse(body);
+    const { data, panelOptions: panelOptionsRaw } = await parseAdminProductCreateBody(
+      req.body as Record<string, unknown>
+    );
     let product = await prisma.product.create({
       data,
       include: { images: true, variants: true },
@@ -60,8 +65,9 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
 
 router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { panelOptions: panelOptionsRaw, ...body } = req.body as Record<string, unknown>;
-    const data = productSchema.partial().parse(body);
+    const { data, panelOptions: panelOptionsRaw } = await parseAdminProductUpdateBody(
+      req.body as Record<string, unknown>
+    );
     let product = await prisma.product.update({
       where: { id: req.params.id },
       data,
