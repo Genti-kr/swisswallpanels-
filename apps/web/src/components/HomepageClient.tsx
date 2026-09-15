@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import { SiteHeader } from '@/components/SiteHeader';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { SiteImageDTO } from '@swisswall/types';
@@ -257,14 +256,13 @@ export default function HomepageClient() {
             <p className="text-lg md:text-xl text-[#1A1A1A]/60 max-w-2xl mx-auto font-light leading-relaxed">
               {t('Hero.subtitle')}
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+            <div className="flex justify-center pt-4">
               <Link
                 href="/produkte"
                 className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-8 py-4 rounded-md text-sm font-semibold uppercase tracking-wider transition-all duration-300"
               >
                 {t('Hero.viewProducts')}
               </Link>
-              <LocaleSwitcher variant="hero" />
             </div>
           </div>
         </section>

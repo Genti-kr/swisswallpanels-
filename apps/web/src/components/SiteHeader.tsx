@@ -112,7 +112,7 @@ export function SiteHeader() {
             </Link>
           )}
 
-          <LocaleSwitcher variant="header" />
+          <LocaleSwitcher />
 
           <button
             type="button"
@@ -144,8 +144,8 @@ export function SiteHeader() {
               {tCommon('login')}
             </Link>
           )}
-          <div className="pt-3 px-1">
-            <LocaleSwitcher variant="header" className="w-full justify-center" />
+          <div className="pt-3 px-3 flex justify-start">
+            <LocaleSwitcher />
           </div>
         </nav>
       )}
