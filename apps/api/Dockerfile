@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./
 COPY --from=build /app/apps/api/prisma ./prisma
+COPY --from=build /app/apps/api/scripts/create-admin-standalone.mjs ./scripts/create-admin-standalone.mjs
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/api/node_modules ./node_modules
 RUN mkdir -p uploads/invoices uploads
