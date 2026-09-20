@@ -26,6 +26,7 @@ import {
   FileText
 } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { sanitizeDigits } from '@/lib/numeric-input';
 
 const COUNTRIES = ['CH', 'DE', 'FR', 'IT'] as const;
 const CANTONS = ['ZH', 'BE', 'GE', 'VD', 'BS', 'LU', 'AG', 'SG', 'TI', 'VS'];
@@ -533,7 +534,14 @@ function CheckoutContent() {
                     <input 
                       placeholder={tCheckout('number')} 
                       value={address.houseNumber} 
-                      onChange={(e) => setAddress({ ...address, houseNumber: e.target.value })} 
+                      onChange={(e) =>
+                        setAddress({
+                          ...address,
+                          houseNumber: sanitizeDigits(e.target.value, 8),
+                        })
+                      }
+                      inputMode="numeric"
+                      autoComplete="address-line2"
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
                       required 
                     />
@@ -544,9 +552,19 @@ function CheckoutContent() {
                     <input 
                       placeholder={tCheckout('zip')} 
                       value={address.postCode} 
-                      onChange={(e) => setAddress({ ...address, postCode: e.target.value })} 
+                      onChange={(e) =>
+                        setAddress({
+                          ...address,
+                          postCode: sanitizeDigits(
+                            e.target.value,
+                            address.country === 'CH' ? 4 : 12
+                          ),
+                        })
+                      }
+                      inputMode="numeric"
+                      autoComplete="postal-code"
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
-                      pattern="\d{4}" 
+                      pattern={address.country === 'CH' ? '\\d{4}' : undefined}
                       required 
                     />
                   </div>

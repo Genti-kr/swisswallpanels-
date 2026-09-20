@@ -8,6 +8,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { SiteImageDTO } from '@swisswall/types';
+import { parseIntegerInput, sanitizeIntegerInput, sanitizePhoneInput } from '@/lib/numeric-input';
 
 const fallbackGallery = [
   { src: '/Enhancing-Wood-Panel-Walls.webp', alt: 'Wood panel wall decoration' },
@@ -341,18 +342,17 @@ export default function HomepageClient() {
                     {t('Calculator.quantityLabel')}
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={quantity || ''}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '') {
+                      const val = sanitizeIntegerInput(e.target.value, 4);
+                      if (!val) {
                         setQuantity(0);
                         return;
                       }
-                      const num = parseInt(val, 10);
-                      if (!isNaN(num)) {
-                        setQuantity(Math.min(1000, Math.max(1, num)));
-                      }
+                      const num = parseIntegerInput(val);
+                      setQuantity(Math.min(1000, Math.max(1, num)));
                     }}
                     onBlur={() => {
                       if (!quantity || quantity < 1) {
@@ -420,8 +420,9 @@ export default function HomepageClient() {
                       />
                       <input
                         type="tel"
+                        inputMode="tel"
                         value={quotePhone}
-                        onChange={(e) => setQuotePhone(e.target.value)}
+                        onChange={(e) => setQuotePhone(sanitizePhoneInput(e.target.value))}
                         placeholder={tCalc('quotePhone')}
                         className="w-full bg-[#F8F8F6] border border-[#1A1A1A]/10 rounded p-3 text-sm focus:outline-none focus:border-[#C8B89A]"
                       />
@@ -597,8 +598,9 @@ export default function HomepageClient() {
               </div>
               <input
                 type="tel"
+                inputMode="tel"
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
+                onChange={(e) => setContactPhone(sanitizePhoneInput(e.target.value))}
                 placeholder={tContact('phone')}
                 className="w-full bg-[#F8F8F6] border border-[#1A1A1A]/10 rounded p-3 text-sm focus:outline-none focus:border-[#C8B89A]"
               />

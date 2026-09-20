@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-store';
 import { apiFetch } from '@/lib/api';
 import { Loader2, Save, UserCheck, AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { sanitizePhoneInput } from '@/lib/numeric-input';
 
 export default function ProfilePage() {
   const t = useTranslations('Dashboard');
@@ -113,7 +114,7 @@ export default function ProfilePage() {
           <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{tc('phone')}</span>
           <input
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
             className={inputClass}
             placeholder="+41 79 123 45 67"
           />

@@ -13,6 +13,12 @@ import {
 } from '@/lib/admin-panel-options';
 import { MAX_PRODUCT_IMAGES } from '@/lib/product-images';
 import { uploadProductImageDirect } from '@/lib/admin-product-image-upload';
+import {
+  parseDecimalInput,
+  parseIntegerInput,
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from '@/lib/numeric-input';
 
 const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024;
 import {
@@ -627,11 +633,14 @@ export default function AdminProductsPage() {
                 </Field>
                 <Field label="Stoku (copë paneli)">
                   <input
-                    type="number"
-                    min="0"
-                    value={form.stockQuantity}
+                    type="text"
+                    inputMode="numeric"
+                    value={form.stockQuantity === 0 ? '' : String(form.stockQuantity)}
                     onChange={(e) =>
-                      setForm({ ...form, stockQuantity: Number(e.target.value) })
+                      setForm({
+                        ...form,
+                        stockQuantity: parseIntegerInput(sanitizeIntegerInput(e.target.value, 6)),
+                      })
                     }
                     className={inputClass}
                   />
@@ -704,30 +713,48 @@ export default function AdminProductsPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <Field label="Trashësia (mm)" required={!isSecond}>
                           <input
-                            type="number"
-                            min="1"
-                            value={panel.thickness_mm}
-                            onChange={(e) => setPanel({ thickness_mm: Number(e.target.value) })}
+                            type="text"
+                            inputMode="numeric"
+                            value={panel.thickness_mm || ''}
+                            onChange={(e) =>
+                              setPanel({
+                                thickness_mm: parseIntegerInput(
+                                  sanitizeIntegerInput(e.target.value, 4)
+                                ),
+                              })
+                            }
                             className={inputClass}
                             required={!isSecond}
                           />
                         </Field>
                         <Field label="Gjerësia (mm)" required={!isSecond}>
                           <input
-                            type="number"
-                            min="1"
-                            value={panel.width_mm}
-                            onChange={(e) => setPanel({ width_mm: Number(e.target.value) })}
+                            type="text"
+                            inputMode="numeric"
+                            value={panel.width_mm || ''}
+                            onChange={(e) =>
+                              setPanel({
+                                width_mm: parseIntegerInput(
+                                  sanitizeIntegerInput(e.target.value, 5)
+                                ),
+                              })
+                            }
                             className={inputClass}
                             required={!isSecond}
                           />
                         </Field>
                         <Field label="Lartësia (mm)" required={!isSecond}>
                           <input
-                            type="number"
-                            min="1"
-                            value={panel.height_mm}
-                            onChange={(e) => setPanel({ height_mm: Number(e.target.value) })}
+                            type="text"
+                            inputMode="numeric"
+                            value={panel.height_mm || ''}
+                            onChange={(e) =>
+                              setPanel({
+                                height_mm: parseIntegerInput(
+                                  sanitizeIntegerInput(e.target.value, 5)
+                                ),
+                              })
+                            }
                             className={inputClass}
                             required={!isSecond}
                           />
@@ -735,11 +762,13 @@ export default function AdminProductsPage() {
                       </div>
                       <Field label={`Cakto çmimin — panel ${optionNum} (CHF / 1 copë)`} required={!isSecond}>
                         <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={panel.priceChf || ''}
-                          onChange={(e) => setPanel({ priceChf: Number(e.target.value) })}
+                          type="text"
+                          inputMode="decimal"
+                          value={panel.priceChf ? String(panel.priceChf) : ''}
+                          onChange={(e) => {
+                            const raw = sanitizeDecimalInput(e.target.value, 2);
+                            setPanel({ priceChf: parseDecimalInput(raw) });
+                          }}
                           className={inputClass}
                           required={!isSecond}
                         />
@@ -751,13 +780,13 @@ export default function AdminProductsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <Field label="Çmimi B2B (CHF / copë, opsional)">
                     <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={form.priceBtwChf || ''}
-                      onChange={(e) =>
-                        setForm({ ...form, priceBtwChf: Number(e.target.value) })
-                      }
+                      type="text"
+                      inputMode="decimal"
+                      value={form.priceBtwChf ? String(form.priceBtwChf) : ''}
+                      onChange={(e) => {
+                        const raw = sanitizeDecimalInput(e.target.value, 2);
+                        setForm({ ...form, priceBtwChf: parseDecimalInput(raw) });
+                      }}
                       className={inputClass}
                       placeholder={
                         form.panel1.priceChf ? String(form.panel1.priceChf) : undefined

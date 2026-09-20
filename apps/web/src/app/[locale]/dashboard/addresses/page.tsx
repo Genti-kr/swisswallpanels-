@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { AddressDTO } from '@swisswall/types';
 import { Loader2, Plus, Trash2, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { sanitizeDigits } from '@/lib/numeric-input';
 
 const emptyAddress = {
   firstName: '',
@@ -105,7 +106,16 @@ export default function AddressesPage() {
               </span>
               <input
                 value={form[key as keyof typeof form] as string}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                onChange={(e) => {
+                  let value = e.target.value;
+                  if (key === 'postCode') {
+                    value = sanitizeDigits(value, form.country === 'CH' ? 4 : 12);
+                  } else if (key === 'houseNumber') {
+                    value = sanitizeDigits(value, 8);
+                  }
+                  setForm({ ...form, [key]: value });
+                }}
+                inputMode={key === 'postCode' || key === 'houseNumber' ? 'numeric' : undefined}
                 className={inputClass}
                 required
               />
