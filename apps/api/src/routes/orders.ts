@@ -10,7 +10,8 @@ import { confirmOrderPayment } from '../lib/order-payment';
 import { checkoutSchema, processCheckout } from '../lib/checkout-service';
 import { verifyInvoiceAccessToken } from '../lib/invoice';
 import { checkoutLimiter, verifyPaymentLimiter } from '../middleware/rateLimit';
-import { validationErrorResponse, internalErrorMessage } from '../lib/safe-response';
+import { validationErrorResponse } from '../lib/safe-response';
+import { mapCheckoutClientError } from '../lib/checkout-client-errors';
 
 const router = Router();
 
@@ -138,10 +139,8 @@ router.post(
         const { status, body } = validationErrorResponse(error);
         return res.status(status).json(body);
       }
-      if (error instanceof Error) {
-        return res.status(400).json({ error: internalErrorMessage(error) });
-      }
-      next(error);
+      console.error('Checkout error:', error);
+      return res.status(400).json({ error: mapCheckoutClientError(error) });
     }
   }
 );
@@ -200,7 +199,25 @@ router.post(
         });
       }
 
-      await confirmOrderPayment(order.id, 'Payment confirmed via Stripe payment intent');
+      try {
+        await confirmOrderPayment(order.id, 'Payment confirmed via Stripe payment intent');
+      } catch (confirmErr) {
+        console.error('confirmOrderPayment after Stripe success:', confirmErr);
+        const refreshed = await prisma.order.findUnique({
+          where: { id: order.id },
+          include: { items: true },
+        });
+        if (
+          refreshed &&
+          (refreshed.paymentStatus === 'PAID' || refreshed.status === 'PAYMENT_CONFIRMED')
+        ) {
+          return res.json({ order: mapOrder(refreshed), confirmed: true });
+        }
+        return res.status(500).json({
+          error:
+            'Pagesa u krye në Stripe por konfirmimi në sistem dështoi. Na kontaktoni me numrin e porosisë.',
+        });
+      }
 
       const updated = await prisma.order.findUnique({
         where: { id: order.id },
@@ -213,7 +230,8 @@ router.post(
         const { status, body } = validationErrorResponse(error);
         return res.status(status).json(body);
       }
-      next(error);
+      console.error('verify-payment error:', error);
+      return res.status(500).json({ error: mapCheckoutClientError(error) });
     }
   }
 );

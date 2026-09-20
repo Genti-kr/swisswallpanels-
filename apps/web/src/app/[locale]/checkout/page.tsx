@@ -39,6 +39,7 @@ function CheckoutContent() {
 
   const tCommon = useTranslations('Common');
   const tAuth = useTranslations('Auth');
+  const tCart = useTranslations('Cart');
   const tCheckout = useTranslations('Checkout');
   const tProducts = useTranslations('Products');
   const t = useTranslations();
@@ -154,7 +155,7 @@ function CheckoutContent() {
       });
       setDiscountAmount(res.discountAmount);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kupon i pavlefshëm');
+      setError(err instanceof Error ? err.message : tCheckout('invalidCoupon'));
       setDiscountAmount(0);
     }
   };
@@ -172,7 +173,7 @@ function CheckoutContent() {
     }
 
     if (!selectedRateId) {
-      setError('Zgjidhni metodën e transportit');
+      setError(tCheckout('selectShipping'));
       return;
     }
 
@@ -280,7 +281,7 @@ function CheckoutContent() {
             <div className="flex-grow h-0.5 bg-zinc-200 mx-2" />
             <div className="flex flex-col items-center gap-1.5 opacity-55">
               <span className="w-6 h-6 rounded-full bg-zinc-200 text-[10px] font-bold flex items-center justify-center text-zinc-600">2</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{t('Checkout.street')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{tCheckout('stepAddress')}</span>
             </div>
             <div className="flex-grow h-0.5 bg-zinc-200 mx-2" />
             <div className="flex flex-col items-center gap-1.5 opacity-55">
@@ -290,7 +291,7 @@ function CheckoutContent() {
             <div className="flex-grow h-0.5 bg-[#C8B89A] mx-2" />
             <div className="flex flex-col items-center gap-1.5">
               <span className="w-6 h-6 rounded-full bg-[#1A1A1A] text-[10px] font-bold flex items-center justify-center text-white ring-4 ring-[#C8B89A]/20">4</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]">{locale === 'sq' ? 'Kryer' : 'Success'}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]">{tCheckout('stepSuccess')}</span>
             </div>
           </div>
         </div>
@@ -315,8 +316,8 @@ function CheckoutContent() {
             {/* Details Box */}
             <div className="bg-[#F8F8F6] rounded-2xl p-5 border border-zinc-100 text-left space-y-3.5">
               <div className="flex justify-between items-center text-xs text-zinc-500 border-b border-zinc-200/50 pb-2.5">
-                <span>Order Status</span>
-                <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] select-none">Paid</span>
+                <span>{tCheckout('orderStatus')}</span>
+                <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] select-none">{tCheckout('paid')}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-500">{tCheckout('orderNumber')}</span>
@@ -367,7 +368,7 @@ function CheckoutContent() {
         <SiteHeader />
         <main className="flex-grow flex items-center justify-center p-6">
           <div className="bg-white border border-zinc-200/50 p-8 text-center space-y-6 max-w-md rounded-3xl shadow-xl shadow-zinc-200/40">
-            <h3 className="text-lg font-medium text-zinc-950">{t('Common.cart')}</h3>
+            <h3 className="text-lg font-medium text-zinc-950">{tCart('title')}</h3>
             <p className="text-sm text-zinc-400 font-light">{tCheckout('emptyCart')}</p>
             <Link href="/produkte" className="inline-block bg-[#1A1A1A] text-white px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest">
               {tAuth('viewProducts')}
@@ -401,7 +402,7 @@ function CheckoutContent() {
             }`}>2</span>
             <span className={`text-[10px] font-bold uppercase tracking-wider ${
               paymentStep === 'address' ? 'text-zinc-900' : 'text-zinc-500'
-            }`}>{locale === 'sq' ? 'Adresa' : locale === 'de' ? 'Adresse' : locale === 'fr' ? 'Adresse' : 'Address'}</span>
+            }`}>{tCheckout('stepAddress')}</span>
           </div>
           
           <div className={`flex-grow h-0.5 mx-3 transition-colors ${
@@ -423,7 +424,7 @@ function CheckoutContent() {
           
           <div className="flex flex-col items-center gap-1.5 opacity-40">
             <span className="w-7 h-7 rounded-full bg-zinc-200 text-[10px] font-bold flex items-center justify-center text-zinc-400">4</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{locale === 'sq' ? 'Kryer' : 'Success'}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{tCheckout('stepSuccess')}</span>
           </div>
         </div>
       </div>
@@ -441,12 +442,7 @@ function CheckoutContent() {
                 <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h4 className="font-semibold text-amber-900">{tCheckout('emailNotVerified')}</h4>
-                  <p className="text-xs text-amber-700/80 font-light">
-                    {locale === 'sq' && 'Ju lutemi verifikoni email-in tuaj për të vazhduar me kryerjen e porosisë.'}
-                    {locale === 'de' && 'Bitte verifizieren Sie Ihre E-Mail-Adresse, um fortzufahren.'}
-                    {locale === 'en' && 'Please verify your email address to continue with your checkout.'}
-                    {locale === 'fr' && 'Veuillez vérifier votre adresse e-mail pour continuer.'}
-                  </p>
+                  <p className="text-xs text-amber-700/80 font-light">{tCheckout('emailVerifyBody')}</p>
                   <Link href="/verify-email" className="inline-block text-xs font-bold text-amber-900 underline mt-2 hover:text-[#C8B89A] transition-colors">
                     {tCheckout('verifyNow')} →
                   </Link>
@@ -459,7 +455,7 @@ function CheckoutContent() {
               <div className="bg-red-50/50 border border-red-200/50 text-red-800 p-5 rounded-2xl text-sm flex gap-3.5 items-start shadow-sm">
                 <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-red-900">{locale === 'sq' ? 'Gabim' : 'Error'}</h4>
+                  <h4 className="font-semibold text-red-900">{tCheckout('errorTitle')}</h4>
                   <p className="text-xs text-red-700/80 font-light mt-0.5">{error}</p>
                 </div>
               </div>
@@ -476,7 +472,7 @@ function CheckoutContent() {
                   </div>
                   <div>
                     <h2 className="font-semibold text-zinc-900">{tCheckout('shippingAddress')}</h2>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">{locale === 'sq' ? 'Plotësoni adresën tuaj të dërgesës në Zvicër' : 'Enter your Swiss shipping coordinates'}</p>
+                    <p className="text-xs text-zinc-400 font-light mt-0.5">{tCheckout('addressHint')}</p>
                   </div>
                 </div>
 
@@ -567,7 +563,7 @@ function CheckoutContent() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">Shteti</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('country')}</label>
                     <select
                       value={address.country}
                       onChange={(e) => setAddress({ ...address, country: e.target.value })}
@@ -592,7 +588,7 @@ function CheckoutContent() {
 
                   {shippingRates.length > 0 && (
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">Transporti</label>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('shippingMethod')}</label>
                       <select
                         value={selectedRateId}
                         onChange={(e) => setSelectedRateId(e.target.value)}
@@ -601,7 +597,7 @@ function CheckoutContent() {
                       >
                         {shippingRates.map((r) => (
                           <option key={r.id} value={r.id}>
-                            {r.name} — {r.price === 0 || (r.freeAbove && subtotal >= r.freeAbove) ? 'Falas' : `CHF ${r.price.toFixed(2)}`}
+                            {r.name} — {r.price === 0 || (r.freeAbove && subtotal >= r.freeAbove) ? tCart('free') : `CHF ${r.price.toFixed(2)}`}
                           </option>
                         ))}
                       </select>
@@ -609,7 +605,7 @@ function CheckoutContent() {
                   )}
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">Kupon</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('coupon')}</label>
                     <div className="flex gap-2">
                       <input
                         value={couponCode}
@@ -618,13 +614,13 @@ function CheckoutContent() {
                         className="flex-1 bg-[#F8F8F6] border border-zinc-200 rounded-xl px-4 py-3 text-sm"
                       />
                       <button type="button" onClick={applyCoupon} className="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold uppercase">
-                        Apliko
+                        {tCheckout('applyCoupon')}
                       </button>
                     </div>
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">Pagesa</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('paymentLabel')}</label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
@@ -632,11 +628,11 @@ function CheckoutContent() {
                     >
                       {address.country === 'CH' && (
                         <>
-                          <option value="twint">TWINT</option>
-                          <option value="card">Kartë</option>
+                          <option value="twint">{tCheckout('payTwint')}</option>
+                          <option value="card">{tCheckout('payCard')}</option>
                         </>
                       )}
-                      {address.country !== 'CH' && <option value="card">Kartë (Stripe)</option>}
+                      {address.country !== 'CH' && <option value="card">{tCheckout('payCardStripe')}</option>}
                     </select>
                   </div>
                 </div>
@@ -670,7 +666,7 @@ function CheckoutContent() {
                   </div>
                   <div>
                     <h2 className="font-semibold text-zinc-900">{tCheckout('paymentTitle')}</h2>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">{locale === 'sq' ? 'Kryeni pagesën tuaj të sigurt me Stripe' : 'Process your secure payment through Stripe'}</p>
+                    <p className="text-xs text-zinc-400 font-light mt-0.5">{tCheckout('paymentStripeHint')}</p>
                   </div>
                 </div>
 
@@ -682,7 +678,7 @@ function CheckoutContent() {
                   {/* Subtle Stripe watermark notice */}
                   <div className="flex items-center gap-2 text-zinc-400 pl-1">
                     <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">{locale === 'sq' ? 'Lidhje e Siguruar me SSL' : 'SSL Encrypted Payment'}</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider">{tCheckout('sslSecure')}</span>
                   </div>
                 </div>
 
@@ -724,7 +720,7 @@ function CheckoutContent() {
               <div className="flex items-center gap-2.5 border-b border-zinc-100 pb-3">
                 <FileText className="w-4 h-4 text-[#C8B89A]" />
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-800">
-                  {locale === 'sq' ? 'Përmbledhja e Blerjes' : 'Order Review'}
+                  {tCheckout('orderReview')}
                 </h3>
               </div>
 
@@ -769,16 +765,16 @@ function CheckoutContent() {
               {/* Dynamic Shipping indicator helper */}
               <div className="bg-[#F8F8F6] rounded-2xl p-4 border border-zinc-100 space-y-3 font-light text-xs text-zinc-500">
                 <div className="flex justify-between">
-                  <span>{locale === 'sq' ? 'Nën-totali' : 'Subtotal'}</span>
+                  <span>{tCart('subtotal')}</span>
                   <span className="font-semibold text-zinc-800">{formatCHF(subtotal)}</span>
                 </div>
                 
                 <div className="flex justify-between">
-                  <span>{locale === 'sq' ? 'Transporti' : 'Shipping'}</span>
+                  <span>{tCart('shipping')}</span>
                   <span className="font-semibold text-zinc-800">
                     {shipping === 0 ? (
                       <span className="text-emerald-600 font-semibold uppercase tracking-wider text-[10px]">
-                        {locale === 'sq' ? 'Falas' : 'Free'}
+                        {tCart('free')}
                       </span>
                     ) : (
                       formatCHF(shipping)
@@ -788,7 +784,7 @@ function CheckoutContent() {
 
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600">
-                    <span>{locale === 'sq' ? 'Zbritja' : 'Discount'}</span>
+                    <span>{tCheckout('discount')}</span>
                     <span className="font-semibold">-{formatCHF(discountAmount)}</span>
                   </div>
                 )}
@@ -803,10 +799,7 @@ function CheckoutContent() {
                 </div>
 
                 <div className="text-[9px] text-zinc-400 text-right leading-none pt-1">
-                  {locale === 'sq' && 'Përfshin 8.1% TVSH zvicerane'}
-                  {locale === 'de' && 'Inklusive 8.1% Schweizer MwSt.'}
-                  {locale === 'en' && 'Includes 8.1% Swiss VAT'}
-                  {locale === 'fr' && 'TVA suisse de 8.1% incluse'}
+                  {tCheckout('vatNote')}
                 </div>
               </div>
 
@@ -814,12 +807,12 @@ function CheckoutContent() {
               {shipping === 0 ? (
                 <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-3.5 flex gap-2.5 items-center text-[11px] text-emerald-800 font-light leading-snug">
                   <Truck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>{locale === 'sq' ? 'Transporti është FALAS për këtë porosi.' : 'You qualified for FREE Swiss shipping!'}</span>
+                  <span>{tCheckout('freeShippingQualified')}</span>
                 </div>
               ) : (
                 <div className="bg-zinc-50 border border-zinc-200/50 rounded-2xl p-3.5 flex gap-2.5 items-center text-[11px] text-zinc-400 font-light leading-snug">
                   <Truck className="w-4 h-4 text-[#C8B89A] flex-shrink-0" />
-                  <span>{locale === 'sq' ? 'Transporti falas sipas metodës së zgjedhur.' : 'Free shipping depends on selected method.'}</span>
+                  <span>{tCheckout('shippingNote')}</span>
                 </div>
               )}
             </div>

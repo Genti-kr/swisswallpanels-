@@ -126,7 +126,13 @@ export async function confirmOrderPayment(orderId: string, note: string): Promis
 
   await clearCartForOrder(order);
 
-  const invoiceUrl = await generateAndStoreInvoice(order.id);
+  let invoiceUrl: string | null = null;
+  try {
+    invoiceUrl = await generateAndStoreInvoice(order.id);
+  } catch (invoiceErr) {
+    console.error('Invoice generation failed after payment:', invoiceErr);
+  }
+
   const refreshed = await prisma.order.findUnique({
     where: { id: order.id },
     include: { items: true },
@@ -139,33 +145,40 @@ export async function confirmOrderPayment(orderId: string, note: string): Promis
 
   const invoicePdf = refreshed ? await readStoredInvoicePdf(refreshed.orderNumber) : null;
 
-  await emailService.sendOrderConfirmation(
-    emailOrder,
-    {
+  try {
+    await emailService.sendOrderConfirmation(
+      emailOrder,
+      {
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+      },
+      customer.locale,
+      invoicePdf
+    );
+    await emailService.sendNewOrderAdminAlert(emailOrder, {
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
-    },
-    customer.locale,
-    invoicePdf
-  );
+      phone: customer.phone,
+    });
+  } catch (emailErr) {
+    console.error('Order emails failed after payment:', emailErr);
+  }
 
-  await emailService.sendNewOrderAdminAlert(emailOrder, {
-    firstName: customer.firstName,
-    lastName: customer.lastName,
-    email: customer.email,
-    phone: customer.phone,
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      event: 'PAYMENT_CONFIRMED',
-      userId: order.userId,
-      ipAddress: crypto.createHash('sha256').update(`order:${order.id}`).digest('hex'),
-      userAgent: 'stripe-payment',
-      timestamp: new Date(),
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        event: 'PAYMENT_CONFIRMED',
+        userId: order.userId,
+        ipAddress: crypto.createHash('sha256').update(`order:${order.id}`).digest('hex'),
+        userAgent: 'stripe-payment',
+        timestamp: new Date(),
+      },
+    });
+  } catch (auditErr) {
+    console.error('Audit log failed after payment:', auditErr);
+  }
 
   return true;
 }

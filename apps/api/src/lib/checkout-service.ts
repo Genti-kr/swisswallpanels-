@@ -210,13 +210,21 @@ export async function processCheckout(
     if (!stripe) {
       throw new Error('Stripe payment integration is not configured on this server.');
     }
+    const publishableKey = getStripePublishableKey();
+    if (!publishableKey) {
+      throw new Error('Stripe publishable key is not configured on this server.');
+    }
 
     const paymentMethodTypes = getStripePaymentMethods(country, data.paymentMethod);
     const currency = getCurrency(country).toLowerCase();
+    const amountMinor = Math.round(totals.total * 100);
+    if (amountMinor < 50) {
+      throw new Error('Order total is too small for online payment');
+    }
 
     const intent = await stripe.paymentIntents.create(
       {
-        amount: Math.round(totals.total * 100),
+        amount: amountMinor,
         currency,
         metadata: {
           orderNumber,
