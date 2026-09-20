@@ -1,3 +1,15 @@
+/** Emri, mbiemri, qyteti: pa shifra; lejon shkronja (unicode), hapësirë, - ' . */
+export function sanitizePersonOrPlaceName(value: string, maxLength = 80): string {
+  const filtered = [...value]
+    .filter((ch) => {
+      if (/\d/.test(ch)) return false;
+      if (/\p{L}/u.test(ch)) return true;
+      return ch === ' ' || ch === '-' || ch === "'" || ch === '’' || ch === '.';
+    })
+    .join('');
+  return filtered.slice(0, maxLength);
+}
+
 /** Digits only (0–9). */
 export function sanitizeDigits(value: string, maxLength?: number): string {
   const digits = value.replace(/\D/g, '');

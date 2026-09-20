@@ -5,7 +5,8 @@ import { apiFetch } from '@/lib/api';
 import { AddressDTO } from '@swisswall/types';
 import { Loader2, Plus, Trash2, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { sanitizeDigits } from '@/lib/numeric-input';
+import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
+import { isShippingCountryCode, SHIPPING_COUNTRY_CODES, SWISS_CANTONS } from '@/lib/shipping-geo';
 
 const emptyAddress = {
   firstName: '',
@@ -22,10 +23,9 @@ const emptyAddress = {
 
 const fieldKeys = ['firstName', 'lastName', 'street', 'houseNumber', 'postCode', 'city'] as const;
 
-const countryCodes = ['CH', 'DE', 'FR', 'IT'] as const;
-
 export default function AddressesPage() {
   const t = useTranslations('Dashboard');
+  const tGeo = useTranslations('Geo');
   const [addresses, setAddresses] = useState<AddressDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyAddress);
@@ -112,6 +112,8 @@ export default function AddressesPage() {
                     value = sanitizeDigits(value, form.country === 'CH' ? 4 : 12);
                   } else if (key === 'houseNumber') {
                     value = sanitizeDigits(value, 8);
+                  } else if (key === 'firstName' || key === 'lastName' || key === 'city') {
+                    value = sanitizePersonOrPlaceName(value, 80);
                   }
                   setForm({ ...form, [key]: value });
                 }}
@@ -131,13 +133,32 @@ export default function AddressesPage() {
               onChange={(e) => setForm({ ...form, country: e.target.value })}
               className={inputClass}
             >
-              {countryCodes.map((code) => (
+              {SHIPPING_COUNTRY_CODES.map((code) => (
                 <option key={code} value={code}>
-                  {t(`addresses.countries.${code}`)}
+                  {tGeo(`countries.${code}`)}
                 </option>
               ))}
             </select>
           </label>
+
+          {form.country === 'CH' && (
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                {t('addresses.canton')}
+              </span>
+              <select
+                value={form.canton}
+                onChange={(e) => setForm({ ...form, canton: e.target.value })}
+                className={inputClass}
+              >
+                {SWISS_CANTONS.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {tGeo(`cantons.${c.code}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <div className="sm:col-span-2 pt-2">
             <button
@@ -176,7 +197,14 @@ export default function AddressesPage() {
                   {addr.street} {addr.houseNumber}
                 </p>
                 <p className="text-zinc-500 font-light">
-                  {addr.postCode} {addr.city}, {addr.country}
+                  {addr.postCode} {addr.city}
+                  {addr.canton && addr.country === 'CH'
+                    ? `, ${tGeo(`cantons.${addr.canton}`)}`
+                    : ''}
+                  {', '}
+                  {isShippingCountryCode(addr.country)
+                    ? tGeo(`countries.${addr.country}`)
+                    : addr.country}
                 </p>
                 {addr.isDefault && (
                   <span className="inline-flex mt-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#C8B89A]/15 text-[#1A1A1A] border border-[#C8B89A]/30">

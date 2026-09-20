@@ -26,10 +26,8 @@ import {
   FileText
 } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { sanitizeDigits } from '@/lib/numeric-input';
-
-const COUNTRIES = ['CH', 'DE', 'FR', 'IT'] as const;
-const CANTONS = ['ZH', 'BE', 'GE', 'VD', 'BS', 'LU', 'AG', 'SG', 'TI', 'VS'];
+import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
+import { SHIPPING_COUNTRY_CODES, SWISS_CANTONS } from '@/lib/shipping-geo';
 
 function CheckoutContent() {
   const { user, fetchMe } = useAuth();
@@ -42,6 +40,7 @@ function CheckoutContent() {
   const tAuth = useTranslations('Auth');
   const tCart = useTranslations('Cart');
   const tCheckout = useTranslations('Checkout');
+  const tGeo = useTranslations('Geo');
   const tProducts = useTranslations('Products');
   const t = useTranslations();
 
@@ -501,7 +500,12 @@ function CheckoutContent() {
                     <input 
                       placeholder={tCommon('firstName')} 
                       value={address.firstName} 
-                      onChange={(e) => setAddress({ ...address, firstName: e.target.value })} 
+                      onChange={(e) =>
+                        setAddress({
+                          ...address,
+                          firstName: sanitizePersonOrPlaceName(e.target.value, 80),
+                        })
+                      } 
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
                       required 
                     />
@@ -512,7 +516,12 @@ function CheckoutContent() {
                     <input 
                       placeholder={tCommon('lastName')} 
                       value={address.lastName} 
-                      onChange={(e) => setAddress({ ...address, lastName: e.target.value })} 
+                      onChange={(e) =>
+                        setAddress({
+                          ...address,
+                          lastName: sanitizePersonOrPlaceName(e.target.value, 80),
+                        })
+                      } 
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
                       required 
                     />
@@ -574,7 +583,12 @@ function CheckoutContent() {
                     <input 
                       placeholder={tCheckout('city')} 
                       value={address.city} 
-                      onChange={(e) => setAddress({ ...address, city: e.target.value })} 
+                      onChange={(e) =>
+                        setAddress({
+                          ...address,
+                          city: sanitizePersonOrPlaceName(e.target.value, 80),
+                        })
+                      } 
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
                       required 
                     />
@@ -587,7 +601,11 @@ function CheckoutContent() {
                       onChange={(e) => setAddress({ ...address, country: e.target.value })}
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
                     >
-                      {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      {SHIPPING_COUNTRY_CODES.map((c) => (
+                        <option key={c} value={c}>
+                          {tGeo(`countries.${c}`)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -599,7 +617,11 @@ function CheckoutContent() {
                       onChange={(e) => setAddress({ ...address, canton: e.target.value })} 
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
                     >
-                      {CANTONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                      {SWISS_CANTONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {tGeo(`cantons.${c.code}`)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   )}

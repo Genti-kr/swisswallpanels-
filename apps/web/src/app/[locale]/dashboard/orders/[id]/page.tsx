@@ -11,11 +11,13 @@ import {
   formatDashboardDateTime,
   formatDashboardMoney,
 } from '@/lib/dashboard-utils';
+import { isShippingCountryCode } from '@/lib/shipping-geo';
 
 export default function UserOrderDetailPage() {
   const params = useParams();
   const locale = useLocale();
   const t = useTranslations('Dashboard');
+  const tGeo = useTranslations('Geo');
   const orderId = params.id as string;
   const [order, setOrder] = useState<OrderDetailDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,8 +85,15 @@ export default function UserOrderDetailPage() {
             </p>
             <p>
               {order.shippingAddressJson.postCode} {order.shippingAddressJson.city}
+              {order.shippingAddressJson.canton && order.shippingAddressJson.country === 'CH'
+                ? `, ${tGeo(`cantons.${order.shippingAddressJson.canton}`)}`
+                : ''}
             </p>
-            <p>{order.shippingAddressJson.country}</p>
+            <p>
+              {isShippingCountryCode(order.shippingAddressJson.country)
+                ? tGeo(`countries.${order.shippingAddressJson.country}`)
+                : order.shippingAddressJson.country}
+            </p>
           </div>
           <div className="bg-zinc-50 rounded-xl p-4 space-y-1">
             <div className="flex justify-between">

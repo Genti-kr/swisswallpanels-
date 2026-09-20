@@ -224,6 +224,42 @@
     "orderStatus": "Bestellstatus",
     "paid": "Bezahlt"
   },
+  "Geo": {
+    "countries": {
+      "CH": "Schweiz",
+      "DE": "Deutschland",
+      "FR": "Frankreich",
+      "IT": "Italien"
+    },
+    "cantons": {
+      "AG": "Aargau",
+      "AR": "Appenzell Ausserrhoden",
+      "AI": "Appenzell Innerrhoden",
+      "BL": "Basel-Landschaft",
+      "BS": "Basel-Stadt",
+      "BE": "Bern",
+      "FR": "Fribourg",
+      "GE": "Genf",
+      "GL": "Glarus",
+      "GR": "Graubünden",
+      "JU": "Jura",
+      "LU": "Luzern",
+      "NE": "Neuchâtel",
+      "NW": "Nidwalden",
+      "OW": "Obwalden",
+      "SG": "St. Gallen",
+      "SH": "Schaffhausen",
+      "SZ": "Schwyz",
+      "SO": "Solothurn",
+      "TG": "Thurgau",
+      "TI": "Tessin",
+      "UR": "Uri",
+      "VS": "Wallis",
+      "VD": "Waadt",
+      "ZG": "Zug",
+      "ZH": "Zürich"
+    }
+  },
   "Contact": {
     "title": "Kontakt",
     "subtitle": "Wir melden uns so schnell wie möglich bei Ihnen.",
@@ -417,11 +453,12 @@
       "empty": "Sie haben keine gespeicherten Adressen.",
       "default": "Standard",
       "country": "Land",
+      "canton": "Kanton",
       "countries": {
-        "CH": "Schweiz (CH)",
-        "DE": "Deutschland (DE)",
-        "FR": "Frankreich (FR)",
-        "IT": "Italien (IT)"
+        "CH": "Schweiz",
+        "DE": "Deutschland",
+        "FR": "Frankreich",
+        "IT": "Italien"
       },
       "fields": {
         "firstName": "Vorname",

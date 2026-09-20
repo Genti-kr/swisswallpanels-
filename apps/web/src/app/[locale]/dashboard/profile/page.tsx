@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-store';
 import { apiFetch } from '@/lib/api';
 import { Loader2, Save, UserCheck, AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { sanitizePhoneInput } from '@/lib/numeric-input';
+import { sanitizePersonOrPlaceName, sanitizePhoneInput } from '@/lib/numeric-input';
 
 export default function ProfilePage() {
   const t = useTranslations('Dashboard');
@@ -83,7 +83,12 @@ export default function ProfilePage() {
             </span>
             <input
               value={form.firstName}
-              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  firstName: sanitizePersonOrPlaceName(e.target.value, 80),
+                })
+              }
               className={inputClass}
               required
             />
@@ -94,7 +99,12 @@ export default function ProfilePage() {
             </span>
             <input
               value={form.lastName}
-              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  lastName: sanitizePersonOrPlaceName(e.target.value, 80),
+                })
+              }
               className={inputClass}
               required
             />

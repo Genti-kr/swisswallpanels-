@@ -8,7 +8,12 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { apiFetch } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { SiteImageDTO } from '@swisswall/types';
-import { parseIntegerInput, sanitizeIntegerInput, sanitizePhoneInput } from '@/lib/numeric-input';
+import {
+  parseIntegerInput,
+  sanitizeIntegerInput,
+  sanitizePersonOrPlaceName,
+  sanitizePhoneInput,
+} from '@/lib/numeric-input';
 
 const fallbackGallery = [
   { src: '/Enhancing-Wood-Panel-Walls.webp', alt: 'Wood panel wall decoration' },
@@ -406,7 +411,9 @@ export default function HomepageClient() {
                         type="text"
                         required
                         value={quoteName}
-                        onChange={(e) => setQuoteName(e.target.value)}
+                        onChange={(e) =>
+                          setQuoteName(sanitizePersonOrPlaceName(e.target.value, 80))
+                        }
                         placeholder={tCalc('quoteName')}
                         className="w-full bg-[#F8F8F6] border border-[#1A1A1A]/10 rounded p-3 text-sm focus:outline-none focus:border-[#C8B89A]"
                       />
@@ -583,7 +590,9 @@ export default function HomepageClient() {
                   type="text"
                   required
                   value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
+                  onChange={(e) =>
+                    setContactName(sanitizePersonOrPlaceName(e.target.value, 80))
+                  }
                   placeholder={tContact('name')}
                   className="w-full bg-[#F8F8F6] border border-[#1A1A1A]/10 rounded p-3 text-sm focus:outline-none focus:border-[#C8B89A]"
                 />

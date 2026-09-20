@@ -224,6 +224,42 @@
     "orderStatus": "Statusi i porosisë",
     "paid": "Paguar"
   },
+  "Geo": {
+    "countries": {
+      "CH": "Zvicra",
+      "DE": "Gjermani",
+      "FR": "Francë",
+      "IT": "Itali"
+    },
+    "cantons": {
+      "AG": "Aargau",
+      "AR": "Appenzell Ausserrhoden",
+      "AI": "Appenzell Innerrhoden",
+      "BL": "Basel-Landschaft",
+      "BS": "Basel-Stadt",
+      "BE": "Bern",
+      "FR": "Fribourg",
+      "GE": "Genève",
+      "GL": "Glarus",
+      "GR": "Graubünden",
+      "JU": "Jura",
+      "LU": "Luzern",
+      "NE": "Neuchâtel",
+      "NW": "Nidwalden",
+      "OW": "Obwalden",
+      "SG": "St. Gallen",
+      "SH": "Schaffhausen",
+      "SZ": "Schwyz",
+      "SO": "Solothurn",
+      "TG": "Thurgau",
+      "TI": "Ticino",
+      "UR": "Uri",
+      "VS": "Valais",
+      "VD": "Vaud",
+      "ZG": "Zug",
+      "ZH": "Zürich"
+    }
+  },
   "Contact": {
     "title": "Kontakt",
     "subtitle": "Do t'ju përgjigjemi sa më shpejt të jetë e mundur.",
@@ -417,11 +453,12 @@
       "empty": "Nuk keni adresa të ruajtura.",
       "default": "Kryesore",
       "country": "Shteti",
+      "canton": "Kanton",
       "countries": {
-        "CH": "Zvicër (CH)",
-        "DE": "Gjermani (DE)",
-        "FR": "Francë (FR)",
-        "IT": "Itali (IT)"
+        "CH": "Zvicra",
+        "DE": "Gjermani",
+        "FR": "Francë",
+        "IT": "Itali"
       },
       "fields": {
         "firstName": "Emri",

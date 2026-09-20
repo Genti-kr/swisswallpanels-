@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Link, useRouter } from '@/i18n/routing';
+import { sanitizePersonOrPlaceName } from '@/lib/numeric-input';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-store';
 import {
@@ -163,7 +164,12 @@ export default function RegisterPage() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-[#C8B89A] transition-colors w-5 h-5 pointer-events-none" />
                   <input
                     value={form.firstName}
-                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        firstName: sanitizePersonOrPlaceName(e.target.value, 80),
+                      })
+                    }
                     className={inputClass}
                     required
                   />
@@ -174,7 +180,12 @@ export default function RegisterPage() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-[#C8B89A] transition-colors w-5 h-5 pointer-events-none" />
                   <input
                     value={form.lastName}
-                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        lastName: sanitizePersonOrPlaceName(e.target.value, 80),
+                      })
+                    }
                     className={inputClass}
                     required
                   />
