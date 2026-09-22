@@ -101,16 +101,13 @@ router.post('/register', registerLimiter, async (req: Request, res: Response, ne
     const hashedVerifyToken = crypto.createHash('sha256').update(verifyToken).digest('hex');
     const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    const nameParts = validatedData.name.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-
-    const user = await prisma.user.create({
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
       data: {
         email: validatedData.email,
         passwordHash,
-        firstName,
-        lastName,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
         phone: validatedData.phone || null,
         companyName: validatedData.companyName || null,
         vatNumber: validatedData.vatNumber || null,
@@ -120,23 +117,40 @@ router.post('/register', registerLimiter, async (req: Request, res: Response, ne
         emailVerifyToken: hashedVerifyToken,
         emailVerifyExpires,
       },
+      });
+      await tx.cart.create({ data: { userId: created.id } });
+      await tx.wishlist.create({ data: { userId: created.id } });
+      return created;
     });
-
-    await prisma.cart.create({ data: { userId: user.id } });
-    await prisma.wishlist.create({ data: { userId: user.id } });
 
     await emailService.sendEmailVerification(
       { firstName: user.firstName, lastName: user.lastName, email: user.email },
       verifyToken,
       localeFromLanguage(user.preferredLanguage)
-    );
+    ).catch((err) => {
+      console.error('Register: email verification send failed:', err);
+    });
 
-    await createAuditLog('REGISTER', user.id, req);
+    await createAuditLog('REGISTER', user.id, req).catch((err) => {
+      console.error('Register: audit log failed:', err);
+    });
 
-    res.status(201).json({
+    const payload: {
+      user: ReturnType<typeof mapUser>;
+      message: string;
+      devVerifyUrl?: string;
+    } = {
       user: mapUser(user),
       message: 'Regjistrimi u krye me sukses. Ju lutemi kontrolloni email-in për të verifikuar llogarinë tuaj.',
-    });
+    };
+
+    const postmarkKey = process.env.POSTMARK_API_KEY;
+    if (!postmarkKey || postmarkKey.includes('placeholder') || postmarkKey.includes('your-postmark')) {
+      const loc = localeFromLanguage(user.preferredLanguage);
+      payload.devVerifyUrl = `${getFrontendUrl()}/${loc}/verify-email?token=${verifyToken}`;
+    }
+
+    res.status(201).json(payload);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validimi dështoi', details: error.errors });

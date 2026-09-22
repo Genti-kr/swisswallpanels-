@@ -1,20 +1,26 @@
 import { z } from 'zod';
 
-export const registerSchema = z.object({
-  email: z.string().email().max(255).trim().toLowerCase(),
-  password: z
-    .string()
-    .min(12)
-    .max(128)
-    .regex(/[A-Z]/, 'Duhet të ketë të paktën 1 shkronjë të madhe')
-    .regex(/[0-9]/, 'Duhet të ketë të paktën 1 numër')
-    .regex(/[^a-zA-Z0-9]/, 'Duhet të ketë të paktën 1 karakter special'),
-  name: z.string().min(2).max(100).trim(),
-  phone: z.string().optional(),
-  companyName: z.string().optional(),
-  vatNumber: z.string().optional(),
-  preferredLanguage: z.enum(['DE', 'FR', 'EN', 'SQ'] as const).default('DE'),
-});
+const passwordRules = z
+  .string()
+  .min(8)
+  .max(128)
+  .regex(/[A-Z]/, 'Duhet të ketë të paktën 1 shkronjë të madhe')
+  .regex(/[0-9]/, 'Duhet të ketë të paktën 1 numër')
+  .regex(/[^a-zA-Z0-9]/, 'Duhet të ketë të paktën 1 karakter special');
+
+/** Public signup — always creates a USER (role is not accepted from the client). */
+export const registerSchema = z
+  .object({
+    email: z.string().email().max(255).trim().toLowerCase(),
+    password: passwordRules,
+    firstName: z.string().min(2).max(80).trim(),
+    lastName: z.string().min(2).max(80).trim(),
+    phone: z.string().max(30).trim().optional(),
+    companyName: z.string().max(200).trim().optional(),
+    vatNumber: z.string().max(50).trim().optional(),
+    preferredLanguage: z.enum(['DE', 'FR', 'EN', 'SQ'] as const).default('DE'),
+  })
+  .strict();
 
 export const loginSchema = z.object({
   email: z.string().email().max(255).trim().toLowerCase(),
@@ -28,13 +34,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  password: z
-    .string()
-    .min(12)
-    .max(128)
-    .regex(/[A-Z]/, 'Duhet të ketë të paktën 1 shkronjë të madhe')
-    .regex(/[0-9]/, 'Duhet të ketë të paktën 1 numër')
-    .regex(/[^a-zA-Z0-9]/, 'Duhet të ketë të paktën 1 karakter special'),
+  password: passwordRules,
 });
 
 export const verifyEmailSchema = z.object({

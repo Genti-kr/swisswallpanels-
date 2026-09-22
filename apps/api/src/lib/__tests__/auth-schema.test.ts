@@ -7,7 +7,8 @@ describe('auth schemas', () => {
     const result = registerSchema.safeParse({
       email: 'User@Example.com',
       password: 'SecurePass123!',
-      name: 'Test User',
+      firstName: 'Test',
+      lastName: 'User',
       preferredLanguage: 'DE',
     });
 
@@ -21,7 +22,8 @@ describe('auth schemas', () => {
     const result = registerSchema.safeParse({
       email: 'user@example.com',
       password: 'short',
-      name: 'Test User',
+      firstName: 'Test',
+      lastName: 'User',
     });
 
     expect(result.success).toBe(false);

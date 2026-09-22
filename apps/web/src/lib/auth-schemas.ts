@@ -5,22 +5,25 @@ export const loginSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
-export const registerSchema = z.object({
-  email: z.string().email().max(255).trim().toLowerCase(),
-  password: z
-    .string()
-    .min(8)
-    .max(128)
-    .regex(/[A-Z]/, 'Duhet të ketë të paktën 1 shkronjë të madhe')
-    .regex(/[0-9]/, 'Duhet të ketë të paktën 1 numër')
-    .regex(/[^a-zA-Z0-9]/, 'Duhet të ketë të paktën 1 karakter special'),
-  firstName: z.string().min(2).max(100).trim(),
-  lastName: z.string().min(2).max(100).trim(),
-  phone: z.string().max(30).trim().optional(),
-  companyName: z.string().max(200).trim().optional(),
-  vatNumber: z.string().max(50).trim().optional(),
-  preferredLanguage: z.enum(['DE', 'FR', 'EN', 'SQ'] as const).default('DE'),
-});
+/** Public signup — role/admin fields are rejected (.strict()). */
+export const registerSchema = z
+  .object({
+    email: z.string().email().max(255).trim().toLowerCase(),
+    password: z
+      .string()
+      .min(8)
+      .max(128)
+      .regex(/[A-Z]/, 'Duhet të ketë të paktën 1 shkronjë të madhe')
+      .regex(/[0-9]/, 'Duhet të ketë të paktën 1 numër')
+      .regex(/[^a-zA-Z0-9]/, 'Duhet të ketë të paktën 1 karakter special'),
+    firstName: z.string().min(2).max(80).trim(),
+    lastName: z.string().min(2).max(80).trim(),
+    phone: z.string().max(30).trim().optional(),
+    companyName: z.string().max(200).trim().optional(),
+    vatNumber: z.string().max(50).trim().optional(),
+    preferredLanguage: z.enum(['DE', 'FR', 'EN', 'SQ'] as const).default('DE'),
+  })
+  .strict();
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email().max(255).trim().toLowerCase(),
