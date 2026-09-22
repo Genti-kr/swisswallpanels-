@@ -20,6 +20,7 @@ import { OrderItemsList } from '@/components/OrderItemsList';
 import { ORDER_STATUS_STYLES, formatDashboardDateTime } from '@/lib/dashboard-utils';
 import { formatAdminCanton, formatAdminCountry } from '@/lib/shipping-geo';
 import { adminRowLabelClass, adminRowValueClass, adminSelectClass, adminTextareaClass } from '@/lib/admin-ui';
+import { isOrderDeletable } from '@/lib/order-delete';
 
 const STATUSES: OrderStatus[] = [
   'PENDING',
@@ -54,11 +55,6 @@ function formatCHF(value: number) {
     style: 'currency',
     currency: 'CHF',
   }).format(value);
-}
-
-function canDeleteOrder(order: OrderDetailDTO) {
-  const ps = order.paymentStatus ?? 'PENDING';
-  return ps === 'PENDING' || ps === 'FAILED';
 }
 
 function AddressBlock({
@@ -136,7 +132,7 @@ export default function AdminOrderDetailPage() {
   };
 
   const deleteOrder = async () => {
-    if (!order || !canDeleteOrder(order)) return;
+    if (!order || !isOrderDeletable(order.paymentStatus)) return;
     const ok = window.confirm(
       `Fshini porosinë ${order.orderNumber}? Ky veprim nuk mund të kthehet.`
     );
@@ -145,14 +141,17 @@ export default function AdminOrderDetailPage() {
     setDeleting(true);
     setDeleteError('');
     try {
-      await apiFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/admin/orders/${id}/delete`, { method: 'POST' });
       router.push('/admin/orders');
+      router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       setDeleteError(
         msg.includes('ORDER_PAID') || msg.includes('409')
-          ? 'Porositë e paguara nuk mund të fshihen.'
-          : 'Fshirja dështoi. Provoni përsëri.'
+          ? 'Porositë e paguara nuk mund të fshihen (statusi i pagesës: Paguar).'
+          : msg.includes('404') || msg.toLowerCase().includes('not found')
+            ? 'Endpoint i fshirjes nuk u gjet — ri-deploy API-n në server.'
+            : msg || 'Fshirja dështoi. Provoni përsëri.'
       );
     } finally {
       setDeleting(false);
@@ -392,13 +391,22 @@ export default function AdminOrderDetailPage() {
         </div>
       )}
 
-      {canDeleteOrder(order) ? (
+      {isOrderDeletable(order.paymentStatus) ? (
         <div className="bg-white rounded-2xl border border-red-100 p-6 shadow-sm space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-red-700">
             Zona e rrezikshme
           </h2>
           <p className="text-sm text-zinc-600">
-            Porosia nuk është paguar — mund ta fshini nga sistemi (p.sh. porosi e braktisur në pagesë).
+            Pagesa:{' '}
+            <span className="font-medium text-zinc-800">
+              {paymentStatusLabels[order.paymentStatus ?? 'PENDING'] ?? order.paymentStatus}
+            </span>
+            {' · '}
+            Statusi:{' '}
+            <span className="font-medium text-zinc-800">
+              {statusLabels[order.status] ?? order.status}
+            </span>
+            . Porositë e papaguara (Anuluar / Në pritje) mund të fshihen.
           </p>
           {deleteError ? <p className="text-sm text-red-600">{deleteError}</p> : null}
           <button
@@ -413,7 +421,9 @@ export default function AdminOrderDetailPage() {
         </div>
       ) : (
         <p className="text-xs text-zinc-500 pl-1">
-          Porositë e paguara nuk mund të fshihen — përdorni statusin «Anuluar» ose rimbursimin.
+          Fshirja nuk lejohet — pagesa është{' '}
+          {paymentStatusLabels[order.paymentStatus ?? ''] ?? order.paymentStatus ?? 'Paguar'}. Përdorni
+          rimbursimin në Stripe, jo fshirjen.
         </p>
       )}
     </div>
