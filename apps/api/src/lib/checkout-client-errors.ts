@@ -1,70 +1,70 @@
 import Stripe from 'stripe';
 
-/** User-visible checkout/payment errors (safe in production). */
+/** English messages for checkout — storefront maps to locale via checkout-error-i18n. */
 export function mapCheckoutClientError(err: unknown): string {
   if (err instanceof Stripe.errors.StripeError) {
     const code = err.code || '';
     if (code === 'amount_too_small') {
-      return 'Shuma e porosisë është shumë e vogël për pagesë online.';
+      return 'Order total is too small for online payment.';
     }
     if (err.type === 'StripeInvalidRequestError') {
       const msg = err.message.toLowerCase();
       if (msg.includes('twint')) {
-        return 'TWINT nuk është aktivizuar në llogarinë Stripe. Provoni me kartë ose kontaktoni suportin.';
+        return 'TWINT is not enabled on the Stripe account. Try card payment or contact support.';
       }
       if (msg.includes('payment_method_types')) {
-        return 'Metoda e pagesës nuk mbështetet. Provoni kartë krediti.';
+        return 'Payment method not supported. Try credit card.';
       }
     }
-    return 'Pagesa nuk u iniciua. Kontrollo totalin ose provo një metodë tjetër.';
+    return 'Payment could not be started. Check the total or try another method.';
   }
 
   const message = err instanceof Error ? err.message : String(err);
   const lower = message.toLowerCase();
 
   if (message.includes('Stripe payment integration is not configured')) {
-    return 'Pagesa online nuk është konfiguruar në server. Provoni më vonë ose na kontaktoni.';
+    return 'Online payment is not configured on the server. Try again later or contact us.';
   }
   if (message.includes('Cart is empty')) {
-    return 'Shporta është bosh.';
+    return 'Cart is empty.';
   }
   if (message.includes('Cart session required')) {
-    return 'Sesioni i shportës mungon. Rifreskoni faqen dhe provoni përsëri.';
+    return 'Cart session required. Refresh the page and try again.';
   }
   if (message.includes('Invalid shipping method')) {
-    return 'Metoda e transportit nuk është e vlefshme.';
+    return 'Invalid shipping method.';
   }
   if (message.includes('Invalid Swiss PLZ')) {
-    return 'Kodi postar zviceran (PLZ) nuk është i vlefshëm.';
+    return 'Invalid Swiss PLZ.';
   }
   if (message.includes('Payment method not available')) {
-    return 'Kjo metodë pagese nuk mbështetet për vendin tuaj.';
+    return 'Payment method not available for this country.';
   }
   if (message.includes('Only secure online payment')) {
-    return 'Vetëm pagesa online (kartë/TWINT) është e disponueshme.';
+    return 'Only secure online payment (card/TWINT) is available.';
   }
   if (message.includes('Order total is too small')) {
-    return 'Totali i porosisë është shumë i vogël për pagesë online.';
+    return 'Order total is too small for online payment.';
   }
   if (message.includes('Invalid coupon code')) {
-    return 'Kupon i pavlefshëm.';
+    return 'Invalid coupon code.';
   }
   if (message.includes('Coupon has expired')) {
-    return 'Kuponi ka skaduar.';
+    return 'Coupon has expired.';
   }
   if (message.includes('Coupon usage limit')) {
-    return 'Kuponi ka arritur limitin e përdorimeve.';
+    return 'Coupon usage limit reached.';
   }
   if (message.includes('Minimum order value')) {
     return message;
   }
   if (lower.includes('publishable') && lower.includes('stripe')) {
-    return 'Konfigurimi i Stripe (çelësi publik) mungon në server.';
+    return 'Stripe publishable key is missing on the server.';
   }
 
   if (process.env.NODE_ENV !== 'production') {
     return message || 'Checkout failed';
   }
 
-  return 'Porosia nuk u krye. Kontrollo të dhënat dhe provo përsëri.';
+  return 'Checkout failed. Check your details and try again.';
 }

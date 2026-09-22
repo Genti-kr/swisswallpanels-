@@ -132,7 +132,7 @@ export default auth((req) => {
     `img-src ${imgSrc}`,
     "font-src 'self' https://fonts.gstatic.com",
     `connect-src ${buildCspConnectSrc()}`,
-    "frame-src 'self' https://js.stripe.com",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

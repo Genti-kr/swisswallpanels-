@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { getCartItemUnitPrice } from '@/lib/product-variants';
-import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useAuth } from '@/lib/auth-store';
 import { useCart } from '@/lib/cart-store';
 import { apiFetch } from '@/lib/api';
@@ -26,7 +25,9 @@ import {
   FileText
 } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { CheckoutStripePayment } from '@/components/CheckoutStripePayment';
 import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
+import { resolveCheckoutError } from '@/lib/checkout-error-i18n';
 import { SHIPPING_COUNTRY_CODES, SWISS_CANTONS } from '@/lib/shipping-geo';
 
 function CheckoutContent() {
@@ -54,6 +55,7 @@ function CheckoutContent() {
   const [shippingRates, setShippingRates] = useState<ShippingRateDTO[]>([]);
   const [selectedRateId, setSelectedRateId] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  const [appliedCouponCode, setAppliedCouponCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [guestEmail, setGuestEmail] = useState('');
@@ -97,7 +99,8 @@ function CheckoutContent() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : tCheckout('paymentFailed'));
+        const raw = err instanceof Error ? err.message : '';
+        setError(resolveCheckoutError(raw, tCheckout));
       })
       .finally(() => {
         if (!cancelled) setPaying(false);
@@ -154,9 +157,12 @@ function CheckoutContent() {
         body: JSON.stringify({ code: couponCode, subtotal }),
       });
       setDiscountAmount(res.discountAmount);
+      setAppliedCouponCode(couponCode.trim().toUpperCase());
     } catch (err) {
-      setError(err instanceof Error ? err.message : tCheckout('invalidCoupon'));
+      const raw = err instanceof Error ? err.message : '';
+      setError(resolveCheckoutError(raw, tCheckout));
       setDiscountAmount(0);
+      setAppliedCouponCode('');
     }
   };
 
@@ -188,7 +194,7 @@ function CheckoutContent() {
           billingAddress: address,
           shippingRateId: selectedRateId,
           paymentMethod,
-          couponCode: couponCode || undefined,
+          couponCode: appliedCouponCode || undefined,
           guestEmail: user ? undefined : guestEmail.trim().toLowerCase(),
         }),
       });
@@ -213,57 +219,31 @@ function CheckoutContent() {
       setStripePublishableKey(res.stripePublishableKey);
       setPaymentStep('payment');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : tCheckout('checkoutFailed');
+      const msg = err instanceof Error ? err.message : '';
       if (msg.includes('EMAIL_NOT_VERIFIED') || msg.includes('Email not verified')) {
         setError(tAuth('mustVerifyEmail'));
       } else {
-        setError(msg);
+        setError(resolveCheckoutError(msg, tCheckout));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePayment = async () => {
-    if (!clientSecret || !stripePublishableKey || !order) {
-      return;
-    }
-
-    setPaying(true);
-    setError('');
-
-    try {
-      const stripe: Stripe | null = await loadStripe(stripePublishableKey);
-      if (!stripe) {
-        throw new Error(tCheckout('paymentUnavailable'));
-      }
-
-      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-        clientSecret,
-        confirmParams: {
-          return_url: `${window.location.origin}/${locale}/checkout?order=${order.id}`,
-        },
-        redirect: 'if_required',
-      });
-
-      if (stripeError) {
-        throw new Error(stripeError.message || tCheckout('paymentFailed'));
-      }
-
-      if (paymentIntent?.status !== 'succeeded') {
-        throw new Error(tCheckout('paymentPending'));
-      }
-
-      await confirmOrderPaymentWithRetry(order.id, user ? undefined : guestEmail || sessionStorage.getItem('guestCheckoutEmail') || undefined);
-
-      await fetchCart();
-      setPaymentStep('success');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : tCheckout('paymentFailed'));
-    } finally {
-      setPaying(false);
-    }
+  const completePaymentOnServer = async () => {
+    if (!order) return;
+    await confirmOrderPaymentWithRetry(
+      order.id,
+      user ? undefined : guestEmail || sessionStorage.getItem('guestCheckoutEmail') || undefined
+    );
+    await fetchCart();
+    setPaymentStep('success');
   };
+
+  const stripeReturnUrl =
+    typeof window !== 'undefined' && order
+      ? `${window.location.origin}/${locale}/checkout?order=${order.id}`
+      : '';
 
   // 1. Success State View
   if (paymentStep === 'success' && order) {
@@ -649,7 +629,11 @@ function CheckoutContent() {
                     <div className="flex gap-2">
                       <input
                         value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          setAppliedCouponCode('');
+                          setDiscountAmount(0);
+                        }}
                         placeholder="SUMMER10"
                         className="flex-1 bg-[#F8F8F6] border border-zinc-200 rounded-xl px-4 py-3 text-sm"
                       />
@@ -714,8 +698,28 @@ function CheckoutContent() {
                   <p className="text-sm text-zinc-500 font-light leading-relaxed bg-[#F8F8F6] p-4 rounded-2xl border border-zinc-100">
                     {tCheckout('paymentDescription')}
                   </p>
-                  
-                  {/* Subtle Stripe watermark notice */}
+
+                  {clientSecret && stripePublishableKey && stripeReturnUrl ? (
+                    <CheckoutStripePayment
+                      publishableKey={stripePublishableKey}
+                      clientSecret={clientSecret}
+                      locale={locale}
+                      returnUrl={stripeReturnUrl}
+                      paying={paying}
+                      setPaying={setPaying}
+                      payLabel={tCheckout('payNow')}
+                      processingLabel={tCheckout('processing')}
+                      onSuccess={completePaymentOnServer}
+                      onError={(message) =>
+                        setError(resolveCheckoutError(message, tCheckout))
+                      }
+                    />
+                  ) : (
+                    <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                      {tCheckout('paymentUnavailable')}
+                    </p>
+                  )}
+
                   <div className="flex items-center gap-2 text-zinc-400 pl-1">
                     <ShieldCheck className="w-4 h-4 text-emerald-500" />
                     <span className="text-[10px] uppercase font-bold tracking-wider">{tCheckout('sslSecure')}</span>
@@ -728,27 +732,15 @@ function CheckoutContent() {
                     <span className="text-lg font-bold text-zinc-950">{formatCHF(total)}</span>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentStep('address')}
-                      disabled={paying}
-                      className="text-xs font-semibold text-zinc-500 hover:text-[#C8B89A] flex items-center gap-1.5 transition-colors disabled:opacity-40"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      {tCommon('back')}
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={handlePayment}
-                      disabled={paying}
-                      className="bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-widest disabled:opacity-50 transition-all duration-300 shadow-md shadow-[#1A1A1A]/10 hover:shadow-[#C8B89A]/20 cursor-pointer flex justify-center items-center gap-2"
-                    >
-                      {paying && <Loader2 className="w-4.5 h-4.5 animate-spin" />}
-                      {paying ? tCheckout('processing') : tCheckout('payNow')}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentStep('address')}
+                    disabled={paying}
+                    className="text-xs font-semibold text-zinc-500 hover:text-[#C8B89A] flex items-center gap-1.5 transition-colors disabled:opacity-40"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    {tCommon('back')}
+                  </button>
                 </div>
               </div>
             )}

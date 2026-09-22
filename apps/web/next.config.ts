@@ -58,7 +58,7 @@ function buildCsp(): string {
     `img-src ${imgSrc}`,
     "font-src 'self' https://fonts.gstatic.com",
     `connect-src ${connectSrc.join(' ')}`,
-    "frame-src 'self' https://js.stripe.com",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",
