@@ -26,6 +26,7 @@ COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./
 COPY --from=build /app/apps/api/prisma ./prisma
 COPY --from=build /app/apps/api/scripts/create-admin-standalone.mjs ./scripts/create-admin-standalone.mjs
+COPY --from=build /app/apps/api/scripts/ensure-test-user.mjs ./scripts/ensure-test-user.mjs
 COPY --from=build /app/apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/api/node_modules ./node_modules
