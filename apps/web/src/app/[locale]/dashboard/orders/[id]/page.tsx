@@ -5,9 +5,10 @@ import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { apiFetch } from '@/lib/api';
 import { OrderDetailDTO } from '@swisswall/types';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Loader2, MapPin, Package } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
+  ORDER_STATUS_STYLES,
   formatDashboardDateTime,
   formatDashboardMoney,
 } from '@/lib/dashboard-utils';
@@ -36,102 +37,155 @@ export default function UserOrderDetailPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#C8B89A]" />
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="text-center py-16">
-        <p className="text-zinc-400">{t('orderDetail.notFound')}</p>
-        <Link href="/dashboard/orders" className="text-sm text-[#C8B89A] mt-4 inline-block">
+      <div className="bg-white rounded-2xl border border-zinc-100 p-12 text-center shadow-sm">
+        <p className="text-zinc-600">{t('orderDetail.notFound')}</p>
+        <Link
+          href="/dashboard/orders"
+          className="text-sm font-semibold text-[#C8B89A] hover:underline mt-4 inline-block"
+        >
           ← {t('orderDetail.back')}
         </Link>
       </div>
     );
   }
 
+  const statusClass =
+    ORDER_STATUS_STYLES[order.status] || 'bg-zinc-100 text-zinc-800 border-zinc-200';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <Link
         href="/dashboard/orders"
-        className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-[#C8B89A]"
+        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-[#C8B89A] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         {t('orderDetail.back')}
       </Link>
 
-      <div className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm space-y-6">
-        <div className="flex flex-wrap justify-between gap-4">
+      <div>
+        <span className="text-[#C8B89A] text-xs font-bold uppercase tracking-widest">
+          {t('accountLabel')}
+        </span>
+        <div className="flex flex-wrap items-start justify-between gap-4 mt-1">
           <div>
-            <h1 className="text-2xl font-light text-zinc-900">{order.orderNumber}</h1>
-            <p className="text-sm text-zinc-400 mt-1">{formatDashboardDateTime(order.createdAt, locale)}</p>
+            <h1 className="text-3xl font-light tracking-tight text-zinc-900 font-mono">
+              {order.orderNumber}
+            </h1>
+            <p className="text-sm text-zinc-500 font-light mt-1 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+              {formatDashboardDateTime(order.createdAt, locale)}
+            </p>
           </div>
-          <div className="text-right">
-            <p className="text-lg font-semibold">{formatDashboardMoney(order.totalChf, order.currency, locale)}</p>
-            <p className="text-xs text-zinc-400">{statusLabel(order.status)}</p>
+          <div className="text-left sm:text-right space-y-2">
+            <p className="text-2xl font-semibold text-zinc-900">
+              {formatDashboardMoney(order.totalChf, order.currency, locale)}
+            </p>
+            <span
+              className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-semibold border ${statusClass}`}
+            >
+              {statusLabel(order.status)}
+            </span>
           </div>
         </div>
+      </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 text-sm">
-          <div className="bg-zinc-50 rounded-xl p-4">
-            <p className="text-xs uppercase tracking-wider text-zinc-400 mb-2">{t('orderDetail.shippingAddress')}</p>
-            <p>
-              {order.shippingAddressJson.firstName} {order.shippingAddressJson.lastName}
+      <div className="bg-white rounded-2xl border border-zinc-100 p-6 sm:p-8 shadow-sm space-y-8 text-zinc-800">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-zinc-100 bg-[#F8F8F6] p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#C8B89A]" />
+              {t('orderDetail.shippingAddress')}
             </p>
-            <p>
-              {order.shippingAddressJson.street} {order.shippingAddressJson.houseNumber}
-            </p>
-            <p>
-              {order.shippingAddressJson.postCode} {order.shippingAddressJson.city}
-              {order.shippingAddressJson.canton && order.shippingAddressJson.country === 'CH'
-                ? `, ${tGeo(`cantons.${order.shippingAddressJson.canton}`)}`
-                : ''}
-            </p>
-            <p>
-              {isShippingCountryCode(order.shippingAddressJson.country)
-                ? tGeo(`countries.${order.shippingAddressJson.country}`)
-                : order.shippingAddressJson.country}
-            </p>
+            <div className="text-sm text-zinc-800 space-y-1 leading-relaxed">
+              <p className="font-semibold text-zinc-900">
+                {order.shippingAddressJson.firstName} {order.shippingAddressJson.lastName}
+              </p>
+              <p>
+                {order.shippingAddressJson.street} {order.shippingAddressJson.houseNumber}
+              </p>
+              <p>
+                {order.shippingAddressJson.postCode} {order.shippingAddressJson.city}
+                {order.shippingAddressJson.canton && order.shippingAddressJson.country === 'CH'
+                  ? `, ${tGeo(`cantons.${order.shippingAddressJson.canton}`)}`
+                  : ''}
+              </p>
+              <p>
+                {isShippingCountryCode(order.shippingAddressJson.country)
+                  ? tGeo(`countries.${order.shippingAddressJson.country}`)
+                  : order.shippingAddressJson.country}
+              </p>
+              {order.shippingAddressJson.phone ? (
+                <p className="text-zinc-600 pt-1">{order.shippingAddressJson.phone}</p>
+              ) : null}
+            </div>
           </div>
-          <div className="bg-zinc-50 rounded-xl p-4 space-y-1">
-            <div className="flex justify-between">
-              <span className="text-zinc-400">{t('orderDetail.subtotal')}</span>
-              <span>{formatDashboardMoney(order.subtotalChf, order.currency, locale)}</span>
+
+          <div className="rounded-xl border border-zinc-100 bg-[#F8F8F6] p-5 space-y-2.5 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-zinc-600">{t('orderDetail.subtotal')}</span>
+              <span className="font-medium text-zinc-900 tabular-nums">
+                {formatDashboardMoney(order.subtotalChf, order.currency, locale)}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-400">{t('orderDetail.vat')}</span>
-              <span>{formatDashboardMoney(order.vatAmountChf, order.currency, locale)}</span>
+            <div className="flex justify-between gap-4">
+              <span className="text-zinc-600">{t('orderDetail.vat')}</span>
+              <span className="font-medium text-zinc-900 tabular-nums">
+                {formatDashboardMoney(order.vatAmountChf, order.currency, locale)}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-400">{t('orderDetail.shipping')}</span>
-              <span>{formatDashboardMoney(order.shippingCostChf, order.currency, locale)}</span>
+            <div className="flex justify-between gap-4">
+              <span className="text-zinc-600">{t('orderDetail.shipping')}</span>
+              <span className="font-medium text-zinc-900 tabular-nums">
+                {formatDashboardMoney(order.shippingCostChf, order.currency, locale)}
+              </span>
             </div>
             {order.discountAmountChf > 0 && (
-              <div className="flex justify-between text-emerald-600">
+              <div className="flex justify-between gap-4 text-emerald-700">
                 <span>{t('orderDetail.discount')}</span>
-                <span>-{formatDashboardMoney(order.discountAmountChf, order.currency, locale)}</span>
+                <span className="font-medium tabular-nums">
+                  -{formatDashboardMoney(order.discountAmountChf, order.currency, locale)}
+                </span>
               </div>
             )}
+            <div className="flex justify-between gap-4 border-t border-zinc-200 pt-2.5 mt-1">
+              <span className="font-semibold text-zinc-900">{t('home.invoiceTotal')}</span>
+              <span className="font-bold text-zinc-900 tabular-nums">
+                {formatDashboardMoney(order.totalChf, order.currency, locale)}
+              </span>
+            </div>
           </div>
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+            <Package className="w-4 h-4 text-[#C8B89A]" />
             {t('orderDetail.items')}
           </h2>
-          <div className="divide-y divide-zinc-50">
+          <div className="divide-y divide-zinc-100 border border-zinc-100 rounded-xl overflow-hidden">
             {order.items.map((item) => (
-              <div key={item.id} className="flex justify-between py-3 text-sm">
-                <div>
-                  <p className="font-medium">{item.productName}</p>
-                  {item.variantName && <p className="text-xs text-zinc-400">{item.variantName}</p>}
-                  <p className="text-xs text-zinc-400">
+              <div
+                key={item.id}
+                className="flex justify-between gap-4 px-4 py-4 bg-white hover:bg-[#F8F8F6]/50 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-zinc-900">{item.productName}</p>
+                  {item.variantName ? (
+                    <p className="text-xs text-zinc-500 mt-0.5">{item.variantName}</p>
+                  ) : null}
+                  <p className="text-xs text-zinc-500 mt-1">
                     {item.quantity} × {formatDashboardMoney(item.unitPriceChf, order.currency, locale)}
                   </p>
                 </div>
-                <span className="font-semibold">{formatDashboardMoney(item.totalChf, order.currency, locale)}</span>
+                <span className="font-semibold text-zinc-900 tabular-nums shrink-0">
+                  {formatDashboardMoney(item.totalChf, order.currency, locale)}
+                </span>
               </div>
             ))}
           </div>
@@ -139,16 +193,22 @@ export default function UserOrderDetailPage() {
 
         {order.statusHistory.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500 mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
               {t('orderDetail.history')}
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-xl border border-zinc-100 bg-[#F8F8F6] p-4">
               {order.statusHistory.map((h) => (
-                <div key={h.id} className="flex justify-between text-xs text-zinc-500">
-                  <span>
-                    {statusLabel(h.status)} {h.note && `— ${h.note}`}
+                <div
+                  key={h.id}
+                  className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm text-zinc-700"
+                >
+                  <span className="text-zinc-800">
+                    <span className="font-medium text-zinc-900">{statusLabel(h.status)}</span>
+                    {h.note ? ` — ${h.note}` : ''}
                   </span>
-                  <span>{formatDashboardDateTime(h.createdAt, locale)}</span>
+                  <span className="text-zinc-500 text-xs sm:text-sm shrink-0">
+                    {formatDashboardDateTime(h.createdAt, locale)}
+                  </span>
                 </div>
               ))}
             </div>

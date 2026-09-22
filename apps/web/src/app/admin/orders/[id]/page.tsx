@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { OrderDetailDTO, OrderStatus } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
-import { ArrowLeft, Loader2, Send, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Calendar, Loader2, MapPin, Package, RefreshCw, Send, Truck } from 'lucide-react';
+import { ORDER_STATUS_STYLES, formatDashboardDateTime } from '@/lib/dashboard-utils';
+import { formatAdminCanton, formatAdminCountry } from '@/lib/shipping-geo';
+import { adminRowLabelClass, adminRowValueClass, adminSelectClass, adminTextareaClass } from '@/lib/admin-ui';
 
 const STATUSES: OrderStatus[] = [
   'PENDING',
@@ -27,11 +30,53 @@ const statusLabels: Record<string, string> = {
   REFUNDED: 'Rimbursuar',
 };
 
+const paymentStatusLabels: Record<string, string> = {
+  PENDING: 'Në pritje',
+  PAID: 'Paguar',
+  FAILED: 'Dështuar',
+  REFUNDED: 'Rimbursuar',
+  PARTIALLY_REFUNDED: 'Pjesërisht rimbursuar',
+};
+
 function formatCHF(value: number) {
   return new Intl.NumberFormat('de-CH', {
     style: 'currency',
     currency: 'CHF',
   }).format(value);
+}
+
+function AddressBlock({
+  title,
+  address,
+}: {
+  title: string;
+  address: OrderDetailDTO['shippingAddressJson'];
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-100 bg-[#F8F8F6] p-5 text-zinc-900">
+      <p className="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-3 flex items-center gap-2">
+        <MapPin className="w-4 h-4 text-[#C8B89A]" />
+        {title}
+      </p>
+      <div className="text-sm text-zinc-800 space-y-1 leading-relaxed">
+        <p className="font-semibold text-zinc-900">
+          {address.firstName} {address.lastName}
+        </p>
+        {address.company ? <p className="text-zinc-700">{address.company}</p> : null}
+        <p>
+          {address.street} {address.houseNumber}
+        </p>
+        <p>
+          {address.postCode} {address.city}
+          {address.canton && address.country === 'CH'
+            ? `, ${formatAdminCanton(address.canton)}`
+            : ''}
+        </p>
+        <p>{formatAdminCountry(address.country)}</p>
+        {address.phone ? <p className="text-zinc-600 pt-2">{address.phone}</p> : null}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminOrderDetailPage() {
@@ -96,8 +141,8 @@ export default function AdminOrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="bg-white rounded-2xl border border-red-100 p-8 text-center">
-        <p className="text-red-600">Porosia nuk u gjet.</p>
+      <div className="bg-white rounded-2xl border border-red-100 p-8 text-center text-zinc-900">
+        <p className="text-red-600 font-medium">Porosia nuk u gjet.</p>
         <Link
           href="/admin/orders"
           className="inline-flex items-center gap-2 mt-4 text-sm text-[#C8B89A] hover:underline"
@@ -109,45 +154,137 @@ export default function AdminOrderDetailPage() {
     );
   }
 
+  const statusClass =
+    ORDER_STATUS_STYLES[order.status] || 'bg-zinc-100 text-zinc-800 border-zinc-200';
+  const ship = order.shippingAddressJson;
+  const bill = order.billingAddressJson;
+
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl text-zinc-900">
       <div>
         <Link
           href="/admin/orders"
-          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400 hover:text-[#C8B89A] transition-colors mb-4"
+          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:text-[#C8B89A] transition-colors mb-4"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Kthehu te porositë
         </Link>
-        <span className="text-[#C8B89A] text-xs font-bold uppercase tracking-widest">
-          Detajet e porosisë
-        </span>
-        <h1 className="text-3xl font-light tracking-tight text-zinc-900 mt-1 font-mono">
-          {order.orderNumber}
-        </h1>
-        <p className="text-zinc-500 text-sm font-light mt-2">
-          {order.user
-            ? `${order.user.firstName} ${order.user.lastName} — ${order.user.email}`
-            : order.guestEmail}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span className="text-[#C8B89A] text-xs font-bold uppercase tracking-widest">
+              Detajet e porosisë
+            </span>
+            <h1 className="text-3xl font-light tracking-tight text-zinc-900 mt-1 font-mono">
+              {order.orderNumber}
+            </h1>
+            <p className="text-zinc-600 text-sm font-light mt-2">
+              {order.user
+                ? `${order.user.firstName} ${order.user.lastName} — ${order.user.email}`
+                : order.guestEmail}
+            </p>
+            <p className="text-sm text-zinc-500 mt-1 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+              {formatDashboardDateTime(order.createdAt, 'de')}
+            </p>
+          </div>
+          <div className="text-left sm:text-right space-y-2">
+            <p className="text-2xl font-semibold text-zinc-900 tabular-nums">
+              {formatCHF(order.totalChf)}
+            </p>
+            <span
+              className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-semibold border ${statusClass}`}
+            >
+              {statusLabels[order.status] || order.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-zinc-100 p-5 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Pagesa</p>
+          <p className="text-sm font-semibold text-zinc-900">
+            {paymentStatusLabels[order.paymentStatus ?? ''] || order.paymentStatus || '—'}
+          </p>
+          <p className="text-xs text-zinc-600 mt-2">
+            Metoda: <span className="font-medium text-zinc-800">{order.paymentMethod || '—'}</span>
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl border border-zinc-100 p-5 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-1.5">
+            <Truck className="w-3.5 h-3.5 text-[#C8B89A]" />
+            Dërgesa
+          </p>
+          <p className="text-sm font-semibold text-zinc-900">{order.shippingMethod || '—'}</p>
+          {order.trackingNumber ? (
+            <p className="text-xs text-zinc-600 mt-2 font-mono">{order.trackingNumber}</p>
+          ) : null}
+        </div>
+        {order.couponCode ? (
+          <div className="bg-white rounded-2xl border border-zinc-100 p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Kuponi</p>
+            <p className="text-sm font-mono font-semibold text-emerald-700">{order.couponCode}</p>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm space-y-6">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <AddressBlock title="Adresa e dërgesës" address={ship} />
+          <AddressBlock title="Adresa e faturimit" address={bill} />
+        </div>
+
+        <div className="rounded-xl border border-zinc-100 bg-[#F8F8F6] p-5 space-y-2.5 text-sm">
+          <div className="flex justify-between gap-4">
+            <span className={adminRowLabelClass}>Nëntotali</span>
+            <span className={adminRowValueClass}>{formatCHF(order.subtotalChf)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className={adminRowLabelClass}>TVSH</span>
+            <span className={adminRowValueClass}>{formatCHF(order.vatAmountChf)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className={adminRowLabelClass}>Transporti</span>
+            <span className={adminRowValueClass}>{formatCHF(order.shippingCostChf)}</span>
+          </div>
+          {order.discountAmountChf > 0 ? (
+            <div className="flex justify-between gap-4 text-emerald-700">
+              <span>Zbritja</span>
+              <span className="font-semibold tabular-nums">-{formatCHF(order.discountAmountChf)}</span>
+            </div>
+          ) : null}
+          <div className="flex justify-between gap-4 border-t border-zinc-200 pt-2.5 mt-1">
+            <span className="font-semibold text-zinc-900">Totali</span>
+            <span className="font-bold text-zinc-900 tabular-nums">{formatCHF(order.totalChf)}</span>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700">Artikujt</h2>
-        <div className="divide-y divide-zinc-50">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 flex items-center gap-2">
+          <Package className="w-4 h-4 text-[#C8B89A]" />
+          Artikujt
+        </h2>
+        <div className="divide-y divide-zinc-100 border border-zinc-100 rounded-xl overflow-hidden">
           {order.items.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm py-3 first:pt-0 last:pb-0">
-              <span className="text-zinc-700">
-                {item.productName}
-                {item.variantName && ` (${item.variantName})`} × {item.quantity}
+            <div
+              key={item.id}
+              className="flex justify-between gap-4 px-4 py-4 bg-white hover:bg-[#F8F8F6]/50 text-sm"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-zinc-900">{item.productName}</p>
+                {item.variantName ? (
+                  <p className="text-xs text-zinc-500 mt-0.5">{item.variantName}</p>
+                ) : null}
+                <p className="text-xs text-zinc-600 mt-1">
+                  {item.quantity} × {formatCHF(item.unitPriceChf)}
+                </p>
+              </div>
+              <span className="font-semibold text-zinc-900 tabular-nums shrink-0">
+                {formatCHF(item.totalChf)}
               </span>
-              <span className="font-medium text-zinc-900">{formatCHF(item.totalChf)}</span>
             </div>
           ))}
-        </div>
-        <div className="flex justify-between font-semibold pt-4 border-t border-zinc-100 text-zinc-900">
-          <span>Totali</span>
-          <span>{formatCHF(order.totalChf)}</span>
         </div>
       </div>
 
@@ -158,7 +295,7 @@ export default function AdminOrderDetailPage() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as OrderStatus)}
-          className="border border-zinc-200 rounded-xl px-4 py-3 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-[#C8B89A]/40 focus:border-[#C8B89A]"
+          className={adminSelectClass}
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -170,7 +307,7 @@ export default function AdminOrderDetailPage() {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Shënim opsional për klientin..."
-          className="w-full border border-zinc-200 rounded-xl px-4 py-3 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-[#C8B89A]/40 focus:border-[#C8B89A] resize-none"
+          className={`${adminTextareaClass} h-24`}
         />
         <button
           onClick={updateStatus}
@@ -190,7 +327,7 @@ export default function AdminOrderDetailPage() {
           value={reply}
           onChange={(e) => setReply(e.target.value)}
           placeholder="Mesazhi për klientin..."
-          className="w-full border border-zinc-200 rounded-xl px-4 py-3 text-sm h-28 focus:outline-none focus:ring-2 focus:ring-[#C8B89A]/40 focus:border-[#C8B89A] resize-none"
+          className={`${adminTextareaClass} h-28`}
         />
         <button
           onClick={sendReply}
@@ -207,16 +344,21 @@ export default function AdminOrderDetailPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 mb-5">
             Historiku
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3 rounded-xl border border-zinc-100 bg-[#F8F8F6] p-4">
             {order.statusHistory.map((h) => (
-              <div key={h.id} className="text-sm border-l-2 border-[#C8B89A] pl-4">
-                <div className="font-medium text-zinc-900">
-                  {statusLabels[h.status] || h.status}
+              <div
+                key={h.id}
+                className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm border-l-2 border-[#C8B89A] pl-4"
+              >
+                <div className="text-zinc-800">
+                  <span className="font-medium text-zinc-900">
+                    {statusLabels[h.status] || h.status}
+                  </span>
+                  {h.note ? <p className="text-zinc-600 mt-1">{h.note}</p> : null}
                 </div>
-                {h.note && <p className="text-zinc-600 mt-1">{h.note}</p>}
-                <div className="text-xs text-zinc-400 mt-1">
-                  {new Date(h.createdAt).toLocaleString('de-CH')}
-                </div>
+                <span className="text-zinc-500 text-xs sm:text-sm shrink-0">
+                  {formatDashboardDateTime(h.createdAt, 'de')}
+                </span>
               </div>
             ))}
           </div>

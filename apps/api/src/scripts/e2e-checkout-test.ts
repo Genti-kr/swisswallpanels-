@@ -120,6 +120,7 @@ async function main() {
       city: 'Zürich',
       canton: 'ZH',
       country: 'CH',
+      phone: '+41791234567',
     },
     shippingRateId: shippingRate.id,
     paymentMethod: 'card',

@@ -174,7 +174,12 @@
   "Checkout": {
     "title": "Checkout",
     "shippingAddress": "Shipping Address (Switzerland)",
-    "street": "Street",
+    "street": "Street address",
+    "streetPlaceholder": "e.g. Bahnhofstrasse 12",
+    "streetHint": "Enter street name and house number in one line.",
+    "phonePlaceholder": "+41 79 123 45 67",
+    "streetRequired": "Please enter your street address.",
+    "phoneRequired": "Please enter a valid phone number for delivery.",
     "number": "Number",
     "zip": "ZIP",
     "city": "City",

@@ -50,7 +50,7 @@ export default function AdminOrdersPage() {
   ).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-zinc-900">
       <div>
         <span className="text-[#C8B89A] text-xs font-bold uppercase tracking-widest">
           Admin Panel

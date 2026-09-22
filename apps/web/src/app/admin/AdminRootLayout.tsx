@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AuthProvider } from '@/components/AuthProvider';
 import { useAuth } from '@/lib/auth-store';
+import { adminMainClass } from '@/lib/admin-ui';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -235,7 +236,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 overflow-auto">{children}</main>
+        <main className={adminMainClass}>{children}</main>
       </div>
     </div>
   );
@@ -247,7 +248,7 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
 
   return (
     <html lang="de" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-screen bg-[#F8F8F6] text-[#1A1A1A] font-sans">
+      <body className="min-h-screen bg-[#F8F8F6] text-zinc-900 font-sans [color-scheme:light]">
         <AuthProvider>
           {isLogin ? children : <AdminShell>{children}</AdminShell>}
         </AuthProvider>

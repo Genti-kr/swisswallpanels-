@@ -174,7 +174,12 @@
   "Checkout": {
     "title": "Checkout",
     "shippingAddress": "Adresa e dërgesës (Zvicër)",
-    "street": "Rruga",
+    "street": "Rruga dhe numri i shtëpisë",
+    "streetPlaceholder": "p.sh. Bahnhofstrasse 12",
+    "streetHint": "Shkruani emrin e rrugës dhe numrin e shtëpisë në një rresht.",
+    "phonePlaceholder": "+41 79 123 45 67",
+    "streetRequired": "Ju lutemi shkruani adresën (rruga dhe numri).",
+    "phoneRequired": "Ju lutemi shkruani një numër telefoni të vlefshëm për dërgesën.",
     "number": "Nr.",
     "zip": "PLZ",
     "city": "Qyteti",

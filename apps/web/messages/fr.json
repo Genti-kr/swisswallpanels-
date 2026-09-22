@@ -174,7 +174,12 @@
   "Checkout": {
     "title": "Commande",
     "shippingAddress": "Adresse de livraison (Suisse)",
-    "street": "Rue",
+    "street": "Rue et numéro",
+    "streetPlaceholder": "p. ex. Rue du Rhône 42",
+    "streetHint": "Indiquez la rue et le numéro sur une seule ligne.",
+    "phonePlaceholder": "+41 79 123 45 67",
+    "streetRequired": "Veuillez indiquer votre adresse (rue et numéro).",
+    "phoneRequired": "Veuillez indiquer un numéro de téléphone valide pour la livraison.",
     "number": "Numéro",
     "zip": "NPA",
     "city": "Localité",

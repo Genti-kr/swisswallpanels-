@@ -10,6 +10,14 @@ export function sanitizePersonOrPlaceName(value: string, maxLength = 80): string
   return filtered.slice(0, maxLength);
 }
 
+/** Phone: digits, spaces, + ( ) - */
+export function sanitizePhone(value: string, maxLength = 24): string {
+  const filtered = [...value]
+    .filter((ch) => /\d/.test(ch) || ch === '+' || ch === ' ' || ch === '-' || ch === '(' || ch === ')')
+    .join('');
+  return filtered.slice(0, maxLength);
+}
+
 /** Digits only (0–9). */
 export function sanitizeDigits(value: string, maxLength?: number): string {
   const digits = value.replace(/\D/g, '');

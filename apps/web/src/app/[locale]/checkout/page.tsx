@@ -26,9 +26,14 @@ import {
 } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { CheckoutStripePayment } from '@/components/CheckoutStripePayment';
-import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
+import { parseStreetAndNumber } from '@/lib/address-line';
+import { sanitizeDigits, sanitizePersonOrPlaceName, sanitizePhone } from '@/lib/numeric-input';
 import { resolveCheckoutError } from '@/lib/checkout-error-i18n';
-import { SHIPPING_COUNTRY_CODES, SWISS_CANTONS } from '@/lib/shipping-geo';
+import {
+  SHIPPING_COUNTRY_CODES,
+  SWISS_CANTONS,
+  type ShippingCountryCode,
+} from '@/lib/shipping-geo';
 
 function CheckoutContent() {
   const { user, fetchMe } = useAuth();
@@ -59,9 +64,15 @@ function CheckoutContent() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('twint');
   const [guestEmail, setGuestEmail] = useState('');
+  const [streetLine, setStreetLine] = useState('');
+  const [phone, setPhone] = useState('');
   const [address, setAddress] = useState({
-    firstName: '', lastName: '', street: '', houseNumber: '',
-    postCode: '', city: '', canton: 'ZH', country: 'CH',
+    firstName: '',
+    lastName: '',
+    postCode: '',
+    city: '',
+    canton: 'ZH',
+    country: 'CH' as ShippingCountryCode,
   });
 
   useEffect(() => {
@@ -130,6 +141,9 @@ function CheckoutContent() {
         firstName: user.firstName,
         lastName: user.lastName,
       }));
+      if (user.phone) {
+        setPhone(user.phone);
+      }
     }
   }, [user]);
 
@@ -195,6 +209,24 @@ function CheckoutContent() {
       return;
     }
 
+    const { street, houseNumber } = parseStreetAndNumber(streetLine);
+    if (!street.trim()) {
+      setError(tCheckout('streetRequired'));
+      return;
+    }
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length < 6) {
+      setError(tCheckout('phoneRequired'));
+      return;
+    }
+
+    const shippingAddress = {
+      ...address,
+      street,
+      houseNumber,
+      phone: phone.trim(),
+    };
+
     setLoading(true);
     setError('');
 
@@ -202,8 +234,8 @@ function CheckoutContent() {
       const res = await apiFetch<{ order: OrderDTO; clientSecret?: string; stripePublishableKey?: string; requiresManualPayment?: boolean }>('/api/orders/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          shippingAddress: address,
-          billingAddress: address,
+          shippingAddress,
+          billingAddress: shippingAddress,
           shippingRateId: selectedRateId,
           paymentMethod,
           couponCode: appliedCouponCode || undefined,
@@ -520,31 +552,33 @@ function CheckoutContent() {
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('street')}</label>
-                    <input 
-                      placeholder={tCheckout('street')} 
-                      value={address.street} 
-                      onChange={(e) => setAddress({ ...address, street: e.target.value })} 
-                      className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
-                      required 
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">
+                      {tCheckout('street')}
+                    </label>
+                    <input
+                      placeholder={tCheckout('streetPlaceholder')}
+                      value={streetLine}
+                      onChange={(e) => setStreetLine(e.target.value.slice(0, 140))}
+                      autoComplete="street-address"
+                      className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800"
+                      required
                     />
+                    <p className="text-xs text-zinc-400 font-light pl-1">{tCheckout('streetHint')}</p>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('number')}</label>
-                    <input 
-                      placeholder={tCheckout('number')} 
-                      value={address.houseNumber} 
-                      onChange={(e) =>
-                        setAddress({
-                          ...address,
-                          houseNumber: sanitizeDigits(e.target.value, 8),
-                        })
-                      }
-                      inputMode="numeric"
-                      autoComplete="address-line2"
-                      className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800" 
-                      required 
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">
+                      {tCommon('phone')}
+                    </label>
+                    <input
+                      placeholder={tCheckout('phonePlaceholder')}
+                      value={phone}
+                      onChange={(e) => setPhone(sanitizePhone(e.target.value))}
+                      type="tel"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800"
+                      required
                     />
                   </div>
 
@@ -590,7 +624,12 @@ function CheckoutContent() {
                     <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('country')}</label>
                     <select
                       value={address.country}
-                      onChange={(e) => setAddress({ ...address, country: e.target.value })}
+                      onChange={(e) =>
+                        setAddress({
+                          ...address,
+                          country: e.target.value as ShippingCountryCode,
+                        })
+                      }
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
                     >
                       {SHIPPING_COUNTRY_CODES.map((c) => (

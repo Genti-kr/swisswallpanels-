@@ -174,7 +174,12 @@
   "Checkout": {
     "title": "Kasse",
     "shippingAddress": "Lieferadresse (Schweiz)",
-    "street": "Strasse",
+    "street": "Strasse und Hausnummer",
+    "streetPlaceholder": "z. B. Bahnhofstrasse 12",
+    "streetHint": "Strasse und Hausnummer in einer Zeile eingeben.",
+    "phonePlaceholder": "+41 79 123 45 67",
+    "streetRequired": "Bitte geben Sie Ihre Strasse und Hausnummer ein.",
+    "phoneRequired": "Bitte geben Sie eine gültige Telefonnummer für die Lieferung ein.",
     "number": "Hausnummer",
     "zip": "PLZ",
     "city": "Ort",

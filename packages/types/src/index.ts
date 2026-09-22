@@ -212,6 +212,7 @@ export interface AddressDTO {
   city: string;
   canton: string;
   country: string;
+  phone?: string | null;
   type?: 'shipping' | 'billing';
   isDefault?: boolean;
 }

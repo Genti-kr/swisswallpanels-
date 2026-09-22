@@ -36,3 +36,21 @@ export type SwissCantonCode = (typeof SWISS_CANTONS)[number]['code'];
 export function isShippingCountryCode(value: string): value is ShippingCountryCode {
   return (SHIPPING_COUNTRY_CODES as readonly string[]).includes(value);
 }
+
+/** Admin UI (Albanian labels, no next-intl on /admin routes). */
+export const SHIPPING_COUNTRY_LABELS_SQ: Record<ShippingCountryCode, string> = {
+  CH: 'Zvicra',
+  DE: 'Gjermania',
+  FR: 'Francia',
+  IT: 'Italia',
+};
+
+export function formatAdminCountry(code: string): string {
+  return isShippingCountryCode(code) ? SHIPPING_COUNTRY_LABELS_SQ[code] : code;
+}
+
+export function formatAdminCanton(code: string | null | undefined): string {
+  if (!code) return '';
+  const match = SWISS_CANTONS.find((c) => c.code === code);
+  return match?.name ?? code;
+}

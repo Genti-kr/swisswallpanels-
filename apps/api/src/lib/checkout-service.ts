@@ -29,6 +29,7 @@ export const addressSchema = z.object({
   city: z.string().min(1).max(80).trim(),
   canton: z.string().max(10).optional().default(''),
   country: z.enum(['CH', 'DE', 'FR', 'IT']).default('CH'),
+  phone: z.string().min(6).max(30).trim(),
 });
 
 export const checkoutSchema = z.object({
@@ -285,6 +286,14 @@ export async function processCheckout(
     }
 
     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+    if (options.userId && data.shippingAddress.phone) {
+      await tx.user.update({
+        where: { id: options.userId },
+        data: { phone: data.shippingAddress.phone },
+      });
+    }
+
     return created;
   });
 
