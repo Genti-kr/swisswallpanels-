@@ -157,6 +157,7 @@
     "errorAccountLocked": "Ihr Konto ist gesperrt. Bitte prüfen Sie Ihre E-Mail für Anweisungen zur Entsperrung.",
     "errorEmailNotVerified": "Bitte verifizieren Sie Ihre E-Mail, bevor Sie sich anmelden.",
     "errorNoAdminAccess": "Kein Admin-Zugriff.",
+    "errorTestAccountDisabled": "Testkonten können auf der Live-Website nicht angemeldet werden.",
     "errorSessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
     "errorServerError": "Login-Dienst vorübergehend nicht verfügbar. Bitte später erneut versuchen."
   },

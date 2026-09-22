@@ -1,8 +1,10 @@
 import { NextAuthConfig } from 'next-auth';
 import { authSecret } from './auth-secret';
+import { isAdminRole } from './user-mapper';
 
 const EIGHT_HOURS = 60 * 60 * 8;
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
+const ADMIN_SESSION_MAX = 60 * 60 * 2;
 
 export const authConfig: NextAuthConfig = {
   secret: authSecret,
@@ -36,7 +38,15 @@ export const authConfig: NextAuthConfig = {
         token.email = user.email;
         token.iat = Math.floor(Date.now() / 1000);
         token.rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
-        token.sessionMaxAge = token.rememberMe ? THIRTY_DAYS : EIGHT_HOURS;
+        token.sessionMaxAge = isAdminRole(token.role as string)
+          ? ADMIN_SESSION_MAX
+          : token.rememberMe
+            ? THIRTY_DAYS
+            : EIGHT_HOURS;
+      }
+
+      if (isAdminRole(token.role as string)) {
+        token.sessionMaxAge = ADMIN_SESSION_MAX;
       }
 
       if (token.sessionMaxAge && token.iat) {

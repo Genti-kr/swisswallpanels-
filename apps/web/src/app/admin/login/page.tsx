@@ -86,6 +86,10 @@ export default function AdminLoginPage() {
           <p className="text-zinc-500 text-sm font-light mt-2">
             Menaxho porositë dhe produktet
           </p>
+          <p className="text-zinc-400 text-xs font-light mt-2 max-w-sm mx-auto">
+            Sesioni admin skadon pas 2 orësh. Dil kur mbaron — nuk lidhet me llogarinë Google në
+            browser.
+          </p>
         </div>
 
         <form

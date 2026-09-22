@@ -157,6 +157,7 @@
     "errorAccountLocked": "Llogaria juaj është e bllokuar. Kontrolloni email-in për udhëzime zhbllokimi.",
     "errorEmailNotVerified": "Verifikoni email-in para se të hyni.",
     "errorNoAdminAccess": "Nuk keni akses admin.",
+    "errorTestAccountDisabled": "Llogaria test nuk lejohet në faqen live. Përdorni llogarinë tuaj reale ose mjedisin lokal.",
     "errorSessionExpired": "Sesioni skadoi. Hyni përsëri.",
     "errorServerError": "Shërbimi i login-it nuk është i disponueshëm. Provo përsëri pas pak."
   },

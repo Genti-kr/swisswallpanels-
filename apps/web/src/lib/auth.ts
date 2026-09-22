@@ -10,6 +10,8 @@ import { authEmailService } from './auth-email';
 import { resetRateLimit } from './rate-limit';
 import { authSecret } from './auth-secret';
 import { AUTH_ERROR_MESSAGES } from './auth-errors';
+import { isAdminRole } from './user-mapper';
+import { isTestLoginBlocked } from './test-account';
 
 function credentialsError(code: keyof typeof AUTH_ERROR_MESSAGES | string): never {
   const err = new CredentialsSignin();
@@ -19,6 +21,8 @@ function credentialsError(code: keyof typeof AUTH_ERROR_MESSAGES | string): neve
 
 const EIGHT_HOURS = 60 * 60 * 8;
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
+/** Admin stays logged in at most 2h — site cookie is independent of Google account in browser. */
+const ADMIN_SESSION_MAX = 60 * 60 * 2;
 const LOGIN_IP_BLOCK_THRESHOLD = 15;
 const LOGIN_IP_BLOCK_MS = 15 * 60 * 1000;
 
@@ -140,6 +144,11 @@ export const authConfig: NextAuthConfig = {
           credentialsError('invalid_credentials');
         }
 
+        if (isTestLoginBlocked(user.email)) {
+          await createAuditLog('LOGIN_FAILED', user.id, ipStr, userAgent);
+          credentialsError('test_account_disabled');
+        }
+
         if (user.isLocked) {
           await createAuditLog('LOGIN_FAILED', user.id, ipStr, userAgent);
           credentialsError('account_locked');
@@ -218,12 +227,14 @@ export const authConfig: NextAuthConfig = {
 
         await createAuditLog('LOGIN_SUCCESS', user.id, ipStr, userAgent);
 
+        const safeRememberMe = isAdminRole(user.role) ? false : rememberMe;
+
         return {
           id: user.id,
           email: user.email,
           role: user.role,
           name: `${user.firstName} ${user.lastName}`,
-          rememberMe,
+          rememberMe: safeRememberMe,
         };
         } catch (error) {
           if (error instanceof CredentialsSignin) {
@@ -243,7 +254,15 @@ export const authConfig: NextAuthConfig = {
         token.email = user.email;
         token.iat = Math.floor(Date.now() / 1000);
         token.rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
-        token.sessionMaxAge = token.rememberMe ? THIRTY_DAYS : EIGHT_HOURS;
+        token.sessionMaxAge = isAdminRole(token.role as string)
+          ? ADMIN_SESSION_MAX
+          : token.rememberMe
+            ? THIRTY_DAYS
+            : EIGHT_HOURS;
+      }
+
+      if (isAdminRole(token.role as string)) {
+        token.sessionMaxAge = ADMIN_SESSION_MAX;
       }
 
       if (token.sessionMaxAge && token.iat) {

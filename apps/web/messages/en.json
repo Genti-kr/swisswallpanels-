@@ -157,6 +157,7 @@
     "errorAccountLocked": "Your account is locked. Please check your email for unlock instructions.",
     "errorEmailNotVerified": "Please verify your email before signing in.",
     "errorNoAdminAccess": "You do not have admin access.",
+    "errorTestAccountDisabled": "Test accounts cannot sign in on the live site. Use your real account or local development.",
     "errorSessionExpired": "Your session has expired. Please sign in again.",
     "errorServerError": "Login service is temporarily unavailable. Please try again shortly."
   },

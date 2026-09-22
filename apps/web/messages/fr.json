@@ -157,6 +157,7 @@
     "errorAccountLocked": "Votre compte est verrouillé. Consultez votre e-mail pour les instructions de déverrouillage.",
     "errorEmailNotVerified": "Veuillez vérifier votre e-mail avant de vous connecter.",
     "errorNoAdminAccess": "Vous n'avez pas accès à l'administration.",
+    "errorTestAccountDisabled": "Les comptes test ne sont pas autorisés sur le site en production.",
     "errorSessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
     "errorServerError": "Service de connexion temporairement indisponible. Réessayez dans un instant."
   },

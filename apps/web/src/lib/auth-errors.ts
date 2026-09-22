@@ -6,6 +6,7 @@ export type AuthErrorCode =
   | 'account_locked'
   | 'email_not_verified'
   | 'no_admin_access'
+  | 'test_account_disabled'
   | 'session_expired'
   | 'server_error';
 
@@ -15,6 +16,7 @@ const AUTH_ERROR_CODES: AuthErrorCode[] = [
   'account_locked',
   'email_not_verified',
   'no_admin_access',
+  'test_account_disabled',
   'session_expired',
   'server_error',
 ];
@@ -31,6 +33,8 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
     'Llogaria juaj është e bllokuar. Ju lutemi kontrolloni email-in tuaj për udhëzime zhbllokimi.',
   email_not_verified: 'Ju lutemi verifikoni email-in tuaj para se të hyni.',
   no_admin_access: 'Nuk keni akses admin.',
+  test_account_disabled:
+    'Llogaria test nuk lejohet në faqen live. Përdorni llogarinë tuaj reale ose mjedisin lokal.',
   session_expired: 'Sesioni juaj skadoi. Ju lutemi hyni përsëri.',
   server_error: 'Shërbimi i login-it nuk është i disponueshëm. Provo përsëri pas pak.',
 };
@@ -66,6 +70,8 @@ export function resolveAuthErrorMessage(
         'Ihr Konto ist gesperrt. Bitte prüfen Sie Ihre E-Mail für Anweisungen zur Entsperrung.',
       email_not_verified: 'Bitte verifizieren Sie Ihre E-Mail, bevor Sie sich anmelden.',
       no_admin_access: 'Kein Admin-Zugriff.',
+      test_account_disabled:
+        'Testkonten können auf der Live-Website nicht angemeldet werden.',
       session_expired: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
       server_error: 'Login-Dienst vorübergehend nicht verfügbar. Bitte später erneut versuchen.',
     },
@@ -76,6 +82,8 @@ export function resolveAuthErrorMessage(
         'Your account is locked. Please check your email for unlock instructions.',
       email_not_verified: 'Please verify your email before signing in.',
       no_admin_access: 'You do not have admin access.',
+      test_account_disabled:
+        'Test accounts cannot sign in on the live site. Use your real account or local development.',
       session_expired: 'Your session has expired. Please sign in again.',
       server_error: 'Login service is temporarily unavailable. Please try again shortly.',
     },
@@ -86,6 +94,8 @@ export function resolveAuthErrorMessage(
         'Votre compte est verrouillé. Consultez votre e-mail pour les instructions de déverrouillage.',
       email_not_verified: 'Veuillez vérifier votre e-mail avant de vous connecter.',
       no_admin_access: "Vous n'avez pas accès à l'administration.",
+      test_account_disabled:
+        'Les comptes test ne sont pas autorisés sur le site en production.',
       session_expired: 'Votre session a expiré. Veuillez vous reconnecter.',
       server_error: 'Service de connexion temporairement indisponible. Réessayez dans un instant.',
     },
@@ -102,6 +112,7 @@ export function authErrorTranslationKey(code: AuthErrorCode): string {
     account_locked: 'errorAccountLocked',
     email_not_verified: 'errorEmailNotVerified',
     no_admin_access: 'errorNoAdminAccess',
+    test_account_disabled: 'errorTestAccountDisabled',
     session_expired: 'errorSessionExpired',
     server_error: 'errorServerError',
   };
