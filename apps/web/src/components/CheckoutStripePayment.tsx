@@ -9,31 +9,36 @@ type StripeLocale = 'auto' | 'de' | 'fr' | 'en';
 
 function stripeLocaleFromApp(locale: string): StripeLocale {
   if (locale === 'de' || locale === 'fr' || locale === 'en') return locale;
-  return 'en';
+  return 'de';
 }
 
 type PayButtonProps = {
   returnUrl: string;
+  paymentMethod: string;
   paying: boolean;
   setPaying: (v: boolean) => void;
   payLabel: string;
   processingLabel: string;
+  twintHint?: string;
   onSuccess: () => Promise<void>;
   onError: (message: string) => void;
 };
 
 function StripePayButton({
   returnUrl,
+  paymentMethod,
   paying,
   setPaying,
   payLabel,
   processingLabel,
+  twintHint,
   onSuccess,
   onError,
 }: PayButtonProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [ready, setReady] = useState(false);
+  const isTwint = paymentMethod === 'twint';
 
   const handlePay = async () => {
     if (!stripe || !elements) {
@@ -46,6 +51,18 @@ function StripePayButton({
       const { error: submitError } = await elements.submit();
       if (submitError) {
         onError(submitError.message || 'Payment validation failed.');
+        return;
+      }
+
+      if (isTwint) {
+        const { error } = await stripe.confirmPayment({
+          elements,
+          confirmParams: { return_url: returnUrl },
+          redirect: 'always',
+        });
+        if (error) {
+          onError(error.message || 'Payment failed.');
+        }
         return;
       }
 
@@ -72,16 +89,38 @@ function StripePayButton({
 
       onError('Payment was not completed.');
     } finally {
-      setPaying(false);
+      if (!isTwint) {
+        setPaying(false);
+      }
     }
   };
 
+  const paymentElementOptions = useMemo(() => {
+    if (isTwint) {
+      return {
+        layout: 'accordion' as const,
+        paymentMethodOrder: ['twint'],
+        wallets: { applePay: 'never' as const, googlePay: 'never' as const },
+      };
+    }
+    return {
+      layout: 'tabs' as const,
+      paymentMethodOrder: ['card'],
+      wallets: { applePay: 'never' as const, googlePay: 'never' as const },
+    };
+  }, [isTwint]);
+
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-zinc-200 bg-[#F8F8F6] p-4">
+      {isTwint && twintHint ? (
+        <p className="text-xs text-zinc-500 font-light bg-[#F8F8F6] border border-zinc-100 rounded-xl px-4 py-3">
+          {twintHint}
+        </p>
+      ) : null}
+      <div className="rounded-2xl border border-zinc-200 bg-[#F8F8F6] p-4 min-h-[120px]">
         <PaymentElement
           onReady={() => setReady(true)}
-          options={{ layout: 'tabs' }}
+          options={paymentElementOptions}
         />
       </div>
       <button
@@ -97,15 +136,17 @@ function StripePayButton({
   );
 }
 
-type CheckoutStripePaymentProps = {
+export type CheckoutStripePaymentProps = {
   publishableKey: string;
   clientSecret: string;
   locale: string;
+  paymentMethod: string;
   returnUrl: string;
   paying: boolean;
   setPaying: (v: boolean) => void;
   payLabel: string;
   processingLabel: string;
+  twintHint?: string;
   onSuccess: () => Promise<void>;
   onError: (message: string) => void;
 };
@@ -115,11 +156,13 @@ export function CheckoutStripePayment(props: CheckoutStripePaymentProps) {
     publishableKey,
     clientSecret,
     locale,
+    paymentMethod,
     returnUrl,
     paying,
     setPaying,
     payLabel,
     processingLabel,
+    twintHint,
     onSuccess,
     onError,
   } = props;
@@ -146,10 +189,12 @@ export function CheckoutStripePayment(props: CheckoutStripePaymentProps) {
     <Elements stripe={stripePromise} options={options}>
       <StripePayButton
         returnUrl={returnUrl}
+        paymentMethod={paymentMethod}
         paying={paying}
         setPaying={setPaying}
         payLabel={payLabel}
         processingLabel={processingLabel}
+        twintHint={twintHint}
         onSuccess={onSuccess}
         onError={onError}
       />

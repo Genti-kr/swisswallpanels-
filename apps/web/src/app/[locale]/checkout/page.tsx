@@ -57,7 +57,7 @@ function CheckoutContent() {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCouponCode, setAppliedCouponCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('twint');
   const [guestEmail, setGuestEmail] = useState('');
   const [address, setAddress] = useState({
     firstName: '', lastName: '', street: '', houseNumber: '',
@@ -75,8 +75,7 @@ function CheckoutContent() {
     const redirectStatus = searchParams.get('redirect_status');
     const storedGuestEmail =
       typeof window !== 'undefined' ? sessionStorage.getItem('guestCheckoutEmail') : null;
-    const canVerify = user || storedGuestEmail;
-    if (!orderId || !canVerify) return;
+    if (!orderId) return;
 
     if (redirectStatus === 'failed') {
       setError(tCheckout('paymentFailed'));
@@ -84,7 +83,14 @@ function CheckoutContent() {
     }
 
     const paymentIntent = searchParams.get('payment_intent');
-    if (!paymentIntent && redirectStatus !== 'succeeded') return;
+    const isStripeReturn =
+      redirectStatus === 'succeeded' ||
+      redirectStatus === 'processing' ||
+      Boolean(paymentIntent);
+    if (!isStripeReturn) return;
+
+    const canVerify = Boolean(user) || Boolean(storedGuestEmail);
+    if (!canVerify) return;
 
     let cancelled = false;
     setPaying(true);
@@ -110,6 +116,12 @@ function CheckoutContent() {
       cancelled = true;
     };
   }, [searchParams, user, fetchCart, tCheckout]);
+
+  useEffect(() => {
+    if (address.country !== 'CH') {
+      setPaymentMethod('card');
+    }
+  }, [address.country]);
 
   useEffect(() => {
     if (user) {
@@ -242,7 +254,7 @@ function CheckoutContent() {
 
   const stripeReturnUrl =
     typeof window !== 'undefined' && order
-      ? `${window.location.origin}/${locale}/checkout?order=${order.id}`
+      ? `${window.location.origin}${window.location.pathname}?order=${encodeURIComponent(order.id)}`
       : '';
 
   // 1. Success State View
@@ -701,14 +713,21 @@ function CheckoutContent() {
 
                   {clientSecret && stripePublishableKey && stripeReturnUrl ? (
                     <CheckoutStripePayment
+                      key={`${clientSecret}-${paymentMethod}`}
                       publishableKey={stripePublishableKey}
                       clientSecret={clientSecret}
                       locale={locale}
+                      paymentMethod={paymentMethod}
                       returnUrl={stripeReturnUrl}
                       paying={paying}
                       setPaying={setPaying}
-                      payLabel={tCheckout('payNow')}
+                      payLabel={
+                        paymentMethod === 'twint' ? tCheckout('payTwint') : tCheckout('payNow')
+                      }
                       processingLabel={tCheckout('processing')}
+                      twintHint={
+                        paymentMethod === 'twint' ? tCheckout('twintRedirectHint') : undefined
+                      }
                       onSuccess={completePaymentOnServer}
                       onError={(message) =>
                         setError(resolveCheckoutError(message, tCheckout))
