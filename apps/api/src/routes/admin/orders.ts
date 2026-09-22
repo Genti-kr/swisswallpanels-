@@ -5,6 +5,9 @@ import { mapOrderDetail } from '../../lib/mappers';
 import { requireAuth, AuthenticatedRequest } from '../../middleware/auth';
 import { emailService } from '../../services/email';
 import { OrderStatus, PaymentStatus, DeliveryStatus } from '@swisswall/types';
+import { getStripe } from '../../lib/stripe';
+
+const DELETABLE_PAYMENT_STATUSES: PaymentStatus[] = ['PENDING', 'FAILED'];
 
 const router = Router();
 router.use(requireAuth(['ADMIN', 'SUPERADMIN']));
@@ -191,6 +194,57 @@ router.patch('/:id/status', async (req: AuthenticatedRequest, res: Response, nex
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
+    next(error);
+  }
+});
+
+router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (!DELETABLE_PAYMENT_STATUSES.includes(order.paymentStatus as PaymentStatus)) {
+      return res.status(409).json({
+        error: 'ORDER_PAID',
+        message: 'Paid orders cannot be deleted. Cancel or refund instead.',
+      });
+    }
+
+    if (order.stripePaymentIntent) {
+      const stripe = getStripe();
+      if (stripe) {
+        try {
+          const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntent);
+          if (
+            intent.status === 'requires_payment_method' ||
+            intent.status === 'requires_confirmation' ||
+            intent.status === 'requires_action'
+          ) {
+            await stripe.paymentIntents.cancel(order.stripePaymentIntent);
+          }
+        } catch {
+          // Non-fatal: order can still be removed if intent is already terminal
+        }
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (order.discountCodeId) {
+        await tx.discountCode.updateMany({
+          where: { id: order.discountCodeId, usesCount: { gt: 0 } },
+          data: { usesCount: { decrement: 1 } },
+        });
+      }
+      await tx.order.delete({ where: { id: order.id } });
+    });
+
+    res.status(204).send();
+  } catch (error) {
     next(error);
   }
 });

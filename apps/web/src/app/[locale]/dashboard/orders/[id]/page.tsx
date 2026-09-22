@@ -13,6 +13,7 @@ import {
   formatDashboardMoney,
 } from '@/lib/dashboard-utils';
 import { isShippingCountryCode } from '@/lib/shipping-geo';
+import { OrderItemsList } from '@/components/OrderItemsList';
 
 export default function UserOrderDetailPage() {
   const params = useParams();
@@ -168,27 +169,15 @@ export default function UserOrderDetailPage() {
             <Package className="w-4 h-4 text-[#C8B89A]" />
             {t('orderDetail.items')}
           </h2>
-          <div className="divide-y divide-zinc-100 border border-zinc-100 rounded-xl overflow-hidden">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between gap-4 px-4 py-4 bg-white hover:bg-[#F8F8F6]/50 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-zinc-900">{item.productName}</p>
-                  {item.variantName ? (
-                    <p className="text-xs text-zinc-500 mt-0.5">{item.variantName}</p>
-                  ) : null}
-                  <p className="text-xs text-zinc-500 mt-1">
-                    {item.quantity} × {formatDashboardMoney(item.unitPriceChf, order.currency, locale)}
-                  </p>
-                </div>
-                <span className="font-semibold text-zinc-900 tabular-nums shrink-0">
-                  {formatDashboardMoney(item.totalChf, order.currency, locale)}
-                </span>
-              </div>
-            ))}
-          </div>
+          <OrderItemsList
+            items={order.items}
+            formatLineTotal={(item) =>
+              formatDashboardMoney(item.totalChf, order.currency, locale)
+            }
+            formatUnitPrice={(item) =>
+              formatDashboardMoney(item.unitPriceChf, order.currency, locale)
+            }
+          />
         </div>
 
         {order.statusHistory.length > 0 && (

@@ -196,6 +196,7 @@ export interface OrderItemDTO {
   productId: string;
   productName: string;
   variantName?: string | null;
+  imageUrl?: string | null;
   quantity: number;
   unitPriceChf: number;
   totalChf: number;

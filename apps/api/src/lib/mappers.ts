@@ -166,6 +166,7 @@ export function mapOrderItem(item: {
   productId: string;
   productName: string;
   variantName: string | null;
+  imageUrl?: string | null;
   quantity: number;
   unitPriceChf: Decimal;
   totalChf: Decimal;
@@ -175,6 +176,7 @@ export function mapOrderItem(item: {
     productId: item.productId,
     productName: item.productName,
     variantName: item.variantName,
+    imageUrl: item.imageUrl ?? null,
     quantity: item.quantity,
     unitPriceChf: toNumber(item.unitPriceChf),
     totalChf: toNumber(item.totalChf),

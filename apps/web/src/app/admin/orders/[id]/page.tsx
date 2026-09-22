@@ -2,10 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { OrderDetailDTO, OrderStatus } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
-import { ArrowLeft, Calendar, Loader2, MapPin, Package, RefreshCw, Send, Truck } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  Loader2,
+  MapPin,
+  Package,
+  RefreshCw,
+  Send,
+  Trash2,
+  Truck,
+} from 'lucide-react';
+import { OrderItemsList } from '@/components/OrderItemsList';
 import { ORDER_STATUS_STYLES, formatDashboardDateTime } from '@/lib/dashboard-utils';
 import { formatAdminCanton, formatAdminCountry } from '@/lib/shipping-geo';
 import { adminRowLabelClass, adminRowValueClass, adminSelectClass, adminTextareaClass } from '@/lib/admin-ui';
@@ -45,6 +56,11 @@ function formatCHF(value: number) {
   }).format(value);
 }
 
+function canDeleteOrder(order: OrderDetailDTO) {
+  const ps = order.paymentStatus ?? 'PENDING';
+  return ps === 'PENDING' || ps === 'FAILED';
+}
+
 function AddressBlock({
   title,
   address,
@@ -81,6 +97,7 @@ function AddressBlock({
 
 export default function AdminOrderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const [order, setOrder] = useState<OrderDetailDTO | null>(null);
   const [status, setStatus] = useState<OrderStatus>('PENDING');
@@ -88,6 +105,8 @@ export default function AdminOrderDetailPage() {
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const load = () => {
     apiFetch<{ order: OrderDetailDTO }>(`/api/admin/orders/${id}`)
@@ -113,6 +132,30 @@ export default function AdminOrderDetailPage() {
       load();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteOrder = async () => {
+    if (!order || !canDeleteOrder(order)) return;
+    const ok = window.confirm(
+      `Fshini porosinë ${order.orderNumber}? Ky veprim nuk mund të kthehet.`
+    );
+    if (!ok) return;
+
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+      router.push('/admin/orders');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      setDeleteError(
+        msg.includes('ORDER_PAID') || msg.includes('409')
+          ? 'Porositë e paguara nuk mund të fshihen.'
+          : 'Fshirja dështoi. Provoni përsëri.'
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -265,27 +308,11 @@ export default function AdminOrderDetailPage() {
           <Package className="w-4 h-4 text-[#C8B89A]" />
           Artikujt
         </h2>
-        <div className="divide-y divide-zinc-100 border border-zinc-100 rounded-xl overflow-hidden">
-          {order.items.map((item) => (
-            <div
-              key={item.id}
-              className="flex justify-between gap-4 px-4 py-4 bg-white hover:bg-[#F8F8F6]/50 text-sm"
-            >
-              <div className="min-w-0">
-                <p className="font-semibold text-zinc-900">{item.productName}</p>
-                {item.variantName ? (
-                  <p className="text-xs text-zinc-500 mt-0.5">{item.variantName}</p>
-                ) : null}
-                <p className="text-xs text-zinc-600 mt-1">
-                  {item.quantity} × {formatCHF(item.unitPriceChf)}
-                </p>
-              </div>
-              <span className="font-semibold text-zinc-900 tabular-nums shrink-0">
-                {formatCHF(item.totalChf)}
-              </span>
-            </div>
-          ))}
-        </div>
+        <OrderItemsList
+          items={order.items}
+          formatLineTotal={(item) => formatCHF(item.totalChf)}
+          formatUnitPrice={(item) => formatCHF(item.unitPriceChf)}
+        />
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm space-y-4">
@@ -363,6 +390,31 @@ export default function AdminOrderDetailPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {canDeleteOrder(order) ? (
+        <div className="bg-white rounded-2xl border border-red-100 p-6 shadow-sm space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-red-700">
+            Zona e rrezikshme
+          </h2>
+          <p className="text-sm text-zinc-600">
+            Porosia nuk është paguar — mund ta fshini nga sistemi (p.sh. porosi e braktisur në pagesë).
+          </p>
+          {deleteError ? <p className="text-sm text-red-600">{deleteError}</p> : null}
+          <button
+            type="button"
+            onClick={deleteOrder}
+            disabled={deleting || saving}
+            className="inline-flex items-center gap-2 border border-red-200 text-red-700 px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-50 transition-colors disabled:opacity-50"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Fshi porosinë
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-zinc-500 pl-1">
+          Porositë e paguara nuk mund të fshihen — përdorni statusin «Anuluar» ose rimbursimin.
+        </p>
       )}
     </div>
   );
