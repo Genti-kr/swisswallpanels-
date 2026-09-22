@@ -11,70 +11,101 @@ import { peekRateLimit, bumpRateLimit, resetRateLimit, registerRateLimitConfig }
 import { getClientIp, verifyOrigin } from '@/lib/security';
 import { authEmailService, buildVerifyUrl, isEmailConfigured } from '@/lib/auth-email';
 import { mapUser } from '@/lib/user-mapper';
-import { getInternalApiUrl, isLocalApiUrl } from '@/lib/urls';
+import { isLocalApiUrl, tryGetInternalApiUrl } from '@/lib/urls';
 
-async function proxyRegisterToApi(body: string): Promise<Response> {
-  const apiUrl = getInternalApiUrl();
-  const upstream = await fetch(`${apiUrl}/api/auth/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body,
-    cache: 'no-store',
-  });
-
-  const text = await upstream.text();
-  let data: Record<string, unknown> = {};
-  try {
-    data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-  } catch {
-    data = { error: text || `Upstream error (${upstream.status})` };
+async function proxyRegisterToApi(bodyJson: string): Promise<NextResponse> {
+  const apiUrl = tryGetInternalApiUrl();
+  if (!apiUrl) {
+    return NextResponse.json(
+      { error: 'INTERNAL_API_URL ose NEXT_PUBLIC_API_URL mungon në Vercel.' },
+      { status: 503 }
+    );
   }
 
-  return NextResponse.json(data, { status: upstream.status });
+  try {
+    const upstream = await fetch(`${apiUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: bodyJson,
+      cache: 'no-store',
+    });
+
+    const text = await upstream.text();
+    let data: Record<string, unknown> = {};
+    try {
+      data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+    } catch {
+      data = {
+        error:
+          text?.slice(0, 200) ||
+          `API përgjigjoi me status ${upstream.status} (pa JSON).`,
+      };
+    }
+
+    if (!upstream.ok && !data.error && !data.message) {
+      data.error = `Regjistrimi dështoi (${upstream.status}). Kontrollo API-n në Hetzner.`;
+    }
+
+    return NextResponse.json(data, { status: upstream.status });
+  } catch (err) {
+    console.error('Register proxy error:', err);
+    const msg =
+      err instanceof Error ? err.message : 'Nuk u arrit lidhja me API-n (Hetzner).';
+    return NextResponse.json({ error: msg }, { status: 502 });
+  }
 }
 
 export async function POST(request: Request) {
-  if (!verifyOrigin(request)) {
-    return new Response('Forbidden', { status: 403 });
-  }
-
   const ip = getClientIp(request);
   const userAgent = request.headers.get('user-agent');
   const { maxAttempts, windowMs } = registerRateLimitConfig();
   const isDev = process.env.NODE_ENV !== 'production';
 
-  const rawBody = await request.text();
-
-  const apiUrl = getInternalApiUrl();
-  if (!isDev && !isLocalApiUrl(apiUrl)) {
-    return proxyRegisterToApi(rawBody);
-  }
-
-  if (!isDev) {
-    try {
-      const { success: allowed } = await peekRateLimit('register', ip, maxAttempts, windowMs);
-      if (!allowed) {
-        return NextResponse.json(
-          { error: 'Shumë përpjekje. Provo përsëri pas 1 ore.' },
-          { status: 429 }
-        );
-      }
-    } catch (rateErr) {
-      console.warn('Register rate-limit check skipped:', rateErr);
-    }
-  }
-
   try {
-    const body = rawBody ? JSON.parse(rawBody) : {};
-    const parsed = registerSchema.safeParse(body);
+    if (!verifyOrigin(request)) {
+      return NextResponse.json(
+        { error: 'Kërkesë e bllokuar (origin). Kontrollo NEXTAUTH_URL / domain www vs pa www.' },
+        { status: 403 }
+      );
+    }
 
+    const rawBody = await request.text();
+    let body: unknown = {};
+    try {
+      body = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      return NextResponse.json({ error: 'JSON i pavlefshëm.' }, { status: 400 });
+    }
+
+    const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
       if (!isDev) await bumpRateLimit('register', ip, maxAttempts, windowMs).catch(() => {});
       const firstError = parsed.error.errors[0]?.message || 'Të dhëna të pavlefshme';
       return NextResponse.json({ error: firstError }, { status: 400 });
+    }
+
+    const payloadJson = JSON.stringify(parsed.data);
+
+    const apiUrl = tryGetInternalApiUrl();
+    if (!isDev && apiUrl && !isLocalApiUrl(apiUrl)) {
+      return proxyRegisterToApi(payloadJson);
+    }
+
+    if (!isDev) {
+      try {
+        const { success: allowed } = await peekRateLimit('register', ip, maxAttempts, windowMs);
+        if (!allowed) {
+          return NextResponse.json(
+            { error: 'Shumë përpjekje. Provo përsëri pas 1 ore.' },
+            { status: 429 }
+          );
+        }
+      } catch (rateErr) {
+        console.warn('Register rate-limit check skipped:', rateErr);
+      }
     }
 
     const sanitized = sanitizeFields(parsed.data, [
@@ -176,7 +207,9 @@ export async function POST(request: Request) {
     const dbHint =
       process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL
         ? 'DATABASE_URL mungon në Vercel.'
-        : 'Internal server error';
+        : error instanceof Error
+          ? error.message
+          : 'Internal server error';
     return NextResponse.json({ error: dbHint }, { status: 500 });
   }
 }

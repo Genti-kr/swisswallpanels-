@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { getFrontendUrl } from '../lib/urls';
+import { getCorsOrigins, getFrontendUrl } from '../lib/urls';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -28,13 +28,23 @@ const router = Router();
 function verifyOrigin(req: Request, res: Response, next: NextFunction) {
   const origin = req.headers.origin;
   const referer = req.headers.referer;
-  const allowedOrigin = getFrontendUrl();
-  
-  if (origin && origin !== allowedOrigin) {
-    return res.status(403).json({ error: 'Forbidden: Invalid request origin' });
+  let allowed: string[] = [];
+  try {
+    allowed = getCorsOrigins();
+  } catch {
+    /* server-side / health-adjacent calls without FRONTEND_URL */
   }
-  if (!origin && referer && !referer.startsWith(allowedOrigin)) {
-    return res.status(403).json({ error: 'Forbidden: Invalid request referer' });
+
+  if (origin && allowed.length > 0) {
+    const normalized = origin.replace(/\/$/, '');
+    if (!allowed.includes(normalized)) {
+      return res.status(403).json({ error: 'Forbidden: Invalid request origin' });
+    }
+  }
+  if (!origin && referer && allowed.length > 0) {
+    if (!allowed.some((a) => referer.startsWith(a))) {
+      return res.status(403).json({ error: 'Forbidden: Invalid request referer' });
+    }
   }
   next();
 }
@@ -146,8 +156,12 @@ router.post('/register', registerLimiter, async (req: Request, res: Response, ne
 
     const postmarkKey = process.env.POSTMARK_API_KEY;
     if (!postmarkKey || postmarkKey.includes('placeholder') || postmarkKey.includes('your-postmark')) {
-      const loc = localeFromLanguage(user.preferredLanguage);
-      payload.devVerifyUrl = `${getFrontendUrl()}/${loc}/verify-email?token=${verifyToken}`;
+      try {
+        const loc = localeFromLanguage(user.preferredLanguage);
+        payload.devVerifyUrl = `${getFrontendUrl()}/${loc}/verify-email?token=${verifyToken}`;
+      } catch (urlErr) {
+        console.warn('Register: devVerifyUrl skipped (set FRONTEND_URL):', urlErr);
+      }
     }
 
     res.status(201).json(payload);

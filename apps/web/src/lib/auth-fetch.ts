@@ -19,7 +19,12 @@ export async function authFetch<T>(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.error || data.message || `Request failed: ${res.status}`);
+    const detail =
+      (typeof data.error === 'string' && data.error) ||
+      (typeof data.message === 'string' && data.message) ||
+      (Array.isArray(data.details) && data.details[0]?.message) ||
+      `Request failed: ${res.status}`;
+    throw new Error(detail);
   }
 
   return data as T;

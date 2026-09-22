@@ -37,17 +37,54 @@ export function getPublicSiteUrl(): string {
   return DEV_SITE_URL;
 }
 
+/** Origins allowed for browser → /api/auth/* (apex + www). */
+export function getAllowedOrigins(): string[] {
+  const origins = new Set<string>();
+  const add = (raw?: string | null) => {
+    if (!raw?.trim()) return;
+    origins.add(normalizeUrl(raw.trim()));
+  };
+
+  add(process.env.NEXTAUTH_URL);
+  add(process.env.FRONTEND_URL);
+  add(process.env.NEXT_PUBLIC_SITE_URL);
+
+  for (const base of [...origins]) {
+    try {
+      const url = new URL(base);
+      if (url.hostname.startsWith('www.')) {
+        add(`${url.protocol}//${url.hostname.slice(4)}`);
+      } else {
+        add(`${url.protocol}//www.${url.hostname}`);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (origins.size === 0 && !isProduction()) {
+    origins.add(DEV_SITE_URL);
+  }
+
+  return [...origins];
+}
+
 /** Origin used for CSRF/origin checks on auth routes. */
 export function getAllowedOrigin(): string {
-  const value =
-    process.env.NEXTAUTH_URL?.trim() ||
-    process.env.FRONTEND_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (value) return normalizeUrl(value);
+  const list = getAllowedOrigins();
+  if (list.length > 0) return list[0];
   if (isProduction()) {
     throw new Error('NEXTAUTH_URL, FRONTEND_URL, or NEXT_PUBLIC_SITE_URL must be set in production');
   }
   return DEV_SITE_URL;
+}
+
+export function tryGetInternalApiUrl(): string | null {
+  try {
+    return getInternalApiUrl();
+  } catch {
+    return null;
+  }
 }
 
 export function buildCspConnectSrc(): string {

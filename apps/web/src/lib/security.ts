@@ -12,19 +12,24 @@ export function hashIp(ip: string): string {
   return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
-import { getAllowedOrigin } from './urls';
+import { getAllowedOrigins } from './urls';
 
 export function verifyOrigin(request: Request): boolean {
-  const origin = request.headers.get('origin');
-  const allowedOrigin = getAllowedOrigin();
+  const allowed = getAllowedOrigins();
+  if (allowed.length === 0) {
+    console.warn('verifyOrigin: no allowed origins configured');
+    return process.env.NODE_ENV !== 'production';
+  }
 
-  if (origin && origin !== allowedOrigin) {
-    return false;
+  const origin = request.headers.get('origin');
+  if (origin) {
+    const normalized = origin.replace(/\/$/, '');
+    return allowed.some((a) => a === normalized);
   }
 
   const referer = request.headers.get('referer');
-  if (!origin && referer && !referer.startsWith(allowedOrigin)) {
-    return false;
+  if (referer) {
+    return allowed.some((a) => referer.startsWith(a));
   }
 
   return true;
