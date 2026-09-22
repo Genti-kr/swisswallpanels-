@@ -13,7 +13,14 @@ const NEXTJS_ONLY_ROUTES = [
 ];
 
 function isNextJsOnlyRoute(path: string): boolean {
-  return NEXTJS_ONLY_ROUTES.some((p) => path === p || path.startsWith(`${p}/`));
+  if (NEXTJS_ONLY_ROUTES.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return true;
+  }
+  // Handled on Vercel (same DB) — works without Hetzner API deploy
+  if (/^\/api\/admin\/orders\/[^/]+\/delete$/.test(path)) {
+    return true;
+  }
+  return false;
 }
 
 function isMultipartUploadRoute(path: string): boolean {

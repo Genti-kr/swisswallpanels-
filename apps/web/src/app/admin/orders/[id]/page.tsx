@@ -149,9 +149,7 @@ export default function AdminOrderDetailPage() {
       setDeleteError(
         msg.includes('ORDER_PAID') || msg.includes('409')
           ? 'Porositë e paguara nuk mund të fshihen (statusi i pagesës: Paguar).'
-          : msg.includes('404') || msg.toLowerCase().includes('not found')
-            ? 'Endpoint i fshirjes nuk u gjet — ri-deploy API-n në server.'
-            : msg || 'Fshirja dështoi. Provoni përsëri.'
+          : msg || 'Fshirja dështoi. Provoni përsëri.'
       );
     } finally {
       setDeleting(false);
