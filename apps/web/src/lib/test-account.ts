@@ -1,9 +1,13 @@
-/** Emails that must not log in on production (demo / seed accounts). */
+/** Block demo/seed logins on production only when explicitly enabled. */
 export function isTestLoginBlocked(email: string): boolean {
+  if (process.env.NODE_ENV !== 'production') {
+    return false;
+  }
   if (process.env.ALLOW_TEST_ACCOUNTS === 'true') {
     return false;
   }
-  if (process.env.NODE_ENV !== 'production') {
+  // Default: test accounts allowed on prod. Set BLOCK_TEST_ACCOUNTS=true to disable them.
+  if (process.env.BLOCK_TEST_ACCOUNTS !== 'true') {
     return false;
   }
 
