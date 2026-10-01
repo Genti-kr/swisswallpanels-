@@ -7,6 +7,7 @@ const router = Router();
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const categories = await prisma.category.findMany({
+      where: { products: { some: {} } },
       orderBy: { sortOrder: 'asc' },
     });
     res.json({ items: categories.map(mapCategory) });
