@@ -5,7 +5,7 @@ import { mapOrderDetail } from '../../lib/mappers';
 import { requireAuth, AuthenticatedRequest } from '../../middleware/auth';
 import { emailService } from '../../services/email';
 import { OrderStatus, PaymentStatus, DeliveryStatus } from '@swisswall/types';
-import { deleteUnpaidOrder } from '../../lib/order-delete';
+import { deleteOrderById, isForcePaidDeleteEnabled } from '../../lib/order-delete';
 
 const router = Router();
 router.use(requireAuth(['ADMIN', 'SUPERADMIN']));
@@ -196,9 +196,25 @@ router.patch('/:id/status', async (req: AuthenticatedRequest, res: Response, nex
   }
 });
 
-async function handleDeleteOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+async function handleDeleteOrder(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+  forcePaid = false
+) {
   try {
-    await deleteUnpaidOrder(req.params.id);
+    if (forcePaid) {
+      if (req.user?.role !== 'SUPERADMIN') {
+        return res.status(403).json({ error: 'SUPERADMIN required' });
+      }
+      if (!isForcePaidDeleteEnabled()) {
+        return res.status(403).json({
+          error: 'FORCE_DELETE_DISABLED',
+          message: 'Set ALLOW_DELETE_PAID_ORDERS=true on API for test-order cleanup.',
+        });
+      }
+    }
+    await deleteOrderById(req.params.id, { forcePaid });
     res.status(204).send();
   } catch (error) {
     const err = error as Error & { statusCode?: number };
@@ -215,8 +231,11 @@ async function handleDeleteOrder(req: AuthenticatedRequest, res: Response, next:
   }
 }
 
-router.delete('/:id', handleDeleteOrder);
-router.post('/:id/delete', handleDeleteOrder);
+router.delete('/:id', (req, res, next) => handleDeleteOrder(req, res, next, false));
+router.post('/:id/delete', (req, res, next) => handleDeleteOrder(req, res, next, false));
+router.post('/:id/force-delete', (req, res, next) =>
+  handleDeleteOrder(req, res, next, true)
+);
 
 router.post('/:id/note', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {

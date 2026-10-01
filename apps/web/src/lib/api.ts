@@ -17,7 +17,9 @@ function isNextJsOnlyRoute(path: string): boolean {
     return true;
   }
   // Handled on Vercel (same DB) — works without Hetzner API deploy
-  if (/^\/api\/admin\/orders\/[^/]+\/delete$/.test(path)) {
+  if (
+    /^\/api\/admin\/orders\/[^/]+\/(delete|force-delete)$/.test(path)
+  ) {
     return true;
   }
   return false;

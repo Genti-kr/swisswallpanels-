@@ -21,6 +21,7 @@ import { ORDER_STATUS_STYLES, formatDashboardDateTime } from '@/lib/dashboard-ut
 import { formatAdminCanton, formatAdminCountry } from '@/lib/shipping-geo';
 import { adminRowLabelClass, adminRowValueClass, adminSelectClass, adminTextareaClass } from '@/lib/admin-ui';
 import { isOrderDeletable } from '@/lib/order-delete';
+import { useAuth } from '@/lib/auth-store';
 
 const STATUSES: OrderStatus[] = [
   'PENDING',
@@ -94,7 +95,9 @@ function AddressBlock({
 export default function AdminOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const id = params.id as string;
+  const isSuperAdmin = user?.role === 'SUPERADMIN';
   const [order, setOrder] = useState<OrderDetailDTO | null>(null);
   const [status, setStatus] = useState<OrderStatus>('PENDING');
   const [note, setNote] = useState('');
@@ -128,6 +131,30 @@ export default function AdminOrderDetailPage() {
       load();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const forceDeleteTestOrder = async () => {
+    if (!order) return;
+    const ok = window.confirm(
+      `Fshi porosinë e PAGUAR ${order.orderNumber}? Vetëm për test — kërkon ALLOW_DELETE_PAID_ORDERS=true në API.`
+    );
+    if (!ok) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiFetch(`/api/admin/orders/${id}/force-delete`, { method: 'POST' });
+      router.push('/admin/orders');
+      router.refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      setDeleteError(
+        msg.includes('FORCE_DELETE_DISABLED')
+          ? 'Aktivizo ALLOW_DELETE_PAID_ORDERS=true në .env të API (Hetzner) dhe rebuild.'
+          : msg || 'Fshirja dështoi.'
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -418,11 +445,32 @@ export default function AdminOrderDetailPage() {
           </button>
         </div>
       ) : (
-        <p className="text-xs text-zinc-500 pl-1">
-          Fshirja nuk lejohet — pagesa është{' '}
-          {paymentStatusLabels[order.paymentStatus ?? ''] ?? order.paymentStatus ?? 'Paguar'}. Përdorni
-          rimbursimin në Stripe, jo fshirjen.
-        </p>
+        <div className="bg-white rounded-2xl border border-amber-100 p-6 shadow-sm space-y-3">
+          <p className="text-sm text-zinc-600">
+            Porosia është <strong className="text-zinc-800">e paguar</strong> — nuk fshihet si porosi
+            normale (mbetet për kontabilitet). Produkti nuk fshihet derisa porosia të hiqet.
+          </p>
+          {deleteError ? <p className="text-sm text-red-600">{deleteError}</p> : null}
+          {isSuperAdmin ? (
+            <button
+              type="button"
+              onClick={forceDeleteTestOrder}
+              disabled={deleting || saving}
+              className="inline-flex items-center gap-2 border border-amber-300 text-amber-900 px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 transition-colors disabled:opacity-50"
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Fshi porosinë test (TWINT / e paguar)
+            </button>
+          ) : (
+            <p className="text-xs text-zinc-500">
+              Vetëm SUPERADMIN mund të fshijë porosi test të paguara (me flag në server).
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

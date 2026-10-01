@@ -10,7 +10,14 @@ export function isOrderDeletable(paymentStatus: string | null | undefined): bool
   return !BLOCKED_PAYMENT_STATUSES.includes(ps);
 }
 
-export async function deleteUnpaidOrder(orderId: string): Promise<void> {
+export function isForcePaidDeleteEnabled(): boolean {
+  return process.env.ALLOW_DELETE_PAID_ORDERS === 'true';
+}
+
+export async function deleteOrderById(
+  orderId: string,
+  options?: { forcePaid?: boolean }
+): Promise<void> {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) {
     const err = new Error('Order not found') as Error & { statusCode?: number };
@@ -18,7 +25,8 @@ export async function deleteUnpaidOrder(orderId: string): Promise<void> {
     throw err;
   }
 
-  if (!isOrderDeletable(order.paymentStatus)) {
+  const forcePaid = options?.forcePaid === true && isForcePaidDeleteEnabled();
+  if (!forcePaid && !isOrderDeletable(order.paymentStatus)) {
     const err = new Error('ORDER_PAID') as Error & { statusCode?: number };
     err.statusCode = 409;
     throw err;
@@ -51,4 +59,9 @@ export async function deleteUnpaidOrder(orderId: string): Promise<void> {
     }
     await tx.order.delete({ where: { id: order.id } });
   });
+}
+
+/** @deprecated use deleteOrderById */
+export async function deleteUnpaidOrder(orderId: string): Promise<void> {
+  return deleteOrderById(orderId);
 }
