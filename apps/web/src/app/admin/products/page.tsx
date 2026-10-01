@@ -229,6 +229,16 @@ export default function AdminProductsPage() {
         setSaving(false);
         return;
       }
+      if (!form.slug.trim()) {
+        setError('Vendos slug-un (URL) e produktit.');
+        setSaving(false);
+        return;
+      }
+      if (!form.sku.trim()) {
+        setError('Vendos SKU-n e produktit.');
+        setSaving(false);
+        return;
+      }
 
       const panelPayload = buildPanelOptionsPayload(
         form.panel1,
@@ -322,8 +332,18 @@ export default function AdminProductsPage() {
 
       if (uploadWarning) {
         setError(`Produkti u ruajt, por: ${uploadWarning}`);
+      } else {
+        setError('');
       }
       setSuccess(isEdit ? 'Produkti u përditësua.' : 'Produkti u shtua me sukses.');
+      await refreshCatalog();
+      if (!uploadWarning && !isEdit) {
+        setShowForm(false);
+        clearPendingImages();
+        setEditingId(null);
+        setEditingImages([]);
+        setForm(defaultForm());
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ruajtja');
     } finally {
@@ -1081,6 +1101,7 @@ export default function AdminProductsPage() {
                       src={primaryImage.url}
                       alt={p.nameJson.de}
                       variant="card"
+                      useStockFallback={false}
                     />
                   ) : (
                     <div className="aspect-[4/3] rounded-xl bg-[#F8F8F6] flex flex-col items-center justify-center text-zinc-400 gap-2 border border-zinc-100">

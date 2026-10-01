@@ -11,6 +11,8 @@ type ProductPhotoFrameProps = {
   imageClassName?: string;
   hoverZoom?: boolean;
   priority?: boolean;
+  /** When false, do not swap to stock placeholder on load error (admin uploads). */
+  useStockFallback?: boolean;
 };
 
 const outerShell: Record<NonNullable<ProductPhotoFrameProps['variant']>, string> = {
@@ -33,13 +35,17 @@ export function ProductPhotoFrame({
   imageClassName = '',
   hoverZoom = false,
   priority = false,
+  useStockFallback = true,
 }: ProductPhotoFrameProps) {
-  const resolved = resolveMediaUrl(src) || PRODUCT_IMAGE_FALLBACK;
+  const emptyFallback = useStockFallback ? PRODUCT_IMAGE_FALLBACK : '';
+  const resolved = resolveMediaUrl(src, { fallback: emptyFallback }) || emptyFallback;
   const [url, setUrl] = useState(resolved);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setUrl(resolveMediaUrl(src) || PRODUCT_IMAGE_FALLBACK);
-  }, [src]);
+    setFailed(false);
+    setUrl(resolveMediaUrl(src, { fallback: emptyFallback }) || emptyFallback);
+  }, [src, emptyFallback]);
 
   return (
     <div
@@ -48,16 +54,28 @@ export function ProductPhotoFrame({
       <div
         className={`absolute ${insetPad[variant]} flex items-center justify-center rounded-lg bg-white border border-zinc-100/90 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]`}
       >
-        <img
-          src={url}
-          alt={alt}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-          className={`block w-full h-full object-contain object-center ${hoverZoom ? 'transition-transform duration-500 ease-out group-hover:scale-[1.03]' : ''} ${imageClassName}`}
-          onError={() => {
-            if (url !== PRODUCT_IMAGE_FALLBACK) setUrl(PRODUCT_IMAGE_FALLBACK);
-          }}
-        />
+        {url ? (
+          <img
+            src={url}
+            alt={alt}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            className={`block w-full h-full object-contain object-center ${hoverZoom ? 'transition-transform duration-500 ease-out group-hover:scale-[1.03]' : ''} ${imageClassName}`}
+            onError={() => {
+              if (useStockFallback && url !== PRODUCT_IMAGE_FALLBACK) {
+                setUrl(PRODUCT_IMAGE_FALLBACK);
+                return;
+              }
+              setFailed(true);
+            }}
+          />
+        ) : null}
+        {!useStockFallback && (failed || !url) ? (
+          <span className="text-[10px] text-red-500 px-2 text-center">
+            Foto nuk u ngarkua — vendos NEXT_PUBLIC_R2_PUBLIC_URL në Vercel ose kontrollo /uploads
+            në API.
+          </span>
+        ) : null}
       </div>
     </div>
   );

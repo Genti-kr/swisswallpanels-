@@ -32,7 +32,10 @@ async function forwardMultipart(
 
   if (!res.ok) {
     return NextResponse.json(
-      { error: data.error || 'Image upload failed' },
+      {
+        error: data.error || data.message || 'Image upload failed',
+        details: data.details,
+      },
       { status: res.status }
     );
   }

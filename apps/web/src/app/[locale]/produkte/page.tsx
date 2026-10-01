@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
-import { ProductDTO } from '@swisswall/types';
+import { CategoryDTO, ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import { useCart } from '@/lib/cart-store';
@@ -15,7 +15,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [categoryFilters, setCategoryFilters] = useState<
+    { slug: string; label: string }[]
+  >([{ slug: 'all', label: '' }]);
+
   const { fetchCart, addItem } = useCart();
   const locale = useLocale();
   
@@ -24,6 +27,21 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchCart();
   }, [fetchCart]);
+
+  useEffect(() => {
+    apiFetch<{ items: CategoryDTO[] }>('/api/categories')
+      .then((res) => {
+        const loc = locale as keyof CategoryDTO['nameJson'];
+        const fromApi = res.items.map((c) => ({
+          slug: c.slug,
+          label: c.nameJson[loc] || c.nameJson.de || c.nameJson.en || c.slug,
+        }));
+        setCategoryFilters([{ slug: 'all', label: tProducts('allCategories') }, ...fromApi]);
+      })
+      .catch(() => {
+        setCategoryFilters([{ slug: 'all', label: tProducts('allCategories') }]);
+      });
+  }, [locale, tProducts]);
 
   useEffect(() => {
     setLoading(true);
@@ -45,13 +63,16 @@ export default function ProductsPage() {
       .finally(() => setLoading(false));
   }, [activeCategory, searchQuery]);
 
-  const categories = [
-    { slug: 'all', label: { de: 'Alle Kollektionen', en: 'All Collections', fr: 'Toutes Collections', sq: 'Të Gjitha' } },
-    { slug: 'akustikpaneele', label: { de: 'Akustikpaneele', en: 'Acoustic Panels', fr: 'Panneaux Acoustiques', sq: 'Panele Akustike' } },
-    { slug: 'dekorationspaneele', label: { de: 'Dekorationspaneele', en: 'Decorative Panels', fr: 'Panneaux Décoratifs', sq: 'Panele Dekorative' } },
-    { slug: 'holzpaneele', label: { de: 'Holzpaneele', en: 'Wood Panels', fr: 'Panneaux en Bois', sq: 'Panele Druri' } },
-  ];
-
+  const categoryLabelForProduct = (p: ProductDTO) => {
+    if (!p.category) return 'Swiss Design';
+    const loc = locale as keyof CategoryDTO['nameJson'];
+    return (
+      p.category.nameJson[loc] ||
+      p.category.nameJson.de ||
+      p.category.nameJson.en ||
+      p.category.slug
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F8F6] text-[#1A1A1A] font-sans flex flex-col">
@@ -85,7 +106,7 @@ export default function ProductsPage() {
         <section className="max-w-7xl mx-auto px-6 pt-12 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* Categories Tab list */}
           <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {categories.map((cat) => (
+            {categoryFilters.map((cat) => (
               <button
                 key={cat.slug}
                 onClick={() => setActiveCategory(cat.slug)}
@@ -95,7 +116,8 @@ export default function ProductsPage() {
                     : 'bg-white border border-zinc-200/60 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900'
                 }`}
               >
-                {cat.label[locale as keyof typeof cat.label] || cat.label.de}
+                {cat.label ||
+                  (cat.slug === 'all' ? tProducts('allCategories') : cat.slug)}
               </button>
             ))}
           </div>
@@ -146,8 +168,6 @@ export default function ProductsPage() {
               {products.map((p) => {
                 const name = p.nameJson[locale as keyof typeof p.nameJson] || p.nameJson.de;
                 const desc = p.descJson[locale as keyof typeof p.descJson] || p.descJson.de;
-                const categorySlug = p.category?.slug || '';
-                
                 return (
                   <Link
                     key={p.id}
@@ -178,11 +198,8 @@ export default function ProductsPage() {
 
                       {/* Text info */}
                       <div className="mt-4 space-y-2">
-                        <span className="text-[10px] font-semibold text-[#C8B89A] uppercase tracking-widest block">
-                          {categorySlug === 'akustikpaneele' && (locale === 'sq' ? 'Akustikë' : 'Acoustic')}
-                          {categorySlug === 'dekorationspaneele' && (locale === 'sq' ? 'Dekor' : 'Decorative')}
-                          {categorySlug === 'holzpaneele' && (locale === 'sq' ? 'Druri' : 'Wood')}
-                          {!categorySlug && 'Swiss Design'}
+                        <span className="text-[10px] font-semibold text-[#C8B89A] uppercase tracking-widest block line-clamp-1">
+                          {categoryLabelForProduct(p)}
                         </span>
                         
                         <h2 className="text-lg font-light text-zinc-900 group-hover:text-[#C8B89A] transition-colors duration-300 line-clamp-1">

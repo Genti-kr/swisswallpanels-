@@ -1,23 +1,11 @@
-async function getUploadCredentials(): Promise<{ token: string; apiBase: string }> {
-  const res = await fetch('/api/admin/upload-token', { credentials: 'include' });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || 'Nuk u mor leja për ngarkimin e fotove');
-  }
-  return { token: data.token, apiBase: data.apiBase };
-}
-
+/** Upload via same-origin Next route (proxies to API) — avoids browser CORS to Hetzner. */
 export async function uploadProductImageDirect(
   productId: string,
   formData: FormData
 ): Promise<unknown> {
-  const { token, apiBase } = await getUploadCredentials();
-
-  const res = await fetch(`${apiBase}/api/admin/products/${productId}/images`, {
+  const res = await fetch(`/api/admin/products/${productId}/images`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
     body: formData,
   });
 
@@ -26,7 +14,14 @@ export async function uploadProductImageDirect(
     const details = Array.isArray(data.details)
       ? data.details.map((d: { message?: string }) => d.message).filter(Boolean).join('; ')
       : '';
-    throw new Error(data.error || details || `Upload failed: ${res.status}`);
+    const msg =
+      data.error ||
+      data.message ||
+      details ||
+      (res.status === 503
+        ? 'API ose storage (R2) nuk është i arritshëm. Kontrollo serverin dhe R2_PUBLIC_URL.'
+        : `Upload failed: ${res.status}`);
+    throw new Error(msg);
   }
   return data;
 }

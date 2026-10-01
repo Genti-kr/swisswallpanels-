@@ -132,7 +132,9 @@ export async function processAndUploadImage(
     }
 
     if (isR2Configured()) {
-      return uploadToR2(processed, `${folder}/${filename}`, contentType);
+      const key = `${folder}/${filename}`;
+      await uploadToR2(processed, key, contentType);
+      return key;
     }
     return uploadLocally(processed, filename);
   }
