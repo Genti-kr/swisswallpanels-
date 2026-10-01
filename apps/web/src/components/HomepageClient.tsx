@@ -253,9 +253,9 @@ export default function HomepageClient() {
           </div>
 
           <div className="relative z-10 max-w-4xl mx-auto space-y-8">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#C8B89A]">
+            <p className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-[#C8B89A] max-w-xl mx-auto leading-relaxed">
               {t('Hero.badge')}
-            </span>
+            </p>
             <h1 className="text-5xl md:text-7xl font-light tracking-tight text-[#1A1A1A]">
               {t('Hero.title')}
             </h1>

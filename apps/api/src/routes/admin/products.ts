@@ -15,6 +15,7 @@ import {
   syncPanelOptionsSchema,
 } from '../../lib/validators/product-variant';
 import { syncPanelOptionsForProduct } from '../../lib/sync-panel-options';
+import { deleteCategoryIfEmpty } from '../../lib/category-cleanup';
 import {
   parseAdminProductCreateBody,
   parseAdminProductUpdateBody,
@@ -141,6 +142,8 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: Nex
 
     const images = await prisma.productImage.findMany({ where: { productId } });
 
+    const categoryId = product.categoryId;
+
     await prisma.$transaction(async (tx) => {
       await tx.review.deleteMany({ where: { productId } });
       await tx.cartItem.deleteMany({ where: { productId } });
@@ -150,6 +153,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: Nex
         data: { productId: null },
       });
       await tx.product.delete({ where: { id: productId } });
+      await deleteCategoryIfEmpty(tx, categoryId);
     });
 
     for (const img of images) {
