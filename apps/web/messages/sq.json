@@ -67,7 +67,10 @@
     "details": "Shiko Detajet",
     "title": "Produktet tona",
     "allCategories": "Të gjitha",
-    "material": "Materiali"
+    "material": "Materiali",
+    "moreInCarousel": "Produkte të tjera",
+    "carouselHint": "Përdorni shigjetat ose rrëshqitni horizontalisht për të parë të gjithë koleksionin.",
+    "showingCount": "{count} produkte aktive në katalog"
   },
   "Calculator": {
     "title": "Llogaritni çmimin tuaj",

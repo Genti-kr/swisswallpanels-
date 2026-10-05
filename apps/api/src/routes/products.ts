@@ -10,7 +10,7 @@ const router = Router();
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(50).default(12),
+  pageSize: z.coerce.number().int().min(1).max(500).default(12),
   category: z.string().max(100).optional(),
   featured: z.enum(['true', 'false']).optional(),
   search: z.string().max(100).optional(),

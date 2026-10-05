@@ -67,7 +67,10 @@
     "details": "Details ansehen",
     "title": "Unsere Produkte",
     "allCategories": "Alle Kollektionen",
-    "material": "Material"
+    "material": "Material",
+    "moreInCarousel": "Weitere Produkte",
+    "carouselHint": "Mit den Pfeilen oder horizontal scrollen, um die gesamte Kollektion zu sehen.",
+    "showingCount": "{count} aktive Produkte im Katalog"
   },
   "Calculator": {
     "title": "Berechnen Sie Ihren Preis",
