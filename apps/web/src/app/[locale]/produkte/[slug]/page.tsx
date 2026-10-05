@@ -8,7 +8,7 @@ import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { ProductPhotoFrame } from '@/components/ProductPhotoFrame';
 import { useCart } from '@/lib/cart-store';
-import { ArrowLeft, Plus, Minus, ShieldCheck, Ruler, Maximize2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Ruler, Maximize2, ShoppingBag } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ColorCatalogGrid } from '@/components/ColorCatalogGrid';
 import { fetchColorCatalogBySlug } from '@/lib/color-catalog';
@@ -174,10 +174,6 @@ export default function ProductDetailPage() {
                 variant="detail"
                 priority
               />
-              <span className="absolute top-3 left-3 z-10 bg-zinc-900/95 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md flex items-center gap-1 select-none pointer-events-none">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#C8B89A]" />
-                Swiss Quality
-              </span>
             </div>
 
             {galleryImages.length > 1 && (

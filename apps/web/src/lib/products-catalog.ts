@@ -1,4 +1,4 @@
-export const PRODUCTS_CATALOG_PAGE_SIZE = 20;
+export const PRODUCTS_CATALOG_PAGE_SIZE = 15;
 
 export function getCatalogPageCount(totalProducts: number): number {
   if (totalProducts <= 0) return 0;
