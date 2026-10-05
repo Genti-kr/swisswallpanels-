@@ -70,7 +70,11 @@
     "material": "Material",
     "moreInCarousel": "Weitere Produkte",
     "carouselHint": "Mit den Pfeilen oder horizontal scrollen, um die gesamte Kollektion zu sehen.",
-    "showingCount": "{count} aktive Produkte im Katalog"
+    "showingCount": "{count} aktive Produkte im Katalog",
+    "catalogPageLabel": "Seite {current} von {total}",
+    "catalogPagerHint": "Weitere Produkte — Seite 1, 2, 3 … wählen",
+    "catalogPrev": "Vorherige Seite",
+    "catalogNext": "Nächste Seite"
   },
   "Calculator": {
     "title": "Berechnen Sie Ihren Preis",

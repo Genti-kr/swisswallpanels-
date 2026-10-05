@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CategoryDTO, ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { fetchAllProducts } from '@/lib/fetch-all-products';
+import { getCatalogPageCount, getCatalogPageSlice } from '@/lib/products-catalog';
 import { ProductListingCard } from '@/components/ProductListingCard';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 import { useCart } from '@/lib/cart-store';
 import { SlidersHorizontal, Search } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -18,6 +20,8 @@ export default function ProductsPage() {
   const [categoryFilters, setCategoryFilters] = useState<{ slug: string; label: string }[]>([
     { slug: 'all', label: '' },
   ]);
+  const [catalogPage, setCatalogPage] = useState(1);
+  const gridAnchorRef = useRef<HTMLDivElement>(null);
 
   const { fetchCart, addItem } = useCart();
   const locale = useLocale();
@@ -60,6 +64,20 @@ export default function ProductsPage() {
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [activeCategory, searchQuery]);
+
+  useEffect(() => {
+    setCatalogPage(1);
+  }, [activeCategory, searchQuery]);
+
+  const visibleProducts = useMemo(
+    () => getCatalogPageSlice(products, catalogPage),
+    [products, catalogPage]
+  );
+
+  const handleCatalogPageChange = (page: number) => {
+    setCatalogPage(page);
+    gridAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const categoryLabelForProduct = (p: ProductDTO) => {
     if (!p.category) return 'Swiss Design';
@@ -147,10 +165,16 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-6 pb-24">
+        <section ref={gridAnchorRef} className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-24">
           {!loading && products.length > 0 ? (
             <p className="text-xs text-zinc-400 font-light mb-8 text-center md:text-left">
               {tProducts('showingCount', { count: products.length })}
+              {products.length > visibleProducts.length
+                ? ` · ${tProducts('catalogPageLabel', {
+                    current: catalogPage,
+                    total: getCatalogPageCount(products.length),
+                  })}`
+                : null}
             </p>
           ) : null}
           {loading ? (
@@ -184,9 +208,24 @@ export default function ProductsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((p) => renderCard(p))}
-            </div>
+            <>
+              <div
+                key={catalogPage}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 transition-opacity duration-300"
+              >
+                {visibleProducts.map((p) => renderCard(p))}
+              </div>
+              <ProductsCatalogPager
+                totalProducts={products.length}
+                currentPage={catalogPage}
+                onPageChange={handleCatalogPageChange}
+                labels={{
+                  page: tProducts('catalogPagerHint'),
+                  prev: tProducts('catalogPrev'),
+                  next: tProducts('catalogNext'),
+                }}
+              />
+            </>
           )}
         </section>
       </main>

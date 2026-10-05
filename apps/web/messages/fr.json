@@ -70,7 +70,11 @@
     "material": "Matériau",
     "moreInCarousel": "Autres produits",
     "carouselHint": "Utilisez les flèches ou faites défiler horizontalement pour voir toute la collection.",
-    "showingCount": "{count} produits actifs au catalogue"
+    "showingCount": "{count} produits actifs au catalogue",
+    "catalogPageLabel": "Page {current} sur {total}",
+    "catalogPagerHint": "Voir plus de produits — choisissez la page 1, 2, 3…",
+    "catalogPrev": "Page précédente",
+    "catalogNext": "Page suivante"
   },
   "Calculator": {
     "title": "Calculez votre prix",
