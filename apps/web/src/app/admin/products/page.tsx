@@ -13,6 +13,7 @@ import {
 } from '@/lib/admin-panel-options';
 import { MAX_PRODUCT_IMAGES } from '@/lib/product-images';
 import { uploadProductImageDirect } from '@/lib/admin-product-image-upload';
+import { fetchAdminProductCatalog } from '@/lib/fetch-admin-catalog';
 import {
   parseDecimalInput,
   parseIntegerInput,
@@ -162,9 +163,7 @@ export default function AdminProductsPage() {
   };
 
   const refreshCatalog = useCallback(async () => {
-    const res = await apiFetch<{ items: ProductDTO[]; categories?: CategoryDTO[] }>(
-      '/api/admin/products'
-    );
+    const res = await fetchAdminProductCatalog();
     setProducts(res.items ?? []);
     if (res.categories?.length) {
       setCategories(res.categories);
@@ -173,7 +172,7 @@ export default function AdminProductsPage() {
         const catRes = await apiFetch<{ items: CategoryDTO[] }>('/api/categories');
         setCategories(catRes.items ?? []);
       } catch {
-        /* kategoritë opsionale — produktet mbeten */
+        /* kategoritë opsionale */
       }
     }
     return res.items ?? [];
@@ -185,7 +184,12 @@ export default function AdminProductsPage() {
     try {
       await refreshCatalog();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Dështoi ngarkimi i produkteve');
+      const msg = err instanceof Error ? err.message : 'Dështoi ngarkimi i produkteve';
+      setError(
+        msg.includes('Internal server error') || msg.includes('Request failed: 5')
+          ? `${msg} — provo të dalësh dhe të hysh përsëri si admin; API: api.swisswallpanels.ch`
+          : msg
+      );
     } finally {
       setLoading(false);
     }

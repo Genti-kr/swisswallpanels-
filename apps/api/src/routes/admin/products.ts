@@ -33,7 +33,15 @@ router.get('/', async (_req: AuthenticatedRequest, res: Response, next: NextFunc
       include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
-    res.json({ items: products.map(mapProduct) });
+    const items = [];
+    for (const row of products) {
+      try {
+        items.push(mapProduct(row));
+      } catch (mapErr) {
+        console.error('admin products: skip row', row.id, mapErr);
+      }
+    }
+    res.json({ items });
   } catch (error) {
     next(error);
   }
