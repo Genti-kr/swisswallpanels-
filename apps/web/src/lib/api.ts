@@ -34,6 +34,9 @@ function isMultipartUploadRoute(path: string): boolean {
 
 function resolveApiUrl(path: string, method = 'GET'): string {
   if (typeof window !== 'undefined' && path.startsWith('/api/')) {
+    if (method === 'GET' && path === '/api/admin/products') {
+      return path;
+    }
     if (isNextJsOnlyRoute(path)) {
       return path;
     }

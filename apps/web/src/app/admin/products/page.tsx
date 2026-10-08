@@ -19,6 +19,8 @@ import {
   sanitizeDecimalInput,
   sanitizeIntegerInput,
 } from '@/lib/numeric-input';
+import { getCatalogPageCount, getCatalogPageSlice } from '@/lib/products-catalog';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 
 const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024;
 import {
@@ -103,12 +105,26 @@ export default function AdminProductsPage() {
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState<FormState>(defaultForm());
   const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
+  const [catalogPage, setCatalogPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const adminGridRef = useRef<HTMLDivElement>(null);
 
   const savedCategoryNames = useMemo(() => {
     const names = categories.map(categoryLabel).filter(Boolean);
     return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'de'));
   }, [categories]);
+
+  const visibleProducts = useMemo(
+    () => getCatalogPageSlice(products, catalogPage),
+    [products, catalogPage]
+  );
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(products.length);
+    if (catalogPage > maxPage && maxPage > 0) {
+      setCatalogPage(maxPage);
+    }
+  }, [products.length, catalogPage]);
 
   const clearPendingImages = useCallback(() => {
     setPendingImages((prev) => {
@@ -1087,8 +1103,16 @@ export default function AdminProductsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {products.map((p) => {
+        <>
+          <p className="text-xs text-zinc-500 mb-4">
+            {products.length} produkte në total
+            {products.length > visibleProducts.length
+              ? ` · Faqja ${catalogPage} nga ${getCatalogPageCount(products.length)} (15 për faqe)`
+              : null}
+          </p>
+          <div ref={adminGridRef} className="h-0" aria-hidden />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {visibleProducts.map((p) => {
             const primaryImage = p.images.find((i) => i.isPrimary) || p.images[0];
             return (
               <div
@@ -1173,7 +1197,21 @@ export default function AdminProductsPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+          <ProductsCatalogPager
+            totalProducts={products.length}
+            currentPage={catalogPage}
+            onPageChange={(page) => {
+              setCatalogPage(page);
+              adminGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            labels={{
+              page: 'Zgjidh faqen 1, 2, 3… (15 produkte për faqe)',
+              prev: 'Faqja e mëparshme',
+              next: 'Faqja tjetër',
+            }}
+          />
+        </>
       )}
     </div>
   );
