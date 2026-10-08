@@ -74,7 +74,10 @@
     "catalogPageLabel": "Faqja {current} nga {total}",
     "catalogPagerHint": "Shfletoni më shumë — zgjidhni faqen 1, 2, 3…",
     "catalogPrev": "Faqja e mëparshme",
-    "catalogNext": "Faqja tjetër"
+    "catalogNext": "Faqja tjetër",
+    "filterCategories": "Koleksionet",
+    "searchLabel": "Kërko",
+    "searchPlaceholder": "Kërko sipas emrit ose SKU…"
   },
   "Calculator": {
     "title": "Llogaritni çmimin tuaj",

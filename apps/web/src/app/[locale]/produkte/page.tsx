@@ -5,11 +5,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { CategoryDTO, ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 import { fetchAllProducts } from '@/lib/fetch-all-products';
-import { getCatalogPageCount, getCatalogPageSlice } from '@/lib/products-catalog';
+import {
+  getCatalogPageCount,
+  getCatalogPageSlice,
+  scrollToCatalogAnchor,
+} from '@/lib/products-catalog';
 import { ProductListingCard } from '@/components/ProductListingCard';
 import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 import { useCart } from '@/lib/cart-store';
-import { SlidersHorizontal, Search } from 'lucide-react';
+import { SlidersHorizontal, Search, X, Layers } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 
 export default function ProductsPage() {
@@ -21,7 +25,8 @@ export default function ProductsPage() {
     { slug: 'all', label: '' },
   ]);
   const [catalogPage, setCatalogPage] = useState(1);
-  const gridAnchorRef = useRef<HTMLDivElement>(null);
+  const catalogScrollAnchorRef = useRef<HTMLDivElement>(null);
+  const pendingCategoryScrollRef = useRef(false);
 
   const { fetchCart, addItem } = useCart();
   const locale = useLocale();
@@ -76,8 +81,22 @@ export default function ProductsPage() {
 
   const handleCatalogPageChange = (page: number) => {
     setCatalogPage(page);
-    gridAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => scrollToCatalogAnchor(catalogScrollAnchorRef.current));
   };
+
+  const handleCategoryChange = (slug: string) => {
+    if (slug === activeCategory) return;
+    pendingCategoryScrollRef.current = true;
+    setActiveCategory(slug);
+    requestAnimationFrame(() => scrollToCatalogAnchor(catalogScrollAnchorRef.current));
+  };
+
+  useEffect(() => {
+    if (!loading && pendingCategoryScrollRef.current) {
+      pendingCategoryScrollRef.current = false;
+      requestAnimationFrame(() => scrollToCatalogAnchor(catalogScrollAnchorRef.current));
+    }
+  }, [loading]);
 
   const categoryLabelForProduct = (p: ProductDTO) => {
     if (!p.category) return 'Swiss Design';
@@ -136,36 +155,90 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-6 pt-12 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {categoryFilters.map((cat) => (
-              <button
-                key={cat.slug}
-                onClick={() => setActiveCategory(cat.slug)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                  activeCategory === cat.slug
-                    ? 'bg-[#1A1A1A] text-white shadow-sm'
-                    : 'bg-white border border-zinc-200/60 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900'
-                }`}
-              >
-                {cat.label || (cat.slug === 'all' ? tProducts('allCategories') : cat.slug)}
-              </button>
-            ))}
-          </div>
+        <section className="max-w-7xl mx-auto px-6 pt-10 pb-8">
+          <div className="bg-white rounded-2xl border border-zinc-200/50 shadow-sm p-5 sm:p-6 flex flex-col lg:flex-row lg:items-stretch gap-6 lg:gap-8">
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5 text-[#C8B89A]" aria-hidden />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C8B89A]">
+                  {tProducts('filterCategories')}
+                </span>
+              </div>
+              <div className="relative -mx-1">
+                <div
+                  className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-white to-transparent sm:hidden"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-white to-transparent sm:hidden"
+                  aria-hidden
+                />
+                <div className="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 px-1 scrollbar-none overscroll-x-contain">
+                  {categoryFilters.map((cat) => {
+                    const active = activeCategory === cat.slug;
+                    const label =
+                      cat.label || (cat.slug === 'all' ? tProducts('allCategories') : cat.slug);
+                    return (
+                      <button
+                        key={cat.slug}
+                        type="button"
+                        onClick={() => handleCategoryChange(cat.slug)}
+                        className={`shrink-0 px-4 py-2.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                          active
+                            ? 'bg-[#1A1A1A] text-white shadow-md ring-2 ring-[#C8B89A]/40 ring-offset-2 ring-offset-white'
+                            : 'bg-[#F8F8F6] text-zinc-600 border border-zinc-200/70 hover:border-[#C8B89A]/50 hover:text-zinc-900 hover:bg-white'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
-          <div className="relative max-w-xs w-full flex items-center">
-            <Search className="absolute left-3.5 text-zinc-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder={locale === 'sq' ? 'Kërko produkte...' : 'Search products...'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-full pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-[#C8B89A] focus:ring-1 focus:ring-[#C8B89A] transition-all font-light"
-            />
+            <div className="lg:w-[min(100%,22rem)] shrink-0 lg:border-l lg:border-zinc-100 lg:pl-8 flex flex-col justify-center space-y-3">
+              <label
+                htmlFor="products-search"
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#C8B89A]"
+              >
+                <Search className="w-3.5 h-3.5" aria-hidden />
+                {tProducts('searchLabel')}
+              </label>
+              <div className="relative">
+                <Search
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none"
+                  aria-hidden
+                />
+                <input
+                  id="products-search"
+                  type="search"
+                  placeholder={tProducts('searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#F8F8F6] border border-zinc-200/80 rounded-xl pl-10 pr-10 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:bg-white focus:border-[#C8B89A] focus:ring-2 focus:ring-[#C8B89A]/25 transition-all font-light"
+                />
+                {searchQuery.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                    aria-label={locale === 'sq' ? 'Pastro kërkimin' : 'Clear search'}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
         </section>
 
-        <section ref={gridAnchorRef} className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-24">
+        <section className="max-w-7xl mx-auto px-6 pb-24">
+          <div
+            ref={catalogScrollAnchorRef}
+            className="scroll-mt-28 h-0 w-full pointer-events-none"
+            aria-hidden
+          />
           {!loading && products.length > 0 ? (
             <p className="text-xs text-zinc-400 font-light mb-8 text-center md:text-left">
               {tProducts('showingCount', { count: products.length })}

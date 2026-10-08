@@ -74,7 +74,10 @@
     "catalogPageLabel": "Seite {current} von {total}",
     "catalogPagerHint": "Weitere Produkte — Seite 1, 2, 3 … wählen",
     "catalogPrev": "Vorherige Seite",
-    "catalogNext": "Nächste Seite"
+    "catalogNext": "Nächste Seite",
+    "filterCategories": "Kollektionen",
+    "searchLabel": "Suche",
+    "searchPlaceholder": "Nach Name oder SKU suchen…"
   },
   "Calculator": {
     "title": "Berechnen Sie Ihren Preis",

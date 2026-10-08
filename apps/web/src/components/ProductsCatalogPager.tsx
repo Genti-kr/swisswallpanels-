@@ -28,9 +28,10 @@ export function ProductsCatalogPager({
     const track = trackRef.current;
     if (!track) return;
     const active = track.querySelector(`[data-page="${currentPage}"]`);
-    if (active instanceof HTMLElement) {
-      active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
+    if (!(active instanceof HTMLElement)) return;
+    const left =
+      active.offsetLeft - track.clientWidth / 2 + active.clientWidth / 2;
+    track.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
   }, [currentPage]);
 
   if (totalPages <= 1) {
