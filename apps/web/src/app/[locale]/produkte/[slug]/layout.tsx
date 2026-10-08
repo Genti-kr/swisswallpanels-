@@ -5,6 +5,8 @@ import { getTranslations } from 'next-intl/server';
 import { buildPageMetadata } from '@/lib/seo';
 import { ProductJsonLd } from '@/components/seo/ProductJsonLd';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({
   params,
 }: {

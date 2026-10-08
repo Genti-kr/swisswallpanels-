@@ -12,6 +12,31 @@ const LOCALE_LABELS: Record<AppLocale, string> = {
   sq: 'SQ',
 };
 
+/** Flag assets in /public/flags (sq → Albania, en → US). */
+const LOCALE_FLAG_SRC: Record<AppLocale, string> = {
+  de: '/flags/de.svg',
+  fr: '/flags/fr.svg',
+  en: '/flags/en.svg',
+  sq: '/flags/sq.svg',
+};
+
+function LocaleFlag({ locale, size = 18 }: { locale: AppLocale; size?: number }) {
+  const height = Math.round(size * 0.75);
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- local SVG flags
+    <img
+      src={LOCALE_FLAG_SRC[locale]}
+      alt=""
+      width={size}
+      height={height}
+      className="rounded-[3px] object-cover ring-1 ring-black/10 shrink-0"
+      aria-hidden
+      loading="lazy"
+      decoding="async"
+    />
+  );
+}
+
 type LocaleSwitcherProps = {
   className?: string;
 };
@@ -22,8 +47,6 @@ export function LocaleSwitcher({ className = '' }: LocaleSwitcherProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-
-  const otherLocales = routing.locales.filter((loc) => loc !== locale);
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +64,10 @@ export function LocaleSwitcher({ className = '' }: LocaleSwitcherProps) {
   }, [pathname, locale]);
 
   const switchLocale = (next: AppLocale) => {
+    if (next === locale) {
+      setOpen(false);
+      return;
+    }
     setOpen(false);
     router.replace(pathname, { locale: next });
   };
@@ -50,33 +77,43 @@ export function LocaleSwitcher({ className = '' }: LocaleSwitcherProps) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex items-center gap-1 px-3 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-zinc-200 bg-zinc-50/90 text-[#1A1A1A] hover:border-[#C8B89A] hover:bg-white transition-all"
+        className="inline-flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-zinc-200 bg-zinc-50/90 text-[#1A1A1A] hover:border-[#C8B89A] hover:bg-white transition-all"
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label="Language"
       >
+        <LocaleFlag locale={locale} size={20} />
         {LOCALE_LABELS[locale]}
         <ChevronDown
           className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
-      {open && otherLocales.length > 0 && (
+      {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-[calc(100%+0.35rem)] z-[60] min-w-[4.25rem] py-1 rounded-xl border border-zinc-200 bg-white shadow-lg shadow-zinc-200/50"
+          aria-label="Languages"
+          className="absolute right-0 top-[calc(100%+0.35rem)] z-[60] min-w-[7.5rem] py-1 rounded-xl border border-zinc-200 bg-white shadow-lg shadow-zinc-200/50"
         >
-          {otherLocales.map((loc) => (
-            <li key={loc} role="option">
-              <button
-                type="button"
-                onClick={() => switchLocale(loc)}
-                className="w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-700 hover:bg-[#F8F8F6] hover:text-[#1A1A1A] transition-colors"
-              >
-                {LOCALE_LABELS[loc]}
-              </button>
-            </li>
-          ))}
+          {routing.locales.map((loc) => {
+            const active = loc === locale;
+            return (
+              <li key={loc} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  onClick={() => switchLocale(loc)}
+                  className={`w-full flex items-center gap-2.5 text-left px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                    active
+                      ? 'bg-[#F8F8F6] text-[#1A1A1A] cursor-default'
+                      : 'text-zinc-700 hover:bg-[#F8F8F6] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <LocaleFlag locale={loc} size={22} />
+                  {LOCALE_LABELS[loc]}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

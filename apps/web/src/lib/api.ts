@@ -97,6 +97,7 @@ export async function apiFetch<T>(
       ...options,
       headers,
       credentials: 'include',
+      cache: options.cache ?? 'no-store',
     });
   } catch {
     throw new Error(
@@ -129,7 +130,7 @@ export async function apiFetch<T>(
 
 export async function serverFetch<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${getInternalApiUrl()}${path}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${getInternalApiUrl()}${path}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {

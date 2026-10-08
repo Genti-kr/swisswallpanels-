@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -39,7 +39,7 @@ export default function ProductDetailPage() {
     fetchCart();
   }, [fetchCart]);
 
-  useEffect(() => {
+  const loadProduct = useCallback(() => {
     apiFetch<{ product: ProductDTO }>(`/api/products/${slug}`)
       .then((res) => {
         setProduct(res.product);
@@ -47,6 +47,18 @@ export default function ProductDetailPage() {
       })
       .catch(console.error);
   }, [slug]);
+
+  useEffect(() => {
+    loadProduct();
+  }, [loadProduct]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadProduct();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loadProduct]);
 
   useEffect(() => {
     if (!product) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CategoryDTO, ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
@@ -61,7 +61,7 @@ export default function ProductsPage() {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => {
+  const loadProducts = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (activeCategory !== 'all') {
@@ -75,6 +75,20 @@ export default function ProductsPage() {
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [activeCategory]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadProducts();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loadProducts]);
 
   useEffect(() => {
     setCatalogPage(1);

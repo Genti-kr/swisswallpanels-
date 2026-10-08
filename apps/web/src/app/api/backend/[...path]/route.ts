@@ -7,7 +7,17 @@ import { createApiToken } from '@/lib/api-token';
 
 const API_URL = getInternalApiUrl();
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const PROTECTED_PREFIXES = ['admin/'];
+
+function applyNoStoreHeaders(headers: Headers) {
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  headers.set('CDN-Cache-Control', 'no-store');
+  headers.set('Vercel-CDN-Cache-Control', 'no-store');
+  headers.set('Pragma', 'no-cache');
+}
 
 function isProtectedRoute(pathSegments: string[]): boolean {
   const path = pathSegments.join('/');
@@ -77,9 +87,11 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
       method: req.method,
       headers,
       body,
+      cache: 'no-store',
     });
 
     const responseHeaders = new Headers();
+    applyNoStoreHeaders(responseHeaders);
     const cartHeader = res.headers.get('x-cart-session');
     if (cartHeader) {
       responseHeaders.set('x-cart-session', cartHeader);
