@@ -13,6 +13,11 @@ import {
 } from '@/lib/admin-panel-options';
 import { MAX_PRODUCT_IMAGES } from '@/lib/product-images';
 import { uploadProductImageDirect } from '@/lib/admin-product-image-upload';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
+import {
+  getCatalogPageCount,
+  getCatalogPageSlice,
+} from '@/lib/products-catalog';
 import {
   parseDecimalInput,
   parseIntegerInput,
@@ -103,7 +108,20 @@ export default function AdminProductsPage() {
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState<FormState>(defaultForm());
   const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
+  const [adminCatalogPage, setAdminCatalogPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const visibleProducts = useMemo(
+    () => getCatalogPageSlice(products, adminCatalogPage),
+    [products, adminCatalogPage]
+  );
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(products.length);
+    if (maxPage > 0 && adminCatalogPage > maxPage) {
+      setAdminCatalogPage(maxPage);
+    }
+  }, [products.length, adminCatalogPage]);
 
   const savedCategoryNames = useMemo(() => {
     const names = categories.map(categoryLabel).filter(Boolean);
@@ -1102,8 +1120,9 @@ export default function AdminProductsPage() {
           </button>
         </div>
       ) : products.length === 0 ? null : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {products.map((p) => {
+          {visibleProducts.map((p) => {
             const primaryImage = p.images.find((i) => i.isPrimary) || p.images[0];
             return (
               <div
@@ -1189,6 +1208,17 @@ export default function AdminProductsPage() {
             );
           })}
         </div>
+        <ProductsCatalogPager
+          totalProducts={products.length}
+          currentPage={adminCatalogPage}
+          onPageChange={setAdminCatalogPage}
+          labels={{
+            page: 'Shfleto produktet — zgjidh faqen',
+            prev: 'Faqja e mëparshme',
+            next: 'Faqja tjetër',
+          }}
+        />
+        </>
       )}
     </div>
   );

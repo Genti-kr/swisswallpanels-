@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCatalogPageCount } from '@/lib/products-catalog';
 
@@ -15,6 +15,19 @@ type ProductsCatalogPagerProps = {
   };
 };
 
+/** Keep page 1–3 visible at the start of the horizontal track (avoid snap/center jumping to ~7). */
+function syncTrackScroll(track: HTMLElement, currentPage: number) {
+  if (currentPage <= 3) {
+    track.scrollLeft = 0;
+    return;
+  }
+  const active = track.querySelector(`[data-page="${currentPage}"]`);
+  if (!(active instanceof HTMLElement)) return;
+  const left =
+    active.offsetLeft - track.clientWidth / 2 + active.clientWidth / 2;
+  track.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
+}
+
 export function ProductsCatalogPager({
   totalProducts,
   currentPage,
@@ -24,15 +37,11 @@ export function ProductsCatalogPager({
   const trackRef = useRef<HTMLDivElement>(null);
   const totalPages = getCatalogPageCount(totalProducts);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const track = trackRef.current;
-    if (!track) return;
-    const active = track.querySelector(`[data-page="${currentPage}"]`);
-    if (!(active instanceof HTMLElement)) return;
-    const left =
-      active.offsetLeft - track.clientWidth / 2 + active.clientWidth / 2;
-    track.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
-  }, [currentPage]);
+    if (!track || totalPages <= 1) return;
+    syncTrackScroll(track, currentPage);
+  }, [currentPage, totalPages]);
 
   if (totalPages <= 1) {
     return null;
@@ -58,7 +67,7 @@ export function ProductsCatalogPager({
 
         <div
           ref={trackRef}
-          className="flex gap-2 max-w-[min(100%,420px)] overflow-x-auto py-1 px-1 snap-x snap-mandatory scroll-smooth scrollbar-none"
+          className="flex gap-2 max-w-[min(100%,420px)] overflow-x-auto py-1 px-1 scroll-smooth scrollbar-none"
           style={{ scrollbarWidth: 'none' }}
         >
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => {
@@ -69,7 +78,7 @@ export function ProductsCatalogPager({
                 type="button"
                 data-page={num}
                 onClick={() => go(num)}
-                className={`snap-center shrink-0 min-w-[2.75rem] h-11 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`shrink-0 min-w-[2.75rem] h-11 rounded-xl text-sm font-semibold transition-all duration-300 ${
                   active
                     ? 'bg-[#1A1A1A] text-white shadow-md scale-105'
                     : 'bg-white border border-zinc-200 text-zinc-600 hover:border-[#C8B89A] hover:text-zinc-900'
