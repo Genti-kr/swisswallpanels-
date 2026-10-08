@@ -1,8 +1,8 @@
 import { ProductDTO } from '@swisswall/types';
 import { apiFetch } from '@/lib/api';
 
-/** Must be ≤ API `pageSize` max (500 after API update; 50 on older deploys). */
-const PAGE_SIZE = 50;
+/** Must be ≤ API `pageSize` max (30); smaller pages avoid 500 on large JSON responses. */
+const PAGE_SIZE = 12;
 const MAX_PAGES = 200;
 
 type ProductsListResponse = {

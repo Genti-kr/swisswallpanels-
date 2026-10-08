@@ -25,14 +25,25 @@ import { MAX_PRODUCT_IMAGES } from '../../lib/product-images';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
+const adminListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(30).default(15),
+});
+
 router.use(requireAuth(['ADMIN', 'SUPERADMIN']));
 
-router.get('/', async (_req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const products = await prisma.product.findMany({
-      include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
-      orderBy: [{ createdAt: 'desc' }],
-    });
+    const query = adminListQuerySchema.parse(req.query);
+    const [total, products] = await Promise.all([
+      prisma.product.count(),
+      prisma.product.findMany({
+        include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+    ]);
     const items = [];
     for (const row of products) {
       try {
@@ -41,8 +52,17 @@ router.get('/', async (_req: AuthenticatedRequest, res: Response, next: NextFunc
         console.error('admin products: skip row', row.id, mapErr);
       }
     }
-    res.json({ items });
+    res.json({
+      items,
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
+    });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation failed' });
+    }
     next(error);
   }
 });

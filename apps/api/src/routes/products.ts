@@ -10,7 +10,7 @@ const router = Router();
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(500).default(12),
+  pageSize: z.coerce.number().int().min(1).max(30).default(12),
   category: z.string().max(100).optional(),
   featured: z.enum(['true', 'false']).optional(),
   search: z.string().max(100).optional(),
@@ -45,8 +45,17 @@ router.get('/', searchLimiter, async (req: Request, res: Response, next: NextFun
       }),
     ]);
 
+    const items = [];
+    for (const row of products) {
+      try {
+        items.push(mapProduct(row));
+      } catch (mapErr) {
+        console.error('products list: skip row', row.id, mapErr);
+      }
+    }
+
     res.json({
-      items: products.map(mapProduct),
+      items,
       total,
       page: query.page,
       pageSize: query.pageSize,
