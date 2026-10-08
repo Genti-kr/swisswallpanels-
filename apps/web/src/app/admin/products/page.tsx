@@ -184,12 +184,7 @@ export default function AdminProductsPage() {
     try {
       await refreshCatalog();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Dështoi ngarkimi i produkteve';
-      setError(
-        msg.includes('Internal server error') || msg.includes('Request failed: 5')
-          ? `${msg} — provo të dalësh dhe të hysh përsëri si admin; API: api.swisswallpanels.ch`
-          : msg
-      );
+      setError(err instanceof Error ? err.message : 'Dështoi ngarkimi i produkteve');
     } finally {
       setLoading(false);
     }

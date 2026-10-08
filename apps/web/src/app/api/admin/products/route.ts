@@ -5,6 +5,7 @@ import { listAdminCatalog } from '@/lib/admin-products-list';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 export async function GET() {
   const session = await auth();
