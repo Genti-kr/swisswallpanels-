@@ -146,27 +146,18 @@ export default function AdminProductsPage() {
   };
 
   const refreshCatalog = useCallback(async () => {
-    let items: ProductDTO[] = [];
-
-    try {
-      const prodRes = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
-      items = prodRes.items ?? [];
-    } catch (backendErr) {
-      const res = await fetch('/api/admin/products', { credentials: 'include', cache: 'no-store' });
-      const data = (await res.json().catch(() => ({}))) as {
-        items?: ProductDTO[];
-        categories?: CategoryDTO[];
-        error?: string;
-      };
-      if (!res.ok) {
-        throw backendErr;
-      }
-      items = data.items ?? [];
-      if (data.categories?.length) {
-        setCategories(data.categories);
-      }
+    const res = await fetch('/api/admin/products', { credentials: 'include', cache: 'no-store' });
+    const data = (await res.json().catch(() => ({}))) as {
+      items?: ProductDTO[];
+      error?: string;
+      message?: string;
+    };
+    if (!res.ok) {
+      const detail = [data.error, data.message].filter(Boolean).join(' — ');
+      throw new Error(detail || `Dështoi ngarkimi (${res.status})`);
     }
 
+    const items = data.items ?? [];
     setProducts(items);
 
     try {
@@ -1096,7 +1087,7 @@ export default function AdminProductsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-[#C8B89A]" />
           <span className="text-sm">Duke ngarkuar produktet...</span>
         </div>
-      ) : products.length === 0 ? (
+      ) : products.length === 0 && !error ? (
         <div className="bg-white rounded-2xl border border-zinc-100 p-16 text-center">
           <Layers className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
           <p className="text-zinc-500 font-light">Nuk ka produkte ende.</p>
@@ -1110,7 +1101,7 @@ export default function AdminProductsPage() {
             Shto produktin e parë
           </button>
         </div>
-      ) : (
+      ) : products.length === 0 ? null : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {products.map((p) => {
             const primaryImage = p.images.find((i) => i.isPrimary) || p.images[0];

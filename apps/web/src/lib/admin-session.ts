@@ -22,11 +22,15 @@ export async function getAdminSessionUser(
   let email = session.user.email;
 
   if (!email) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true },
-    });
-    email = dbUser?.email;
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { email: true },
+      });
+      email = dbUser?.email;
+    } catch (e) {
+      console.error('getAdminSessionUser: DB lookup failed', e);
+    }
   }
 
   if (!email) {
