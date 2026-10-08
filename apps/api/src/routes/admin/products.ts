@@ -31,7 +31,7 @@ router.get('/', async (_req: AuthenticatedRequest, res: Response, next: NextFunc
   try {
     const products = await prisma.product.findMany({
       include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ createdAt: 'desc' }],
     });
     const items = [];
     for (const row of products) {
