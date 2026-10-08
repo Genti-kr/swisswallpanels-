@@ -11,14 +11,23 @@ function toNumber(value: Decimal | number): number {
   return typeof value === 'number' ? value : Number(value);
 }
 
+const emptyMultilingual: MultilingualText = { de: '', fr: '', en: '', sq: '' };
+
 function toMultilingualText(json: unknown): MultilingualText {
-  const obj = json as MultilingualText;
-  return {
-    de: obj.de || '',
-    fr: obj.fr || '',
-    en: obj.en || '',
-    sq: obj.sq || '',
-  };
+  if (json == null) return { ...emptyMultilingual };
+  if (typeof json === 'string') {
+    return { de: json, fr: json, en: json, sq: json };
+  }
+  if (typeof json === 'object' && !Array.isArray(json)) {
+    const obj = json as Record<string, unknown>;
+    return {
+      de: String(obj.de ?? ''),
+      fr: String(obj.fr ?? ''),
+      en: String(obj.en ?? ''),
+      sq: String(obj.sq ?? ''),
+    };
+  }
+  return { ...emptyMultilingual };
 }
 
 function mapProductImage(image: {

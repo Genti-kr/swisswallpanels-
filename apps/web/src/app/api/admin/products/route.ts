@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getAdminSessionUser } from '@/lib/admin-session';
-import { prisma } from '@/lib/prisma';
-import { mapProductForAdmin } from '@/lib/admin-product-mapper';
+import { listAdminCatalog } from '@/lib/admin-products-list';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET() {
   const session = await auth();
@@ -12,20 +14,17 @@ export async function GET() {
   }
 
   try {
-    const products = await prisma.product.findMany({
-      include: {
-        images: { orderBy: { sortOrder: 'asc' } },
-        variants: true,
-        category: true,
-      },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-    });
-
-    return NextResponse.json({
-      items: products.map(mapProductForAdmin),
-    });
+    const { items, categories } = await listAdminCatalog();
+    return NextResponse.json({ items, categories });
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('admin products list error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'production' ? undefined : message,
+      },
+      { status: 500 }
+    );
   }
 }

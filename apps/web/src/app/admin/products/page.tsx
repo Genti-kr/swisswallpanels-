@@ -162,13 +162,21 @@ export default function AdminProductsPage() {
   };
 
   const refreshCatalog = useCallback(async () => {
-    const [prodRes, catRes] = await Promise.all([
-      apiFetch<{ items: ProductDTO[] }>('/api/admin/products'),
-      apiFetch<{ items: CategoryDTO[] }>('/api/categories'),
-    ]);
-    setProducts(prodRes.items);
-    setCategories(catRes.items);
-    return prodRes.items;
+    const res = await apiFetch<{ items: ProductDTO[]; categories?: CategoryDTO[] }>(
+      '/api/admin/products'
+    );
+    setProducts(res.items ?? []);
+    if (res.categories?.length) {
+      setCategories(res.categories);
+    } else {
+      try {
+        const catRes = await apiFetch<{ items: CategoryDTO[] }>('/api/categories');
+        setCategories(catRes.items ?? []);
+      } catch {
+        /* kategoritë opsionale — produktet mbeten */
+      }
+    }
+    return res.items ?? [];
   }, []);
 
   const load = useCallback(async () => {

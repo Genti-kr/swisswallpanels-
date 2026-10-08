@@ -10,6 +10,7 @@ import {
   getCatalogPageSlice,
   scrollToCatalogAnchor,
 } from '@/lib/products-catalog';
+import { filterProductsBySearch } from '@/lib/product-search';
 import { ProductListingCard } from '@/components/ProductListingCard';
 import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 import { useCart } from '@/lib/cart-store';
@@ -20,7 +21,8 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categoryFilters, setCategoryFilters] = useState<{ slug: string; label: string }[]>([
     { slug: 'all', label: '' },
   ]);
@@ -53,13 +55,17 @@ export default function ProductsPage() {
   }, [locale, tProducts]);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 280);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (activeCategory !== 'all') {
       params.set('category', activeCategory);
-    }
-    if (searchQuery.trim() !== '') {
-      params.set('search', searchQuery.trim());
     }
     const qs = params.toString();
     const path = qs ? `/api/products?${qs}` : '/api/products';
@@ -68,15 +74,20 @@ export default function ProductsPage() {
       .then(setProducts)
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory]);
 
   useEffect(() => {
     setCatalogPage(1);
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, debouncedSearch]);
+
+  const filteredProducts = useMemo(
+    () => filterProductsBySearch(products, debouncedSearch),
+    [products, debouncedSearch]
+  );
 
   const visibleProducts = useMemo(
-    () => getCatalogPageSlice(products, catalogPage),
-    [products, catalogPage]
+    () => getCatalogPageSlice(filteredProducts, catalogPage),
+    [filteredProducts, catalogPage]
   );
 
   const handleCatalogPageChange = (page: number) => {
@@ -97,6 +108,13 @@ export default function ProductsPage() {
       requestAnimationFrame(() => scrollToCatalogAnchor(catalogScrollAnchorRef.current));
     }
   }, [loading]);
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(filteredProducts.length);
+    if (maxPage > 0 && catalogPage > maxPage) {
+      setCatalogPage(maxPage);
+    }
+  }, [filteredProducts.length, catalogPage]);
 
   const categoryLabelForProduct = (p: ProductDTO) => {
     if (!p.category) return 'Swiss Design';
@@ -155,79 +173,65 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-6 pt-10 pb-8">
-          <div className="bg-white rounded-2xl border border-zinc-200/50 shadow-sm p-5 sm:p-6 flex flex-col lg:flex-row lg:items-stretch gap-6 lg:gap-8">
-            <div className="flex-1 min-w-0 space-y-3">
-              <div className="flex items-center gap-2">
-                <Layers className="w-3.5 h-3.5 text-[#C8B89A]" aria-hidden />
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C8B89A]">
-                  {tProducts('filterCategories')}
-                </span>
-              </div>
-              <div className="relative -mx-1">
-                <div
-                  className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-white to-transparent sm:hidden"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-white to-transparent sm:hidden"
-                  aria-hidden
-                />
-                <div className="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 px-1 scrollbar-none overscroll-x-contain">
-                  {categoryFilters.map((cat) => {
-                    const active = activeCategory === cat.slug;
-                    const label =
-                      cat.label || (cat.slug === 'all' ? tProducts('allCategories') : cat.slug);
-                    return (
-                      <button
-                        key={cat.slug}
-                        type="button"
-                        onClick={() => handleCategoryChange(cat.slug)}
-                        className={`shrink-0 px-4 py-2.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                          active
-                            ? 'bg-[#1A1A1A] text-white shadow-md ring-2 ring-[#C8B89A]/40 ring-offset-2 ring-offset-white'
-                            : 'bg-[#F8F8F6] text-zinc-600 border border-zinc-200/70 hover:border-[#C8B89A]/50 hover:text-zinc-900 hover:bg-white'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:w-[min(100%,22rem)] shrink-0 lg:border-l lg:border-zinc-100 lg:pl-8 flex flex-col justify-center space-y-3">
-              <label
-                htmlFor="products-search"
-                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#C8B89A]"
-              >
-                <Search className="w-3.5 h-3.5" aria-hidden />
+        <section className="max-w-7xl mx-auto px-6 pt-8 pb-6 -mt-4 relative z-20">
+          <div className="bg-white rounded-2xl border border-zinc-200/60 shadow-md shadow-zinc-200/40 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 px-5 py-4 sm:px-6 sm:py-4 bg-gradient-to-b from-[#F8F8F6]/80 to-white border-b border-zinc-100">
+              <label htmlFor="products-search" className="sr-only">
                 {tProducts('searchLabel')}
               </label>
-              <div className="relative">
+              <div className="relative w-full sm:max-w-md sm:ml-auto">
                 <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C8B89A] w-4 h-4 pointer-events-none"
                   aria-hidden
                 />
                 <input
                   id="products-search"
                   type="search"
                   placeholder={tProducts('searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#F8F8F6] border border-zinc-200/80 rounded-xl pl-10 pr-10 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:bg-white focus:border-[#C8B89A] focus:ring-2 focus:ring-[#C8B89A]/25 transition-all font-light"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-full bg-white border border-zinc-200 rounded-full pl-11 pr-11 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:outline-none focus:border-[#C8B89A] focus:ring-2 focus:ring-[#C8B89A]/20 transition-all font-light"
                 />
-                {searchQuery.trim() ? (
+                {searchInput.trim() ? (
                   <button
                     type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                    onClick={() => setSearchInput('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 transition-colors"
                     aria-label={locale === 'sq' ? 'Pastro kërkimin' : 'Clear search'}
                   >
                     <X className="w-4 h-4" />
                   </button>
                 ) : null}
+              </div>
+            </div>
+
+            <div className="px-5 py-5 sm:px-6 sm:py-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#C8B89A]" aria-hidden />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                  {tProducts('filterCategories')}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {categoryFilters.map((cat) => {
+                  const active = activeCategory === cat.slug;
+                  const label =
+                    cat.label || (cat.slug === 'all' ? tProducts('allCategories') : cat.slug);
+                  return (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => handleCategoryChange(cat.slug)}
+                      className={`px-4 py-2 rounded-full text-[11px] font-semibold uppercase tracking-wider transition-all duration-300 ${
+                        active
+                          ? 'bg-[#1A1A1A] text-white shadow-sm'
+                          : 'bg-[#F8F8F6] text-zinc-600 border border-transparent hover:border-zinc-200 hover:bg-white'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -239,13 +243,19 @@ export default function ProductsPage() {
             className="scroll-mt-28 h-0 w-full pointer-events-none"
             aria-hidden
           />
-          {!loading && products.length > 0 ? (
+          {!loading && filteredProducts.length > 0 ? (
             <p className="text-xs text-zinc-400 font-light mb-8 text-center md:text-left">
-              {tProducts('showingCount', { count: products.length })}
-              {products.length > visibleProducts.length
+              {tProducts('showingCount', { count: filteredProducts.length })}
+              {debouncedSearch ? (
+                <span className="text-[#C8B89A]">
+                  {' '}
+                  · {locale === 'sq' ? 'kërkim' : 'search'} “{debouncedSearch}”
+                </span>
+              ) : null}
+              {filteredProducts.length > visibleProducts.length
                 ? ` · ${tProducts('catalogPageLabel', {
                     current: catalogPage,
-                    total: getCatalogPageCount(products.length),
+                    total: getCatalogPageCount(filteredProducts.length),
                   })}`
                 : null}
             </p>
@@ -268,7 +278,7 @@ export default function ProductsPage() {
                 </div>
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-2xl border border-zinc-100 shadow-sm max-w-lg mx-auto">
               <SlidersHorizontal className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
               <h3 className="text-lg font-light text-zinc-800">
@@ -279,6 +289,15 @@ export default function ProductsPage() {
                   ? 'Ju lutemi provoni një kategori tjetër ose kërkim tjetër.'
                   : 'Please try another category or search term.'}
               </p>
+              {debouncedSearch ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchInput('')}
+                  className="mt-4 text-sm font-medium text-[#C8B89A] hover:underline"
+                >
+                  {locale === 'sq' ? 'Pastro kërkimin' : 'Clear search'}
+                </button>
+              ) : null}
             </div>
           ) : (
             <>
@@ -289,7 +308,7 @@ export default function ProductsPage() {
                 {visibleProducts.map((p) => renderCard(p))}
               </div>
               <ProductsCatalogPager
-                totalProducts={products.length}
+                totalProducts={filteredProducts.length}
                 currentPage={catalogPage}
                 onPageChange={handleCatalogPageChange}
                 labels={{
