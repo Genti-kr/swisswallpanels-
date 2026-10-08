@@ -115,6 +115,18 @@ export function mapProduct(product: {
   };
 }
 
+export function mapProductSafe(
+  product: Parameters<typeof mapProduct>[0],
+  logPrefix = 'mapProduct'
+): ProductDTO | null {
+  try {
+    return mapProduct(product);
+  } catch (err) {
+    console.error(`${logPrefix} skip`, product.id, err);
+    return null;
+  }
+}
+
 export function mapCategory(category: {
   id: string;
   slug: string;

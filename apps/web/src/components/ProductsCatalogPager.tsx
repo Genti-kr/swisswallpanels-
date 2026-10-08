@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCatalogPageCount } from '@/lib/products-catalog';
+import { syncCatalogPagerTrackScroll } from '@/lib/catalog-pager-scroll';
 
 type ProductsCatalogPagerProps = {
   totalProducts: number;
@@ -15,19 +16,6 @@ type ProductsCatalogPagerProps = {
   };
 };
 
-/** Keep page 1–3 visible at the start of the horizontal track (avoid snap/center jumping to ~7). */
-function syncTrackScroll(track: HTMLElement, currentPage: number) {
-  if (currentPage <= 3) {
-    track.scrollLeft = 0;
-    return;
-  }
-  const active = track.querySelector(`[data-page="${currentPage}"]`);
-  if (!(active instanceof HTMLElement)) return;
-  const left =
-    active.offsetLeft - track.clientWidth / 2 + active.clientWidth / 2;
-  track.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
-}
-
 export function ProductsCatalogPager({
   totalProducts,
   currentPage,
@@ -35,12 +23,16 @@ export function ProductsCatalogPager({
   labels,
 }: ProductsCatalogPagerProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const firstScrollRef = useRef(true);
   const totalPages = getCatalogPageCount(totalProducts);
 
   useLayoutEffect(() => {
     const track = trackRef.current;
     if (!track || totalPages <= 1) return;
-    syncTrackScroll(track, currentPage);
+
+    const behavior: ScrollBehavior = firstScrollRef.current ? 'auto' : 'smooth';
+    firstScrollRef.current = false;
+    syncCatalogPagerTrackScroll(track, currentPage, totalPages, behavior);
   }, [currentPage, totalPages]);
 
   if (totalPages <= 1) {
@@ -54,7 +46,7 @@ export function ProductsCatalogPager({
   return (
     <div className="mt-12 pt-8 border-t border-zinc-200/60">
       <p className="text-center text-xs text-zinc-400 font-light mb-4">{labels.page}</p>
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={() => go(currentPage - 1)}
@@ -67,7 +59,7 @@ export function ProductsCatalogPager({
 
         <div
           ref={trackRef}
-          className="flex gap-2 max-w-[min(100%,420px)] overflow-x-auto py-1 px-1 scroll-smooth scrollbar-none"
+          className="flex gap-2 w-full max-w-[min(100%,32rem)] overflow-x-auto py-1 px-2 scroll-smooth scrollbar-none"
           style={{ scrollbarWidth: 'none' }}
         >
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => {
@@ -78,9 +70,10 @@ export function ProductsCatalogPager({
                 type="button"
                 data-page={num}
                 onClick={() => go(num)}
-                className={`shrink-0 min-w-[2.75rem] h-11 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                aria-current={active ? 'page' : undefined}
+                className={`shrink-0 min-w-[2.75rem] h-11 rounded-xl text-sm font-semibold transition-colors duration-200 ${
                   active
-                    ? 'bg-[#1A1A1A] text-white shadow-md scale-105'
+                    ? 'bg-[#1A1A1A] text-white shadow-md ring-2 ring-[#C8B89A]/40'
                     : 'bg-white border border-zinc-200 text-zinc-600 hover:border-[#C8B89A] hover:text-zinc-900'
                 }`}
               >

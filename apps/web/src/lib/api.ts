@@ -12,8 +12,24 @@ const NEXTJS_ONLY_ROUTES = [
   '/api/admin/ensure-category',
 ];
 
-function isNextJsOnlyRoute(path: string): boolean {
+function isAdminProductWriteRoute(path: string, method: string): boolean {
+  if (method === 'POST' && path === '/api/admin/products') {
+    return true;
+  }
+  if (
+    (method === 'PUT' || method === 'DELETE') &&
+    /^\/api\/admin\/products\/[^/]+$/.test(path)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isNextJsOnlyRoute(path: string, method = 'GET'): boolean {
   if (NEXTJS_ONLY_ROUTES.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return true;
+  }
+  if (isAdminProductWriteRoute(path, method)) {
     return true;
   }
   // Handled on Vercel (same DB) — works without Hetzner API deploy
@@ -34,7 +50,7 @@ function isMultipartUploadRoute(path: string): boolean {
 
 function resolveApiUrl(path: string, method = 'GET'): string {
   if (typeof window !== 'undefined' && path.startsWith('/api/')) {
-    if (isNextJsOnlyRoute(path)) {
+    if (isNextJsOnlyRoute(path, method)) {
       return path;
     }
     if (method === 'POST' && isMultipartUploadRoute(path)) {

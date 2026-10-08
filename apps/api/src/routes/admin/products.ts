@@ -3,7 +3,7 @@ import multer from 'multer';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { mapProduct, mapProductVariant } from '../../lib/mappers';
+import { mapProduct, mapProductSafe, mapProductVariant } from '../../lib/mappers';
 import { requireAuth, AuthenticatedRequest } from '../../middleware/auth';
 import { processAndUploadImage, deleteImageByUrl } from '../../services/storage';
 import { productSchema } from '../../lib/validators/product';
@@ -74,7 +74,7 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
     );
     let product = await prisma.product.create({
       data,
-      include: { images: true, variants: true },
+      include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
     });
     if (panelOptionsRaw !== undefined) {
       try {
@@ -82,14 +82,18 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
         await syncPanelOptionsForProduct(product.id, options);
         const refreshed = await prisma.product.findUnique({
           where: { id: product.id },
-          include: { images: true, variants: true },
+          include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
         });
         if (refreshed) product = refreshed;
       } catch (syncErr) {
         console.error('Panel options sync failed after product create:', syncErr);
       }
     }
-    res.status(201).json({ product: mapProduct(product) });
+    const mapped = mapProductSafe(product, 'admin product create');
+    if (!mapped) {
+      return res.status(500).json({ error: 'Produkti u ruajt por përgjigja nuk u formua.' });
+    }
+    res.status(201).json({ product: mapped });
   } catch (error) {
     if (error instanceof Error && error.message === 'CATEGORY_REQUIRED') {
       return res.status(400).json({ error: 'Kategoria është e detyrueshme' });
@@ -117,7 +121,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
     let product = await prisma.product.update({
       where: { id: req.params.id },
       data,
-      include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
+      include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
     });
     if (panelOptionsRaw !== undefined) {
       try {
@@ -125,14 +129,18 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
         await syncPanelOptionsForProduct(product.id, options);
         const refreshed = await prisma.product.findUnique({
           where: { id: product.id },
-          include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true },
+          include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
         });
         if (refreshed) product = refreshed;
       } catch (syncErr) {
         console.error('Panel options sync failed after product update:', syncErr);
       }
     }
-    res.json({ product: mapProduct(product) });
+    const mapped = mapProductSafe(product, 'admin product update');
+    if (!mapped) {
+      return res.status(500).json({ error: 'Produkti u përditësua por përgjigja nuk u formua.' });
+    }
+    res.json({ product: mapped });
   } catch (error) {
     if (error instanceof Error && error.message === 'CATEGORY_REQUIRED') {
       return res.status(400).json({ error: 'Kategoria është e detyrueshme' });

@@ -308,6 +308,7 @@ export default function AdminProductsPage() {
         slug: form.slug.trim(),
         sku: form.sku.trim(),
         categoryId,
+        categoryName: form.categoryName.trim(),
         nameJson,
         descJson,
         priceChf: form.panel1.priceChf,
@@ -326,23 +327,34 @@ export default function AdminProductsPage() {
       };
 
       let productId = editingId;
+      let savedProduct: ProductDTO;
 
       if (editingId) {
         const res = await apiFetch<{ product: ProductDTO }>(`/api/admin/products/${editingId}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
+        savedProduct = res.product;
         productId = editingId;
-        setEditingImages(res.product.images);
+        setEditingImages(savedProduct.images);
       } else {
         const res = await apiFetch<{ product: ProductDTO }>('/api/admin/products', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
+        savedProduct = res.product;
         productId = res.product.id;
         setEditingId(productId);
-        setEditingImages(res.product.images);
+        setEditingImages(savedProduct.images);
       }
+
+      setProducts((prev) => {
+        const idx = prev.findIndex((p) => p.id === savedProduct.id);
+        if (idx === -1) return [...prev, savedProduct];
+        const next = [...prev];
+        next[idx] = savedProduct;
+        return next;
+      });
 
       let uploadWarning = '';
       if (productId && pendingImages.length > 0) {
@@ -355,21 +367,18 @@ export default function AdminProductsPage() {
         }
       }
 
-      try {
-        const items = await refreshCatalog();
-        const refreshed = productId ? items.find((p) => p.id === productId) : undefined;
-        if (refreshed) setEditingImages(refreshed.images);
-      } catch {
-        setSuccess('Produkti u ruajt, por lista nuk u rifreskua — rifresko faqen.');
-      }
-
       if (uploadWarning) {
         setError(`Produkti u ruajt, por: ${uploadWarning}`);
       } else {
         setError('');
       }
       setSuccess(isEdit ? 'Produkti u përditësua.' : 'Produkti u shtua me sukses.');
-      await refreshCatalog();
+
+      try {
+        await refreshCatalog();
+      } catch {
+        /* lista mbetet e përditësuar lokalisht nga savedProduct */
+      }
       if (!uploadWarning && !isEdit) {
         setShowForm(false);
         clearPendingImages();

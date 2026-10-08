@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { getAdminSessionUser } from '@/lib/admin-session';
 import { fetchInternalApiAsAdmin } from '@/lib/fetch-internal-api-as-admin';
 import { listAdminCatalogPage } from '@/lib/admin-products-list';
+import { proxyAdminApiJson } from '@/lib/proxy-admin-api-json';
 import type { ProductDTO } from '@swisswall/types';
 
 export const dynamic = 'force-dynamic';
@@ -135,6 +136,30 @@ export async function GET(req: NextRequest) {
           'API serveri nuk është i arritshëm. Kontrollo INTERNAL_API_URL në Vercel dhe API-n në Hetzner.',
         message: process.env.NODE_ENV === 'production' ? undefined : message,
       },
+      { status: 503 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  const admin = await getAdminSessionUser(session);
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await req.text();
+
+  try {
+    return await proxyAdminApiJson(admin, '/api/admin/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+  } catch (error) {
+    console.error('admin product POST proxy error:', error);
+    return NextResponse.json(
+      { error: 'API serveri nuk është i arritshëm për krijimin e produktit.' },
       { status: 503 }
     );
   }

@@ -3,6 +3,22 @@ import { resolveCategoryIdByName } from './resolve-category';
 
 const LOCALES = ['de', 'fr', 'en', 'sq'] as const;
 
+function coerceProductNumericFields(rest: Record<string, unknown>) {
+  const numericKeys = [
+    'priceChf',
+    'priceBtwChf',
+    'stockQuantity',
+    'lowStockAlert',
+    'sortOrder',
+    'acousticRating',
+  ] as const;
+  for (const key of numericKeys) {
+    if (rest[key] === undefined || rest[key] === null) continue;
+    const n = Number(rest[key]);
+    if (!Number.isNaN(n)) rest[key] = n;
+  }
+}
+
 function normalizeProductTextFields(rest: Record<string, unknown>) {
   const nameJson = { ...(rest.nameJson as Record<string, string>) };
   const descJson = { ...(rest.descJson as Record<string, string>) };
@@ -45,6 +61,7 @@ async function applyCategoryFromBody(rest: Record<string, unknown>, categoryName
 export async function parseAdminProductCreateBody(body: Record<string, unknown>) {
   const { panelOptions, categoryName, ...rest } = body;
   await applyCategoryFromBody(rest, categoryName);
+  coerceProductNumericFields(rest);
   normalizeProductTextFields(rest);
   const data = productSchema.parse(rest);
   return { data, panelOptions };
@@ -55,6 +72,7 @@ export async function parseAdminProductUpdateBody(body: Record<string, unknown>)
   if (typeof categoryName === 'string' && categoryName.trim()) {
     rest.categoryId = await resolveCategoryIdByName(categoryName);
   }
+  coerceProductNumericFields(rest);
   if (rest.nameJson !== undefined || rest.descJson !== undefined) {
     normalizeProductTextFields(rest);
   }
