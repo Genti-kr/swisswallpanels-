@@ -51,18 +51,22 @@ function verifyOrigin(req: Request, res: Response, next: NextFunction) {
 }
 
 async function createAuditLog(event: string, userId: string | null, req: Request) {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-  const ipStr = Array.isArray(ip) ? ip[0] : ip;
-  const hashedIP = crypto.createHash('sha256').update(ipStr).digest('hex');
-  await prisma.auditLog.create({
-    data: {
-      event,
-      userId,
-      ipAddress: hashedIP,
-      userAgent: req.headers['user-agent'] || null,
-      timestamp: new Date(),
-    }
-  });
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    const ipStr = Array.isArray(ip) ? ip[0] : ip;
+    const hashedIP = crypto.createHash('sha256').update(ipStr).digest('hex');
+    await prisma.auditLog.create({
+      data: {
+        event,
+        userId,
+        ipAddress: hashedIP,
+        userAgent: req.headers['user-agent'] || null,
+        timestamp: new Date(),
+      },
+    });
+  } catch (err) {
+    console.error('Audit log skipped:', event, err);
+  }
 }
 
 router.use(verifyOrigin);

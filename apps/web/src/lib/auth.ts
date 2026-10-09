@@ -148,6 +148,10 @@ export const authConfig: NextAuthConfig = {
             if (apiLogin.status === 401) {
               credentialsError('invalid_credentials');
             }
+            if (apiLogin.status === 429) {
+              credentialsError('rate_limited');
+            }
+            console.error('Login via API failed:', apiLogin.status, apiLogin.error);
             credentialsError('server_error');
           }
 
