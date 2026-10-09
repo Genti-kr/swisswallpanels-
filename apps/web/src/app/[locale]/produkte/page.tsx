@@ -200,7 +200,10 @@ export default function ProductsPage() {
                 />
                 <input
                   id="products-search"
-                  type="search"
+                  type="text"
+                  role="searchbox"
+                  autoComplete="off"
+                  enterKeyHint="search"
                   placeholder={tProducts('searchPlaceholder')}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}

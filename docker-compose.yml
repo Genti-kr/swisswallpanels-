@@ -12,8 +12,9 @@ services:
       MYSQL_USER: swisswalluser
       MYSQL_PASSWORD: swisswallpassword
       TZ: Europe/Zurich
+    # Bind to localhost only — never expose MySQL on the public VPS IP.
     ports:
-      - '3306:3306'
+      - '127.0.0.1:3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -21,8 +22,9 @@ services:
     image: redis:7-alpine
     container_name: swisswall-redis
     restart: always
+    # Localhost only — open 0.0.0.0:6379 triggers CERT-Bund / Hetzner abuse notices.
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
     volumes:
       - redis_data:/data
 
@@ -31,7 +33,7 @@ services:
     container_name: swisswall-phpmyadmin
     restart: always
     ports:
-      - '8080:80'
+      - '127.0.0.1:8080:80'
     environment:
       - PMA_HOST=mysql
       - PMA_PORT=3306

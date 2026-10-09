@@ -71,25 +71,54 @@ async function sendEmail({
   }
 }
 
+function verificationEmailCopy(locale: string) {
+  const loc = locale.toLowerCase();
+  if (loc === 'de') {
+    return {
+      subject: 'E-Mail-Adresse bestätigen',
+      heading: 'E-Mail bestätigen',
+      body: 'Bitte klicken Sie auf den Link unten, um Ihre E-Mail zu bestätigen. Der Link ist 24 Stunden gültig.',
+      button: 'E-Mail bestätigen',
+    };
+  }
+  if (loc === 'fr') {
+    return {
+      subject: 'Vérifiez votre adresse e-mail',
+      heading: 'Vérification e-mail',
+      body: 'Cliquez sur le lien ci-dessous pour vérifier votre e-mail. Ce lien expire dans 24 heures.',
+      button: "Vérifier l'e-mail",
+    };
+  }
+  if (loc === 'sq') {
+    return {
+      subject: 'Verifikoni email-in tuaj',
+      heading: 'Verifikoni llogarinë tuaj',
+      body: 'Klikoni linkun më poshtë për të verifikuar email-in tuaj. Linku skadon pas 24 orësh.',
+      button: 'Verifiko emailin',
+    };
+  }
+  return {
+    subject: 'Verify your email',
+    heading: 'Verify your account',
+    body: 'Click the link below to verify your email. This link expires in 24 hours.',
+    button: 'Verify email',
+  };
+}
+
 export const authEmailService = {
   async sendEmailVerification(user: EmailUser, token: string, locale: string) {
     const verifyUrl = buildVerifyUrl(token, locale);
-    const isSq = locale.toLowerCase() === 'sq';
-    const subject = isSq ? 'Verifikoni email-in tuaj' : 'Verify your email';
-    const heading = isSq ? 'Verifikoni llogarinë tuaj' : 'Verify your account';
-    const body = isSq
-      ? 'Klikoni linkun më poshtë për të verifikuar email-in tuaj. Linku skadon pas 24 orësh.'
-      : 'Click the link below to verify your email. This link expires in 24 hours.';
+    const copy = verificationEmailCopy(locale);
 
     await sendEmail({
       to: user.email,
-      subject,
+      subject: copy.subject,
       htmlBody: `
         <div style="font-family: sans-serif; padding: 20px; color: #1a1a1a;">
-          <h2>${heading}</h2>
+          <h2>${copy.heading}</h2>
           <p>Hello ${user.firstName} ${user.lastName},</p>
-          <p>${body}</p>
-          <p><a href="${verifyUrl}" style="background: #1a1a1a; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Verify Email</a></p>
+          <p>${copy.body}</p>
+          <p><a href="${verifyUrl}" style="background: #1a1a1a; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">${copy.button}</a></p>
         </div>
       `,
     });

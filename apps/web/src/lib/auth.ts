@@ -12,6 +12,11 @@ import { authSecret } from './auth-secret';
 import { AUTH_ERROR_MESSAGES } from './auth-errors';
 import { isAdminRole } from './user-mapper';
 import { isTestLoginBlocked } from './test-account';
+import { emailVerificationBlocksLogin } from './auth-login-policy';
+import {
+  authenticateViaInternalApi,
+  shouldAuthenticateViaApi,
+} from './auth-login-via-api';
 
 function credentialsError(code: keyof typeof AUTH_ERROR_MESSAGES | string): never {
   const err = new CredentialsSignin();
@@ -134,6 +139,39 @@ export const authConfig: NextAuthConfig = {
           await clearIpBlock(hashedIP);
         }
 
+        if (shouldAuthenticateViaApi()) {
+          const apiLogin = await authenticateViaInternalApi(email, password);
+          if (!apiLogin.ok) {
+            if (apiLogin.status === 403 && apiLogin.error === 'email_not_verified') {
+              credentialsError('email_not_verified');
+            }
+            if (apiLogin.status === 401) {
+              credentialsError('invalid_credentials');
+            }
+            credentialsError('server_error');
+          }
+
+          const apiUser = apiLogin.user;
+          if (isTestLoginBlocked(apiUser.email)) {
+            credentialsError('test_account_disabled');
+          }
+
+          await clearIpBlock(hashedIP);
+          await resetRateLimit('login', ipStr).catch(() => {});
+
+          const safeRememberMe = isAdminRole(apiUser.role) ? false : rememberMe;
+
+          return {
+            id: apiUser.id,
+            email: apiUser.email,
+            role: apiUser.role,
+            name: `${apiUser.firstName} ${apiUser.lastName}`,
+            firstName: apiUser.firstName,
+            lastName: apiUser.lastName,
+            rememberMe: safeRememberMe,
+          };
+        }
+
         const user = await prisma.user.findUnique({
           where: { email },
         });
@@ -154,16 +192,8 @@ export const authConfig: NextAuthConfig = {
           credentialsError('account_locked');
         }
 
-        if (!user.emailVerified) {
-          const isAdminUser = user.role === 'ADMIN' || user.role === 'SUPERADMIN';
-          if (isDev || isAdminUser) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { emailVerified: true },
-            });
-          } else {
-            credentialsError('email_not_verified');
-          }
+        if (!user.emailVerified && emailVerificationBlocksLogin(user.role)) {
+          credentialsError('email_not_verified');
         }
 
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
@@ -234,6 +264,8 @@ export const authConfig: NextAuthConfig = {
           email: user.email,
           role: user.role,
           name: `${user.firstName} ${user.lastName}`,
+          firstName: user.firstName,
+          lastName: user.lastName,
           rememberMe: safeRememberMe,
         };
         } catch (error) {
@@ -252,6 +284,8 @@ export const authConfig: NextAuthConfig = {
         token.role = (user as { role?: string }).role;
         token.id = user.id;
         token.email = user.email;
+        token.firstName = (user as { firstName?: string }).firstName;
+        token.lastName = (user as { lastName?: string }).lastName;
         token.iat = Math.floor(Date.now() / 1000);
         token.rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
         token.sessionMaxAge = isAdminRole(token.role as string)
@@ -272,21 +306,29 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
-      if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { updatedAt: true },
-        });
+      if (token.id && !shouldAuthenticateViaApi()) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { updatedAt: true, emailVerified: true, role: true },
+          });
 
-        if (!dbUser) {
-          return null;
-        }
+          if (!dbUser) {
+            return null;
+          }
 
-        const tokenIat = token.iat as number;
-        const userUpdatedAtSec = Math.floor(dbUser.updatedAt.getTime() / 1000);
+          if (emailVerificationBlocksLogin(dbUser.role) && !dbUser.emailVerified) {
+            return null;
+          }
 
-        if (userUpdatedAtSec > tokenIat) {
-          return null;
+          const tokenIat = token.iat as number;
+          const userUpdatedAtSec = Math.floor(dbUser.updatedAt.getTime() / 1000);
+
+          if (userUpdatedAtSec > tokenIat) {
+            return null;
+          }
+        } catch (error) {
+          console.warn('JWT session DB check skipped:', error);
         }
       }
 
@@ -299,6 +341,10 @@ export const authConfig: NextAuthConfig = {
         if (token.email) {
           session.user.email = token.email as string;
         }
+        (session.user as { firstName?: string }).firstName = token.firstName as
+          | string
+          | undefined;
+        (session.user as { lastName?: string }).lastName = token.lastName as string | undefined;
       }
       return session;
     },

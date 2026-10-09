@@ -8,6 +8,7 @@ import { resolveAuthErrorMessage, getAuthErrorCode } from './auth-errors';
 interface AuthState {
   user: UserDTO | null;
   loading: boolean;
+  lastAuthErrorCode: import('./auth-errors').AuthErrorCode | null;
   login: (
     email: string,
     password: string,
@@ -30,6 +31,7 @@ interface AuthState {
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   loading: false,
+  lastAuthErrorCode: null,
 
   login: async (
     email: string,
@@ -40,7 +42,7 @@ export const useAuth = create<AuthState>((set) => ({
       translateError?: (code: ReturnType<typeof getAuthErrorCode>) => string;
     }
   ) => {
-    set({ loading: true });
+    set({ loading: true, lastAuthErrorCode: null });
     try {
       const res = await signIn('credentials', {
         email,
@@ -51,12 +53,14 @@ export const useAuth = create<AuthState>((set) => ({
 
       if (res?.error) {
         const code = getAuthErrorCode(res.error, res.code);
+        set({ lastAuthErrorCode: code });
         const message = options?.translateError
           ? options.translateError(code)
           : resolveAuthErrorMessage(res.error, res.code, options?.locale ?? 'sq');
         throw new Error(message);
       }
 
+      set({ lastAuthErrorCode: null });
       await useAuth.getState().fetchMe();
     } finally {
       set({ loading: false });

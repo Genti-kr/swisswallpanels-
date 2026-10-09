@@ -10,6 +10,7 @@ import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { loginLimiter, registerLimiter, forgotPasswordLimiter } from '../middleware/rateLimit';
 import { getRequiredSecret } from '../lib/secrets';
 import { mapUser } from '../lib/mappers';
+import { emailVerificationBlocksLogin } from '../lib/auth-login-policy';
 import { Role, Language } from '@swisswall/types';
 import {
   forgotPasswordSchema,
@@ -225,6 +226,16 @@ router.post('/login', loginLimiter, async (req: Request, res: Response, next: Ne
 
       await createAuditLog('LOGIN_FAILED', user.id, req);
       return res.status(401).json({ error: 'Email ose fjalëkalim i pasaktë' });
+    }
+
+    if (!user.emailVerified && emailVerificationBlocksLogin(user.role)) {
+      await createAuditLog('LOGIN_FAILED', user.id, req);
+      return res.status(403).json({
+        error: 'email_not_verified',
+        code: 'EMAIL_NOT_VERIFIED',
+        message:
+          'Ju lutemi verifikoni email-in tuaj para se të hyni. Kontrolloni inbox-in ose kërkoni link të ri.',
+      });
     }
 
     // Success login

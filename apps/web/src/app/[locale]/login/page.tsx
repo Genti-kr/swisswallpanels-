@@ -15,6 +15,7 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [needsEmailVerify, setNeedsEmailVerify] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { login, loading } = useAuth();
   const { mergeCart } = useCart();
@@ -38,6 +39,7 @@ function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNeedsEmailVerify(false);
     try {
       await login(email, password, rememberMe, {
         locale: locale as import('@/i18n/routing').AppLocale,
@@ -61,6 +63,9 @@ function LoginContent() {
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tAuth('loginFailed'));
+      if (useAuth.getState().lastAuthErrorCode === 'email_not_verified') {
+        setNeedsEmailVerify(true);
+      }
     }
   };
 
@@ -129,9 +134,19 @@ function LoginContent() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm animate-fade-in">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
-              <p className="font-light">{error}</p>
+            <div className="flex flex-col gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm animate-fade-in">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
+                <p className="font-light">{error}</p>
+              </div>
+              {needsEmailVerify && email.trim() ? (
+                <Link
+                  href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+                  className="text-xs font-semibold text-[#1A1A1A] underline underline-offset-2 hover:text-[#C8B89A] pl-8"
+                >
+                  {tAuth('sendAgain')}
+                </Link>
+              ) : null}
             </div>
           )}
 

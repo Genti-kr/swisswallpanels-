@@ -12,6 +12,7 @@ import { verifyInvoiceAccessToken } from '../lib/invoice';
 import { checkoutLimiter, verifyPaymentLimiter } from '../middleware/rateLimit';
 import { validationErrorResponse } from '../lib/safe-response';
 import { mapCheckoutClientError } from '../lib/checkout-client-errors';
+import { emailVerificationBlocksLogin } from '../lib/auth-login-policy';
 
 const router = Router();
 
@@ -110,7 +111,7 @@ router.post(
         if (!user) {
           return res.status(404).json({ error: 'User not found' });
         }
-        if (!user.emailVerified && user.role === 'USER') {
+        if (!user.emailVerified && emailVerificationBlocksLogin(user.role)) {
           return res.status(403).json({ error: 'EMAIL_NOT_VERIFIED', message: 'Email not verified' });
         }
 
