@@ -170,7 +170,8 @@
     "errorNoAdminAccess": "You do not have admin access.",
     "errorTestAccountDisabled": "Test accounts cannot sign in on the live site. Use your real account or local development.",
     "errorSessionExpired": "Your session has expired. Please sign in again.",
-    "errorServerError": "Login service is temporarily unavailable. Please try again shortly."
+    "errorServerError": "Login service is temporarily unavailable. Please try again shortly.",
+    "errorConfiguration": "Login is misconfigured on the server (AUTH_SECRET, NEXTAUTH_URL, or API URL). Check Vercel settings."
   },
   "Cart": {
     "title": "Shopping Cart",

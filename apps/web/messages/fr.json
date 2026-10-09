@@ -170,7 +170,8 @@
     "errorNoAdminAccess": "Vous n'avez pas accès à l'administration.",
     "errorTestAccountDisabled": "Les comptes test ne sont pas autorisés sur le site en production.",
     "errorSessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
-    "errorServerError": "Service de connexion temporairement indisponible. Réessayez dans un instant."
+    "errorServerError": "Service de connexion temporairement indisponible. Réessayez dans un instant.",
+    "errorConfiguration": "Connexion mal configurée (AUTH_SECRET, NEXTAUTH_URL, URL API). Vérifiez Vercel."
   },
   "Cart": {
     "title": "Panier",

@@ -8,7 +8,8 @@ export type AuthErrorCode =
   | 'no_admin_access'
   | 'test_account_disabled'
   | 'session_expired'
-  | 'server_error';
+  | 'server_error'
+  | 'configuration';
 
 const AUTH_ERROR_CODES: AuthErrorCode[] = [
   'invalid_credentials',
@@ -19,6 +20,7 @@ const AUTH_ERROR_CODES: AuthErrorCode[] = [
   'test_account_disabled',
   'session_expired',
   'server_error',
+  'configuration',
 ];
 
 function isAuthErrorCode(value: string): value is AuthErrorCode {
@@ -37,6 +39,8 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
     'Llogaria test nuk lejohet në faqen live. Përdorni llogarinë tuaj reale ose mjedisin lokal.',
   session_expired: 'Sesioni juaj skadoi. Ju lutemi hyni përsëri.',
   server_error: 'Shërbimi i login-it nuk është i disponueshëm. Provo përsëri pas pak.',
+  configuration:
+    'Konfigurimi i login-it mungon (AUTH_SECRET, NEXTAUTH_URL, URL e API). Kontrollo Vercel Environment Variables.',
 };
 
 export function getAuthErrorCode(
@@ -50,7 +54,7 @@ export function getAuthErrorCode(
     return error;
   }
   if (error === 'Configuration') {
-    return 'server_error';
+    return 'configuration';
   }
   return 'invalid_credentials';
 }
@@ -74,6 +78,8 @@ export function resolveAuthErrorMessage(
         'Testkonten können auf der Live-Website nicht angemeldet werden.',
       session_expired: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
       server_error: 'Login-Dienst vorübergehend nicht verfügbar. Bitte später erneut versuchen.',
+      configuration:
+        'Login-Konfiguration fehlt (AUTH_SECRET, NEXTAUTH_URL, API-URL). Prüfen Sie Vercel Environment Variables.',
     },
     en: {
       invalid_credentials: 'Incorrect email or password',
@@ -86,6 +92,8 @@ export function resolveAuthErrorMessage(
         'Test accounts cannot sign in on the live site. Use your real account or local development.',
       session_expired: 'Your session has expired. Please sign in again.',
       server_error: 'Login service is temporarily unavailable. Please try again shortly.',
+      configuration:
+        'Login is misconfigured (AUTH_SECRET, NEXTAUTH_URL, API URL). Check Vercel environment variables.',
     },
     fr: {
       invalid_credentials: 'E-mail ou mot de passe incorrect',
@@ -98,6 +106,8 @@ export function resolveAuthErrorMessage(
         'Les comptes test ne sont pas autorisés sur le site en production.',
       session_expired: 'Votre session a expiré. Veuillez vous reconnecter.',
       server_error: 'Service de connexion temporairement indisponible. Réessayez dans un instant.',
+      configuration:
+        'Connexion mal configurée (AUTH_SECRET, NEXTAUTH_URL, URL API). Vérifiez les variables Vercel.',
     },
     sq: AUTH_ERROR_MESSAGES,
   };
@@ -115,6 +125,7 @@ export function authErrorTranslationKey(code: AuthErrorCode): string {
     test_account_disabled: 'errorTestAccountDisabled',
     session_expired: 'errorSessionExpired',
     server_error: 'errorServerError',
+    configuration: 'errorConfiguration',
   };
   return keys[code];
 }
