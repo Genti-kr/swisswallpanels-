@@ -254,13 +254,17 @@ router.post('/login', loginLimiter, async (req: Request, res: Response, next: Ne
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt,
-      },
-    });
+    try {
+      await prisma.refreshToken.create({
+        data: {
+          token: refreshToken,
+          userId: user.id,
+          expiresAt,
+        },
+      });
+    } catch (err) {
+      console.error('Refresh token create skipped (login continues):', err);
+    }
 
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('refreshToken', refreshToken, {

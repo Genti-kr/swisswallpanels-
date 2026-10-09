@@ -15,6 +15,7 @@ import { isTestLoginBlocked } from './test-account';
 import { emailVerificationBlocksLogin } from './auth-login-policy';
 import {
   authenticateViaInternalApi,
+  resolveProductionApiUrl,
   shouldAuthenticateViaApi,
 } from './auth-login-via-api';
 
@@ -137,6 +138,13 @@ export const authConfig: NextAuthConfig = {
           credentialsError('rate_limited');
         } else if (ipBlock?.blockedAt) {
           await clearIpBlock(hashedIP);
+        }
+
+        if (process.env.NODE_ENV === 'production' && !resolveProductionApiUrl()) {
+          console.error(
+            'Login: set INTERNAL_API_URL or NEXT_PUBLIC_API_URL on Vercel (e.g. https://api.swisswallpanels.ch)'
+          );
+          credentialsError('server_error');
         }
 
         if (shouldAuthenticateViaApi()) {

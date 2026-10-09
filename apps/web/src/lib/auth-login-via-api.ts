@@ -8,7 +8,7 @@ export type ApiLoginUser = {
   lastName: string;
 };
 
-function resolveProductionApiUrl(): string | null {
+export function resolveProductionApiUrl(): string | null {
   const internal = tryGetInternalApiUrl();
   if (internal && !isLocalApiUrl(internal)) {
     return internal;
