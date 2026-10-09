@@ -1,9 +1,10 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getCatalogPageCount } from '@/lib/products-catalog';
-import { syncCatalogPagerTrackScroll } from '@/lib/catalog-pager-scroll';
+import {
+  getCatalogPageCount,
+  getCatalogPagerVisiblePages,
+} from '@/lib/products-catalog';
 
 type ProductsCatalogPagerProps = {
   totalProducts: number;
@@ -22,18 +23,8 @@ export function ProductsCatalogPager({
   onPageChange,
   labels,
 }: ProductsCatalogPagerProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const firstScrollRef = useRef(true);
   const totalPages = getCatalogPageCount(totalProducts);
-
-  useLayoutEffect(() => {
-    const track = trackRef.current;
-    if (!track || totalPages <= 1) return;
-
-    const behavior: ScrollBehavior = firstScrollRef.current ? 'auto' : 'smooth';
-    firstScrollRef.current = false;
-    syncCatalogPagerTrackScroll(track, currentPage, totalPages, behavior);
-  }, [currentPage, totalPages]);
+  const visiblePages = getCatalogPagerVisiblePages(currentPage, totalPages);
 
   if (totalPages <= 1) {
     return null;
@@ -57,18 +48,13 @@ export function ProductsCatalogPager({
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <div
-          ref={trackRef}
-          className="flex gap-2 w-full max-w-[min(100%,32rem)] overflow-x-auto py-1 px-2 scroll-smooth scrollbar-none"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => {
+        <div className="flex gap-2 justify-center py-1 px-1">
+          {visiblePages.map((num) => {
             const active = num === currentPage;
             return (
               <button
                 key={num}
                 type="button"
-                data-page={num}
                 onClick={() => go(num)}
                 aria-current={active ? 'page' : undefined}
                 className={`shrink-0 min-w-[2.75rem] h-11 rounded-xl text-sm font-semibold transition-colors duration-200 ${

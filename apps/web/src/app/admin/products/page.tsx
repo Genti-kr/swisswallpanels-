@@ -17,6 +17,7 @@ import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 import {
   getCatalogPageCount,
   getCatalogPageSlice,
+  scrollToCatalogAnchor,
 } from '@/lib/products-catalog';
 import {
   parseDecimalInput,
@@ -109,7 +110,13 @@ export default function AdminProductsPage() {
   const [form, setForm] = useState<FormState>(defaultForm());
   const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
   const [adminCatalogPage, setAdminCatalogPage] = useState(1);
+  const adminCatalogAnchorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAdminCatalogPageChange = useCallback((page: number) => {
+    setAdminCatalogPage(page);
+    requestAnimationFrame(() => scrollToCatalogAnchor(adminCatalogAnchorRef.current));
+  }, []);
 
   const visibleProducts = useMemo(
     () => getCatalogPageSlice(products, adminCatalogPage),
@@ -137,10 +144,35 @@ export default function AdminProductsPage() {
 
   const totalImageCount = editingId ? editingImages.length : pendingImages.length;
 
+  const mergeUploadedImages = (uploaded: ProductImageDTO[], productIdForMerge: string) => {
+    if (!uploaded.length || !productIdForMerge) return;
+    setEditingImages((prev) => {
+      const byId = new Map(prev.map((img) => [img.id, img]));
+      for (const img of uploaded) {
+        byId.set(img.id, img);
+      }
+      return [...byId.values()].sort((a, b) => a.sortOrder - b.sortOrder);
+    });
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== productIdForMerge) return p;
+        const byId = new Map(p.images.map((img) => [img.id, img]));
+        for (const img of uploaded) {
+          byId.set(img.id, img);
+        }
+        return {
+          ...p,
+          images: [...byId.values()].sort((a, b) => a.sortOrder - b.sortOrder),
+        };
+      })
+    );
+  };
+
   const uploadPendingBatch = async (productId: string, batch: PendingProductImage[]) => {
-    if (!batch.length) return;
+    if (!batch.length) return [] as ProductImageDTO[];
     const primary = batch.find((p) => p.isPrimary)?.localId ?? batch[0].localId;
     const errors: string[] = [];
+    const uploaded: ProductImageDTO[] = [];
     for (let i = 0; i < batch.length; i++) {
       const item = batch[i];
       if (item.file.size > MAX_IMAGE_FILE_BYTES) {
@@ -151,16 +183,18 @@ export default function AdminProductsPage() {
       fd.append('image', item.file);
       fd.append('isPrimary', item.localId === primary ? 'true' : 'false');
       try {
-        await uploadProductImageDirect(productId, fd);
+        const { image } = await uploadProductImageDirect(productId, fd);
+        uploaded.push(image);
       } catch (err) {
         errors.push(
-          `${item.file.name}: ${err instanceof Error ? err.message : 'dështoi ngarkimi'}`
+          `${item.file.name}: ${err instanceof Error ? err.message : 'dështoi ngarkimin'}`
         );
       }
     }
     if (errors.length) {
       throw new Error(`Disa foto nuk u ngarkuan: ${errors.join(' · ')}`);
     }
+    return uploaded;
   };
 
   const refreshCatalog = useCallback(async () => {
@@ -359,7 +393,8 @@ export default function AdminProductsPage() {
       let uploadWarning = '';
       if (productId && pendingImages.length > 0) {
         try {
-          await uploadPendingBatch(productId, pendingImages);
+          const uploadedPending = await uploadPendingBatch(productId, pendingImages);
+          mergeUploadedImages(uploadedPending, productId);
           clearPendingImages();
         } catch (uploadErr) {
           uploadWarning =
@@ -470,11 +505,12 @@ export default function AdminProductsPage() {
         const hasPrimary = prev.some((p) => p.isPrimary);
         const next = [...prev];
         toAdd.forEach((file, i) => {
+          const isFirstInBatch = i === 0;
           next.push({
             localId: crypto.randomUUID(),
             file,
             previewUrl: URL.createObjectURL(file),
-            isPrimary: !hasPrimary && prev.length === 0 && i === 0,
+            isPrimary: !hasPrimary && isFirstInBatch,
           });
         });
         return next;
@@ -484,30 +520,43 @@ export default function AdminProductsPage() {
 
     setUploading(true);
     const uploadErrors: string[] = [];
+    const uploaded: ProductImageDTO[] = [];
     try {
+      let existingCount = editingImages.length;
       for (let i = 0; i < toAdd.length; i++) {
         const fd = new FormData();
         fd.append('image', toAdd[i]);
-        fd.append('isPrimary', i === 0 && editingImages.length === 0 ? 'true' : 'false');
+        fd.append(
+          'isPrimary',
+          existingCount === 0 && i === 0 ? 'true' : 'false'
+        );
         try {
-          await uploadProductImageDirect(editingId, fd);
+          const { image } = await uploadProductImageDirect(editingId, fd);
+          uploaded.push(image);
+          existingCount += 1;
         } catch (err) {
           uploadErrors.push(
             `${toAdd[i].name}: ${err instanceof Error ? err.message : 'dështoi'}`
           );
         }
       }
-      const res = await apiFetch<{ items: ProductDTO[] }>('/api/admin/products');
-      const updated = res.items.find((p) => p.id === editingId);
-      if (updated) setEditingImages(updated.images);
-      await load();
+      mergeUploadedImages(uploaded, editingId);
+      if (uploaded.length) {
+        setSuccess(`${uploaded.length} foto u ngarkuan.`);
+      }
       if (uploadErrors.length) {
         setError(`Disa foto nuk u ngarkuan: ${uploadErrors.join(' · ')}`);
+      } else {
+        setError('');
       }
+      void refreshCatalog().catch(() => undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dështoi ngarkimi i fotografive');
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -1130,6 +1179,7 @@ export default function AdminProductsPage() {
         </div>
       ) : products.length === 0 ? null : (
         <>
+        <div ref={adminCatalogAnchorRef} className="scroll-mt-28" aria-hidden />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {visibleProducts.map((p) => {
             const primaryImage = p.images.find((i) => i.isPrimary) || p.images[0];
@@ -1220,7 +1270,7 @@ export default function AdminProductsPage() {
         <ProductsCatalogPager
           totalProducts={products.length}
           currentPage={adminCatalogPage}
-          onPageChange={setAdminCatalogPage}
+          onPageChange={handleAdminCatalogPageChange}
           labels={{
             page: 'Shfleto produktet — zgjidh faqen',
             prev: 'Faqja e mëparshme',

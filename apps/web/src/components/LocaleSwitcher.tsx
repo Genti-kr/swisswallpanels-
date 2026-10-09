@@ -21,15 +21,15 @@ const LOCALE_FLAG_SRC: Record<AppLocale, string> = {
 };
 
 function LocaleFlag({ locale, size = 18 }: { locale: AppLocale; size?: number }) {
-  const height = Math.round(size * 0.75);
   return (
     // eslint-disable-next-line @next/next/no-img-element -- local SVG flags
     <img
       src={LOCALE_FLAG_SRC[locale]}
       alt=""
       width={size}
-      height={height}
-      className="rounded-[3px] object-cover ring-1 ring-black/10 shrink-0"
+      height={size}
+      className="rounded-full object-cover ring-1 ring-black/10 shrink-0"
+      style={{ width: size, height: size }}
       aria-hidden
       loading="lazy"
       decoding="async"

@@ -5,6 +5,9 @@ import { createApiToken } from '@/lib/api-token';
 
 import { getInternalApiUrl } from '@/lib/urls';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 const API_URL = getInternalApiUrl();
 
 async function forwardMultipart(

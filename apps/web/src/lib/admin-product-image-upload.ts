@@ -1,8 +1,12 @@
+import type { ProductImageDTO } from '@swisswall/types';
+
+export type UploadProductImageResponse = { image: ProductImageDTO };
+
 /** Upload via same-origin Next route (proxies to API) — avoids browser CORS to Hetzner. */
 export async function uploadProductImageDirect(
   productId: string,
   formData: FormData
-): Promise<unknown> {
+): Promise<UploadProductImageResponse> {
   const res = await fetch(`/api/admin/products/${productId}/images`, {
     method: 'POST',
     credentials: 'include',
@@ -23,5 +27,5 @@ export async function uploadProductImageDirect(
         : `Upload failed: ${res.status}`);
     throw new Error(msg);
   }
-  return data;
+  return data as UploadProductImageResponse;
 }
