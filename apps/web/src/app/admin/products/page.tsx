@@ -319,29 +319,9 @@ export default function AdminProductsPage() {
         priceChf: Number(o.priceChf),
       }));
 
-      const categoryLabelNorm = form.categoryName.trim().toLowerCase();
-      const existingCategory = categories.find(
-        (c) => categoryLabel(c).trim().toLowerCase() === categoryLabelNorm
-      );
-
-      let categoryId = existingCategory?.id;
-      if (!categoryId && form.categoryName.trim()) {
-        const catRes = await apiFetch<{ categoryId: string }>('/api/admin/ensure-category', {
-          method: 'POST',
-          body: JSON.stringify({ name: form.categoryName.trim() }),
-        });
-        categoryId = catRes.categoryId;
-      }
-      if (!categoryId) {
-        setError('Zgjidh ose shkruaj kategorinë e produktit.');
-        setSaving(false);
-        return;
-      }
-
       const payload: Record<string, unknown> = {
         slug: form.slug.trim(),
         sku: form.sku.trim(),
-        categoryId,
         categoryName: form.categoryName.trim(),
         nameJson,
         descJson,
