@@ -4,12 +4,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   getCatalogPageCount,
   getCatalogPagerVisiblePages,
+  PRODUCTS_CATALOG_PAGE_SIZE,
 } from '@/lib/products-catalog';
 
 type ProductsCatalogPagerProps = {
   totalProducts: number;
   currentPage: number;
   onPageChange: (page: number) => void;
+  pageSize?: number;
   labels: {
     page: string;
     prev: string;
@@ -21,9 +23,10 @@ export function ProductsCatalogPager({
   totalProducts,
   currentPage,
   onPageChange,
+  pageSize = PRODUCTS_CATALOG_PAGE_SIZE,
   labels,
 }: ProductsCatalogPagerProps) {
-  const totalPages = getCatalogPageCount(totalProducts);
+  const totalPages = getCatalogPageCount(totalProducts, pageSize);
   const visiblePages = getCatalogPagerVisiblePages(currentPage, totalPages);
 
   if (totalPages <= 1) {

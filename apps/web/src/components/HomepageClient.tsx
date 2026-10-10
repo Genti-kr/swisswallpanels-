@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import FeaturedProducts from '@/components/FeaturedProducts';
@@ -14,6 +14,13 @@ import {
   sanitizePersonOrPlaceName,
   sanitizePhoneInput,
 } from '@/lib/numeric-input';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
+import {
+  getCatalogPageCount,
+  getCatalogPageSlice,
+  HOMEPAGE_GALLERY_PAGE_SIZE,
+  scrollToCatalogAnchor,
+} from '@/lib/products-catalog';
 
 const fallbackGallery = [
   { src: '/Enhancing-Wood-Panel-Walls.webp', alt: 'Wood panel wall decoration' },
@@ -53,7 +60,11 @@ export default function HomepageClient() {
   const tContact = useTranslations('Contact');
   const tCalc = useTranslations('Calculator');
   const tCTA = useTranslations('CTA');
+  const tGallery = useTranslations('Gallery');
   const locale = useLocale();
+
+  const galleryScrollAnchorRef = useRef<HTMLDivElement>(null);
+  const [galleryPage, setGalleryPage] = useState(1);
 
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
@@ -106,6 +117,23 @@ export default function HomepageClient() {
       })
       .catch(() => { });
   }, [locale]);
+
+  const visibleGalleryImages = useMemo(
+    () => getCatalogPageSlice(galleryImages, galleryPage, HOMEPAGE_GALLERY_PAGE_SIZE),
+    [galleryImages, galleryPage]
+  );
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(galleryImages.length, HOMEPAGE_GALLERY_PAGE_SIZE);
+    if (maxPage > 0 && galleryPage > maxPage) {
+      setGalleryPage(maxPage);
+    }
+  }, [galleryImages.length, galleryPage]);
+
+  const handleGalleryPageChange = useCallback((page: number) => {
+    setGalleryPage(page);
+    requestAnimationFrame(() => scrollToCatalogAnchor(galleryScrollAnchorRef.current));
+  }, []);
 
   useEffect(() => {
     if (!SHOW_HOMEPAGE_CALCULATOR) return;
@@ -466,11 +494,14 @@ export default function HomepageClient() {
           </div>
           <div className="space-y-6">
             <span className="text-xs font-bold uppercase tracking-widest text-[#C8B89A]">
-              {t('Stats.swiss')}
+              {t('About.badge')}
             </span>
             <h2 className="text-3xl md:text-4xl font-light tracking-tight">{t('About.title')}</h2>
             <p className="text-base text-[#1A1A1A]/70 leading-relaxed font-light">
               {t('About.text')}
+            </p>
+            <p className="text-base text-[#1A1A1A]/70 leading-relaxed font-light">
+              {t('About.panels')}
             </p>
           </div>
         </section>
@@ -484,11 +515,20 @@ export default function HomepageClient() {
               <div className="w-16 h-0.5 bg-[#C8B89A] mx-auto" />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {galleryImages.map((img, idx) => (
+            <div
+              ref={galleryScrollAnchorRef}
+              className="scroll-mt-28 h-0 w-full pointer-events-none"
+              aria-hidden
+            />
+
+            <div
+              key={galleryPage}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 transition-opacity duration-300"
+            >
+              {visibleGalleryImages.map((img, idx) => (
                 <div
-                  key={`${img.src}-${idx}`}
-                  className="aspect-[4/5] bg-white border border-zinc-200 rounded-md overflow-hidden cursor-pointer group relative shadow-sm hover:shadow-md transition-all duration-300"
+                  key={`${img.src}-${galleryPage}-${idx}`}
+                  className="aspect-[4/3] bg-white border border-zinc-100 rounded-lg overflow-hidden group relative shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
                 >
                   <img
                     src={img.src}
@@ -498,6 +538,27 @@ export default function HomepageClient() {
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               ))}
+            </div>
+
+            <ProductsCatalogPager
+              totalProducts={galleryImages.length}
+              currentPage={galleryPage}
+              onPageChange={handleGalleryPageChange}
+              pageSize={HOMEPAGE_GALLERY_PAGE_SIZE}
+              labels={{
+                page: tGallery('catalogPagerHint'),
+                prev: tGallery('catalogPrev'),
+                next: tGallery('catalogNext'),
+              }}
+            />
+
+            <div className="text-center pt-4">
+              <Link
+                href="/#gallery"
+                className="inline-flex items-center justify-center min-h-11 px-8 py-3 rounded text-xs font-bold uppercase tracking-wider border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-colors duration-300"
+              >
+                {tGallery('viewGallery')} →
+              </Link>
             </div>
           </div>
         </section>

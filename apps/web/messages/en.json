@@ -48,7 +48,11 @@
     "swissDesc": "Legal pages, privacy compliance, and payment options for Switzerland."
   },
   "Gallery": {
-    "projectsComingSoon": "Reference images for inspiration. Client project gallery coming soon."
+    "projectsComingSoon": "Reference images for inspiration. Client project gallery coming soon.",
+    "catalogPagerHint": "Browse more gallery images — select a page",
+    "catalogPrev": "Previous page",
+    "catalogNext": "Next page",
+    "viewGallery": "View gallery"
   },
   "Products": {
     "featured": "Featured Products",
@@ -103,7 +107,9 @@
   },
   "About": {
     "title": "About Us",
-    "text": "Swiss Wall Panels provides premium acoustic and decorative wall panels for the Swiss market."
+    "badge": "Wall panels & interiors",
+    "text": "Swiss Wall Panels is your online shop for wall panels in Switzerland: a clear catalog, transparent per-panel prices incl. VAT, personal quotes, and support from product choice through to checkout.",
+    "panels": "We offer acoustic and decorative panels with defined dimensions per piece — ideal for bedrooms, offices, reception areas, or echo-prone spaces. Pick thickness, choose colours from the AMF catalog, and order exactly the number of panels you need, with no minimum order."
   },
   "FAQ": {
     "title": "Frequently Asked Questions",

@@ -48,7 +48,11 @@
     "swissDesc": "Faqe ligjore, privatësi dhe opsione pagese për Zvicër."
   },
   "Gallery": {
-    "projectsComingSoon": "Imazhe reference për inspirim. Galeria e projekteve të klientëve së shpejti."
+    "projectsComingSoon": "Imazhe reference për inspirim. Galeria e projekteve të klientëve së shpejti.",
+    "catalogPagerHint": "Shfleto më shumë foto — zgjidh faqen",
+    "catalogPrev": "Faqja e mëparshme",
+    "catalogNext": "Faqja tjetër",
+    "viewGallery": "Shiko galerinë"
   },
   "Products": {
     "featured": "Produktet e zgjedhura",
@@ -103,7 +107,9 @@
   },
   "About": {
     "title": "Rreth Nesh",
-    "text": "Swiss Wall Panels ofron panele muri akustike dhe dekorative të cilësisë së lartë për tregun zviceran."
+    "badge": "Panele muri & interier",
+    "text": "Swiss Wall Panels është dyqani juaj online për panele muri në Zvicër: katalog i qartë, çmime për copë me TVSH, oferta personalizuese dhe mbështetje nga zgjedhja e modelit deri te porosia.",
+    "panels": "Ofrojmë panele akustike dhe dekorative me dimensione të përcaktuara për copë — ideale për dhomë gjumi, zyra, recepsion apo hapësira me shumë jehonë. Zgjidhni trashësinë, ngjyrën nga katalogu AMF dhe porositni sa copë ju duhen, pa porosi minimale."
   },
   "FAQ": {
     "title": "Pyetjet e shpeshta",

@@ -10,15 +10,25 @@ export function scrollToCatalogAnchor(anchor: HTMLElement | null) {
   window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
-export function getCatalogPageCount(totalProducts: number): number {
-  if (totalProducts <= 0) return 0;
-  return Math.ceil(totalProducts / PRODUCTS_CATALOG_PAGE_SIZE);
+export function getCatalogPageCount(
+  totalProducts: number,
+  pageSize: number = PRODUCTS_CATALOG_PAGE_SIZE
+): number {
+  if (totalProducts <= 0 || pageSize <= 0) return 0;
+  return Math.ceil(totalProducts / pageSize);
 }
 
-export function getCatalogPageSlice<T>(items: T[], page: number): T[] {
-  const start = (page - 1) * PRODUCTS_CATALOG_PAGE_SIZE;
-  return items.slice(start, start + PRODUCTS_CATALOG_PAGE_SIZE);
+export function getCatalogPageSlice<T>(
+  items: T[],
+  page: number,
+  pageSize: number = PRODUCTS_CATALOG_PAGE_SIZE
+): T[] {
+  const start = (page - 1) * pageSize;
+  return items.slice(start, start + pageSize);
 }
+
+/** Homepage gallery section — same pager UX as the product catalog, fewer tiles per page. */
+export const HOMEPAGE_GALLERY_PAGE_SIZE = 6;
 
 /** Max page buttons supported by catalog fetch (see fetch-all-products). */
 export const CATALOG_PAGER_MAX_PAGES = 200;

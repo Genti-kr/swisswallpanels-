@@ -48,7 +48,11 @@
     "swissDesc": "Pages légales, confidentialité et options de paiement pour la Suisse."
   },
   "Gallery": {
-    "projectsComingSoon": "Images de référence. Galerie de projets clients bientôt disponible."
+    "projectsComingSoon": "Images de référence. Galerie de projets clients bientôt disponible.",
+    "catalogPagerHint": "Parcourir la galerie — choisir une page",
+    "catalogPrev": "Page précédente",
+    "catalogNext": "Page suivante",
+    "viewGallery": "Voir la galerie"
   },
   "Products": {
     "featured": "Produits phares",
@@ -103,7 +107,9 @@
   },
   "About": {
     "title": "À Propos de Nous",
-    "text": "Swiss Wall Panels propose des panneaux muraux acoustiques et décoratifs de haute qualité pour le marché suisse."
+    "badge": "Panneaux muraux & intérieur",
+    "text": "Swiss Wall Panels est votre boutique en ligne de panneaux muraux en Suisse : catalogue clair, prix à la pièce TTC, devis personnalisés et accompagnement du choix du produit jusqu'à la commande.",
+    "panels": "Nous proposons des panneaux acoustiques et décoratifs aux dimensions définies par pièce — idéaux pour chambres, bureaux, accueil ou pièces réverbérantes. Choisissez l'épaisseur, les couleurs du catalogue AMF et commandez le nombre exact de panneaux souhaité, sans quantité minimale."
   },
   "FAQ": {
     "title": "Questions fréquemment posées",

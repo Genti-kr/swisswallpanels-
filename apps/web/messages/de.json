@@ -48,7 +48,11 @@
     "swissDesc": "Rechtliche Seiten, Datenschutz und Zahlungsoptionen für die Schweiz."
   },
   "Gallery": {
-    "projectsComingSoon": "Referenzbilder zur Inspiration. Kundenprojekt-Galerie folgt in Kürze."
+    "projectsComingSoon": "Referenzbilder zur Inspiration. Kundenprojekt-Galerie folgt in Kürze.",
+    "catalogPagerHint": "Weitere Galeriebilder — Seite wählen",
+    "catalogPrev": "Vorherige Seite",
+    "catalogNext": "Nächste Seite",
+    "viewGallery": "Galerie ansehen"
   },
   "Products": {
     "featured": "Ausgewählte Produkte",
@@ -103,7 +107,9 @@
   },
   "About": {
     "title": "Über Uns",
-    "text": "Swiss Wall Panels bietet hochwertige akustische und dekorative Wandpaneele für den Schweizer Markt."
+    "badge": "Wandpaneele & Interieur",
+    "text": "Swiss Wall Panels ist Ihr Online-Shop für Wandpaneele in der Schweiz: übersichtlicher Katalog, transparente Stückpreise inkl. MwSt., persönliche Offerten und Unterstützung von der Produktwahl bis zur Bestellung.",
+    "panels": "Wir führen akustische und dekorative Paneele mit festen Massen pro Stück — ideal für Schlafzimmer, Büros, Empfangsbereiche oder hallige Räume. Wählen Sie die Stärke, Farben aus dem AMF-Katalog und bestellen Sie genau so viele Paneele wie nötig, ohne Mindestmenge."
   },
   "FAQ": {
     "title": "Häufig gestellte Fragen",
