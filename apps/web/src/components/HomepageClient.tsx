@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import FeaturedProducts from '@/components/FeaturedProducts';
@@ -14,20 +14,12 @@ import {
   sanitizePersonOrPlaceName,
   sanitizePhoneInput,
 } from '@/lib/numeric-input';
-import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 import {
-  getCatalogPageCount,
-  getCatalogPageSlice,
-  HOMEPAGE_GALLERY_PAGE_SIZE,
-  scrollToCatalogAnchor,
-} from '@/lib/products-catalog';
-
-const fallbackGallery = [
-  { src: '/Enhancing-Wood-Panel-Walls.webp', alt: 'Wood panel wall decoration' },
-  { src: '/balsa_02.webp', alt: 'Balsa wood panels close-up' },
-  { src: '/images.jpg', alt: 'Acoustic oak wood panels' },
-  { src: '/imagess.jpg', alt: 'Decorative pine wood panels' },
-];
+  FALLBACK_GALLERY_IMAGES,
+  mapGalleryImagesFromApi,
+  type GalleryImageItem,
+} from '@/lib/gallery-images';
+import { HOMEPAGE_GALLERY_PAGE_SIZE } from '@/lib/products-catalog';
 
 const fallbackAbout = '/balsa_02.webp';
 
@@ -63,15 +55,12 @@ export default function HomepageClient() {
   const tGallery = useTranslations('Gallery');
   const locale = useLocale();
 
-  const galleryScrollAnchorRef = useRef<HTMLDivElement>(null);
-  const [galleryPage, setGalleryPage] = useState(1);
-
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(10);
-  const [galleryImages, setGalleryImages] = useState<{ src: string; alt: string }[]>(fallbackGallery);
+  const [galleryImages, setGalleryImages] = useState<GalleryImageItem[]>(FALLBACK_GALLERY_IMAGES);
   const [aboutImage, setAboutImage] = useState<string>(fallbackAbout);
-  const [heroBg, setHeroBg] = useState(fallbackGallery[0].src);
+  const [heroBg, setHeroBg] = useState(FALLBACK_GALLERY_IMAGES[0].src);
   const [heroBgVisible, setHeroBgVisible] = useState(true);
 
   const [showQuoteForm, setShowQuoteForm] = useState(false);
@@ -94,13 +83,7 @@ export default function HomepageClient() {
     apiFetch<{ gallery: SiteImageDTO[]; about: SiteImageDTO[] }>('/api/site/images')
       .then((res) => {
         if (res.gallery?.length) {
-          const mapped = res.gallery.map((img) => ({
-            src: resolveMediaUrl(img.url),
-            alt:
-              (img.altJson as Record<string, string> | null)?.[locale] ||
-              (img.altJson as Record<string, string> | null)?.de ||
-              'Gallery image',
-          }));
+          const mapped = mapGalleryImagesFromApi(res.gallery, locale, resolveMediaUrl);
           setGalleryImages(mapped);
           setHeroBg(mapped[0].src);
           setHeroBgVisible(true);
@@ -118,22 +101,10 @@ export default function HomepageClient() {
       .catch(() => { });
   }, [locale]);
 
-  const visibleGalleryImages = useMemo(
-    () => getCatalogPageSlice(galleryImages, galleryPage, HOMEPAGE_GALLERY_PAGE_SIZE),
-    [galleryImages, galleryPage]
+  const homepageGalleryPreview = useMemo(
+    () => galleryImages.slice(0, HOMEPAGE_GALLERY_PAGE_SIZE),
+    [galleryImages]
   );
-
-  useEffect(() => {
-    const maxPage = getCatalogPageCount(galleryImages.length, HOMEPAGE_GALLERY_PAGE_SIZE);
-    if (maxPage > 0 && galleryPage > maxPage) {
-      setGalleryPage(maxPage);
-    }
-  }, [galleryImages.length, galleryPage]);
-
-  const handleGalleryPageChange = useCallback((page: number) => {
-    setGalleryPage(page);
-    requestAnimationFrame(() => scrollToCatalogAnchor(galleryScrollAnchorRef.current));
-  }, []);
 
   useEffect(() => {
     if (!SHOW_HOMEPAGE_CALCULATOR) return;
@@ -515,19 +486,10 @@ export default function HomepageClient() {
               <div className="w-16 h-0.5 bg-[#C8B89A] mx-auto" />
             </div>
 
-            <div
-              ref={galleryScrollAnchorRef}
-              className="scroll-mt-28 h-0 w-full pointer-events-none"
-              aria-hidden
-            />
-
-            <div
-              key={galleryPage}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 transition-opacity duration-300"
-            >
-              {visibleGalleryImages.map((img, idx) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {homepageGalleryPreview.map((img) => (
                 <div
-                  key={`${img.src}-${galleryPage}-${idx}`}
+                  key={img.id}
                   className="aspect-[4/3] bg-white border border-zinc-100 rounded-lg overflow-hidden group relative shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
                 >
                   <img
@@ -540,21 +502,9 @@ export default function HomepageClient() {
               ))}
             </div>
 
-            <ProductsCatalogPager
-              totalProducts={galleryImages.length}
-              currentPage={galleryPage}
-              onPageChange={handleGalleryPageChange}
-              pageSize={HOMEPAGE_GALLERY_PAGE_SIZE}
-              labels={{
-                page: tGallery('catalogPagerHint'),
-                prev: tGallery('catalogPrev'),
-                next: tGallery('catalogNext'),
-              }}
-            />
-
             <div className="text-center pt-4">
               <Link
-                href="/#gallery"
+                href="/gallery"
                 className="inline-flex items-center justify-center min-h-11 px-8 py-3 rounded text-xs font-bold uppercase tracking-wider border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-colors duration-300"
               >
                 {tGallery('viewGallery')} →

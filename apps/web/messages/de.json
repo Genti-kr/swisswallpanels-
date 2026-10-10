@@ -49,10 +49,17 @@
   },
   "Gallery": {
     "projectsComingSoon": "Referenzbilder zur Inspiration. Kundenprojekt-Galerie folgt in Kürze.",
+    "pageBadge": "Inspiration",
+    "pageTitle": "Galerie",
+    "pageSubtitle": "Referenzfotos unserer Wandpaneele — akustische und dekorative Oberflächen für Ihr Projekt.",
+    "showingCount": "{count} Galeriebilder",
+    "catalogPageLabel": "Seite {current} von {total}",
     "catalogPagerHint": "Weitere Galeriebilder — Seite wählen",
     "catalogPrev": "Vorherige Seite",
     "catalogNext": "Nächste Seite",
-    "viewGallery": "Galerie ansehen"
+    "viewGallery": "Galerie ansehen",
+    "emptyTitle": "Noch keine Galeriebilder",
+    "emptyHint": "Neue Referenzfotos erscheinen hier demnächst."
   },
   "Products": {
     "featured": "Ausgewählte Produkte",
@@ -414,6 +421,8 @@
     "widerrufDesc": "Informationen zu Ihrem gesetzlichen Widerrufsrecht bei Online-Käufen.",
     "productsTitle": "Produkte | Swiss Wall Panels",
     "productsDesc": "Durchsuchen Sie unsere Kollektion an akustischen und dekorativen Premium-Wandpaneelen.",
+    "galleryTitle": "Galerie | Swiss Wall Panels",
+    "galleryDesc": "Referenzfotos von Swiss Wall Panels Installationen und Oberflächen.",
     "cartTitle": "Warenkorb | Swiss Wall Panels",
     "cartDesc": "Ihr Warenkorb bei Swiss Wall Panels.",
     "checkoutTitle": "Checkout | Swiss Wall Panels",

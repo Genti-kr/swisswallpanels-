@@ -49,10 +49,17 @@
   },
   "Gallery": {
     "projectsComingSoon": "Imazhe reference për inspirim. Galeria e projekteve të klientëve së shpejti.",
+    "pageBadge": "Inspirim",
+    "pageTitle": "Galeria",
+    "pageSubtitle": "Foto reference të paneleve tona — përfundime akustike dhe dekorative për projektin tuaj.",
+    "showingCount": "{count} foto në galeri",
+    "catalogPageLabel": "Faqja {current} nga {total}",
     "catalogPagerHint": "Shfleto më shumë foto — zgjidh faqen",
     "catalogPrev": "Faqja e mëparshme",
     "catalogNext": "Faqja tjetër",
-    "viewGallery": "Shiko galerinë"
+    "viewGallery": "Shiko galerinë e plotë",
+    "emptyTitle": "Ende pa foto në galeri",
+    "emptyHint": "Fotot e reja do të shfaqen këtu së shpejti."
   },
   "Products": {
     "featured": "Produktet e zgjedhura",
@@ -414,6 +421,8 @@
     "widerrufDesc": "Informacion mbi të drejtën ligjore të tërheqjes për blerjet online.",
     "productsTitle": "Produktet | Swiss Wall Panels",
     "productsDesc": "Shfletoni koleksionin tonë të paneleve të murit akustikë dhe dekorativë premium.",
+    "galleryTitle": "Galeria | Swiss Wall Panels",
+    "galleryDesc": "Shfletoni foto reference të instalimeve dhe përfundimeve të Swiss Wall Panels.",
     "cartTitle": "Shporta | Swiss Wall Panels",
     "cartDesc": "Shporta juaj në Swiss Wall Panels.",
     "checkoutTitle": "Checkout | Swiss Wall Panels",

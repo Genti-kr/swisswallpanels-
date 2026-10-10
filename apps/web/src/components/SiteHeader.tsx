@@ -14,7 +14,7 @@ const mainNavItems = [
   { key: 'about', href: '/#about' as const, match: () => false },
   { key: 'products', href: '/produkte' as const, match: (path: string) => path.startsWith('/produkte') },
   { key: 'catalog', href: '/katalog' as const, match: (path: string) => path.startsWith('/katalog') },
-  { key: 'gallery', href: '/#gallery' as const, match: () => false },
+  { key: 'gallery', href: '/gallery' as const, match: (path: string) => path.startsWith('/gallery') },
   { key: 'contact', href: '/#contact' as const, match: () => false },
 ] as const;
 

@@ -6,6 +6,7 @@ const LOCALES = ['de', 'fr', 'en', 'sq'] as const;
 const PUBLIC_ROUTES = [
   '',
   '/produkte',
+  '/gallery',
   '/katalog',
   '/agb',
   '/widerruf',
@@ -22,7 +23,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       sitemapEntries.push({
         url: `${baseUrl}/${locale}${route}`,
         changeFrequency: route === '' ? 'weekly' : 'monthly',
-        priority: route === '' ? 1.0 : route === '/produkte' || route === '/katalog' ? 0.9 : 0.7,
+        priority:
+          route === ''
+            ? 1.0
+            : route === '/produkte' || route === '/katalog' || route === '/gallery'
+              ? 0.9
+              : 0.7,
       });
     }
   }

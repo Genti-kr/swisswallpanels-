@@ -49,10 +49,17 @@
   },
   "Gallery": {
     "projectsComingSoon": "Images de référence. Galerie de projets clients bientôt disponible.",
+    "pageBadge": "Inspiration",
+    "pageTitle": "Galerie",
+    "pageSubtitle": "Photos de référence de nos panneaux muraux — finitions acoustiques et décoratives pour votre projet.",
+    "showingCount": "{count} images dans la galerie",
+    "catalogPageLabel": "Page {current} sur {total}",
     "catalogPagerHint": "Parcourir la galerie — choisir une page",
     "catalogPrev": "Page précédente",
     "catalogNext": "Page suivante",
-    "viewGallery": "Voir la galerie"
+    "viewGallery": "Voir la galerie complète",
+    "emptyTitle": "Aucune image pour le moment",
+    "emptyHint": "De nouvelles photos de référence apparaîtront ici bientôt."
   },
   "Products": {
     "featured": "Produits phares",
@@ -414,6 +421,8 @@
     "widerrufDesc": "Informations sur votre droit de rétractation pour les achats en ligne.",
     "productsTitle": "Produits | Swiss Wall Panels",
     "productsDesc": "Découvrez notre collection de panneaux muraux acoustiques et décoratifs premium.",
+    "galleryTitle": "Galerie | Swiss Wall Panels",
+    "galleryDesc": "Photos de référence des installations et finitions Swiss Wall Panels.",
     "cartTitle": "Panier | Swiss Wall Panels",
     "cartDesc": "Votre panier chez Swiss Wall Panels.",
     "checkoutTitle": "Commande | Swiss Wall Panels",

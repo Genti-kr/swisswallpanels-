@@ -49,10 +49,17 @@
   },
   "Gallery": {
     "projectsComingSoon": "Reference images for inspiration. Client project gallery coming soon.",
+    "pageBadge": "Inspiration",
+    "pageTitle": "Gallery",
+    "pageSubtitle": "Reference photos of our wall panels — acoustic and decorative finishes for your project.",
+    "showingCount": "{count} gallery images",
+    "catalogPageLabel": "Page {current} of {total}",
     "catalogPagerHint": "Browse more gallery images — select a page",
     "catalogPrev": "Previous page",
     "catalogNext": "Next page",
-    "viewGallery": "View gallery"
+    "viewGallery": "View full gallery",
+    "emptyTitle": "No gallery images yet",
+    "emptyHint": "New reference photos will appear here soon."
   },
   "Products": {
     "featured": "Featured Products",
@@ -414,6 +421,8 @@
     "widerrufDesc": "Information on your statutory right of withdrawal for online purchases.",
     "productsTitle": "Products | Swiss Wall Panels",
     "productsDesc": "Browse our collection of premium acoustic and decorative wall panels.",
+    "galleryTitle": "Gallery | Swiss Wall Panels",
+    "galleryDesc": "Browse reference photos of Swiss Wall Panels installations and finishes.",
     "cartTitle": "Shopping Cart | Swiss Wall Panels",
     "cartDesc": "Your shopping cart at Swiss Wall Panels.",
     "checkoutTitle": "Checkout | Swiss Wall Panels",
