@@ -205,6 +205,7 @@
     "streetHint": "Strasse und Hausnummer in einer Zeile eingeben.",
     "phonePlaceholder": "79 123 45 67",
     "phoneCountryHint": "Ländervorwahl wählen (Standard +41 Schweiz). Nummer ohne führende 0 eingeben.",
+    "phoneDigitLimit": "Nach Vorwahl: Schweiz genau 9 Ziffern, Deutschland 7–11, Frankreich 9, Italien 9–10.",
     "streetRequired": "Bitte geben Sie Ihre Strasse und Hausnummer ein.",
     "phoneRequired": "Bitte geben Sie eine gültige Telefonnummer für die Lieferung ein.",
     "number": "Hausnummer",

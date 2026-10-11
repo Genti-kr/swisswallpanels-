@@ -205,6 +205,7 @@
     "streetHint": "Indiquez la rue et le numéro sur une seule ligne.",
     "phonePlaceholder": "79 123 45 67",
     "phoneCountryHint": "Choisissez l’indicatif (+41 Suisse par défaut). Saisissez le numéro sans 0 initial.",
+    "phoneDigitLimit": "Après l’indicatif : Suisse 9 chiffres, Allemagne 7–11, France 9, Italie 9–10.",
     "streetRequired": "Veuillez indiquer votre adresse (rue et numéro).",
     "phoneRequired": "Veuillez indiquer un numéro de téléphone valide pour la livraison.",
     "number": "Numéro",

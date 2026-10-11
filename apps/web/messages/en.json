@@ -205,6 +205,7 @@
     "streetHint": "Enter street name and house number in one line.",
     "phonePlaceholder": "79 123 45 67",
     "phoneCountryHint": "Choose country code (+41 Switzerland by default). Enter number without leading 0.",
+    "phoneDigitLimit": "After the prefix: Switzerland exactly 9 digits, Germany 7–11, France 9, Italy 9–10.",
     "streetRequired": "Please enter your street address.",
     "phoneRequired": "Please enter a valid phone number for delivery.",
     "number": "Number",

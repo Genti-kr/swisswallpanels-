@@ -617,6 +617,7 @@ function CheckoutContent() {
                       required
                     />
                     <p className="text-xs text-zinc-400 font-light pl-1">{tCheckout('phoneCountryHint')}</p>
+                    <p className="text-xs text-zinc-400 font-light pl-1">{tCheckout('phoneDigitLimit')}</p>
                   </div>
 
                   <div className="space-y-1.5">

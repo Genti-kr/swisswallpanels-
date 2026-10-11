@@ -6,6 +6,7 @@ import {
   PHONE_COUNTRY_OPTIONS,
   normalizeLocalPhoneDigits,
   phoneCountryForShipping,
+  phoneLocalMaxDigits,
 } from '@/lib/phone-countries';
 import { FlagCountryDropdown } from '@/components/FlagCountryDropdown';
 
@@ -56,9 +57,10 @@ export function PhoneCountryInput({
       <input
         id={id}
         type="tel"
-        inputMode="tel"
+        inputMode="numeric"
         autoComplete="tel-national"
         required={required}
+        maxLength={phoneLocalMaxDigits(country)}
         placeholder={placeholder ?? selected.exampleLocal}
         value={localDigits}
         onChange={(e) => onLocalDigitsChange(normalizeLocalPhoneDigits(country, e.target.value))}
