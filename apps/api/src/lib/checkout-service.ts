@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { z } from 'zod';
 import { prisma } from './prisma';
-import { getStripe, getStripePublishableKey } from './stripe';
+import { getStripe, getStripePublishableKey, isStripeCheckoutReady } from './stripe';
 import { mapOrder } from './mappers';
 import { validateSwissPLZ, generateOrderNumber } from './swiss';
 import { getProductName } from './order-payment';
@@ -208,7 +208,7 @@ export async function processCheckout(
   const customerRef = options.userId || customerEmail || 'guest';
 
   if (usesStripe) {
-    if (!stripe) {
+    if (!isStripeCheckoutReady() || !stripe) {
       throw new Error('Stripe payment integration is not configured on this server.');
     }
     const publishableKey = getStripePublishableKey();
@@ -227,9 +227,11 @@ export async function processCheckout(
       {
         amount: amountMinor,
         currency,
+        capture_method: 'automatic',
         metadata: {
           orderNumber,
           customerRef,
+          paymentMethod: data.paymentMethod,
           ...(customerEmail ? { guestEmail: customerEmail } : {}),
         },
         payment_method_types: paymentMethodTypes,
@@ -296,6 +298,22 @@ export async function processCheckout(
 
     return created;
   });
+
+  if (usesStripe && stripe && stripePaymentIntent) {
+    try {
+      await stripe.paymentIntents.update(stripePaymentIntent, {
+        metadata: {
+          orderNumber: order.orderNumber,
+          orderId: order.id,
+          customerRef,
+          paymentMethod: data.paymentMethod,
+          ...(customerEmail ? { guestEmail: customerEmail } : {}),
+        },
+      });
+    } catch (updateErr) {
+      console.error('Failed to attach order metadata to PaymentIntent:', updateErr);
+    }
+  }
 
   return {
     order: mapOrder(order),

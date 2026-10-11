@@ -231,8 +231,14 @@ function CheckoutContent() {
     setError('');
 
     try {
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
       const res = await apiFetch<{ order: OrderDTO; clientSecret?: string; stripePublishableKey?: string; requiresManualPayment?: boolean }>('/api/orders/checkout', {
         method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({
           shippingAddress,
           billingAddress: shippingAddress,

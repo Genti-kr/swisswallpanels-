@@ -7,6 +7,10 @@ import { prisma } from '../../lib/prisma';
 import { confirmOrderPayment } from '../../lib/order-payment';
 
 import { getStripe, isStripeConfigured } from '../../lib/stripe';
+import {
+  assertPaymentIntentMatchesOrder,
+  StripePaymentVerificationError,
+} from '../../lib/stripe-payment-verify';
 
 
 
@@ -237,6 +241,18 @@ router.post('/stripe', async (req: Request, res: Response) => {
         const order = await findOrderForPaymentIntent(paymentIntent.id);
 
         if (order) {
+          try {
+            assertPaymentIntentMatchesOrder(paymentIntent, order);
+          } catch (verifyErr) {
+            if (verifyErr instanceof StripePaymentVerificationError) {
+              console.error('Stripe webhook payment verification failed:', verifyErr.message, {
+                orderId: order.id,
+                paymentIntentId: paymentIntent.id,
+              });
+              break;
+            }
+            throw verifyErr;
+          }
 
           await confirmOrderPayment(order.id, 'Payment confirmed via Stripe payment_intent webhook');
 

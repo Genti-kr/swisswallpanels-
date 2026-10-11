@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getStripe, getStripePublishableKey, isPlaceholder, isStripeConfigured } from '../stripe';
+import {
+  getStripe,
+  getStripePublishableKey,
+  isPlaceholder,
+  isStripeCheckoutReady,
+  isStripeConfigured,
+} from '../stripe';
 
 describe('stripe helpers', () => {
   it('detects placeholder keys', () => {
@@ -31,5 +37,26 @@ describe('stripe helpers', () => {
     process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_...';
     expect(getStripePublishableKey()).toBeNull();
     process.env.STRIPE_PUBLISHABLE_KEY = original;
+  });
+
+  it('requires webhook secret for checkout in production', () => {
+    const origEnv = process.env.NODE_ENV;
+    const origSecret = process.env.STRIPE_SECRET_KEY;
+    const origPub = process.env.STRIPE_PUBLISHABLE_KEY;
+    const origWebhook = process.env.STRIPE_WEBHOOK_SECRET;
+
+    process.env.NODE_ENV = 'production';
+    process.env.STRIPE_SECRET_KEY = 'sk_live_realkey';
+    process.env.STRIPE_PUBLISHABLE_KEY = 'pk_live_realkey';
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_...';
+    expect(isStripeCheckoutReady()).toBe(false);
+
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_real_secret_value';
+    expect(isStripeCheckoutReady()).toBe(true);
+
+    process.env.NODE_ENV = origEnv;
+    process.env.STRIPE_SECRET_KEY = origSecret;
+    process.env.STRIPE_PUBLISHABLE_KEY = origPub;
+    process.env.STRIPE_WEBHOOK_SECRET = origWebhook;
   });
 });

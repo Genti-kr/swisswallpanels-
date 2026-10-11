@@ -10,6 +10,7 @@ function sleep(ms: number): Promise<void> {
 type VerifyPaymentResponse = {
   order: OrderDTO;
   confirmed: boolean;
+  paymentStatus?: string;
 };
 
 /**
@@ -37,7 +38,11 @@ export async function confirmOrderPaymentWithRetry(
         return res;
       }
 
-      lastError = new Error('Payment not confirmed yet');
+      if (res.paymentStatus === 'processing') {
+        lastError = new Error('Payment has not been completed.');
+      } else {
+        lastError = new Error('Payment not confirmed yet');
+      }
     } catch (err) {
       lastError = err instanceof Error ? err : new Error('Payment verification failed');
 

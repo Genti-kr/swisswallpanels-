@@ -13,6 +13,11 @@ import { checkoutLimiter, verifyPaymentLimiter } from '../middleware/rateLimit';
 import { validationErrorResponse } from '../lib/safe-response';
 import { mapCheckoutClientError } from '../lib/checkout-client-errors';
 import { emailVerificationBlocksLogin } from '../lib/auth-login-policy';
+import {
+  assertPaymentIntentMatchesOrder,
+  isPaymentIntentPaidOrProcessing,
+  StripePaymentVerificationError,
+} from '../lib/stripe-payment-verify';
 
 const router = Router();
 
@@ -193,9 +198,28 @@ router.post(
       }
 
       const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentIntent);
-      if (paymentIntent.status !== 'succeeded') {
+
+      try {
+        assertPaymentIntentMatchesOrder(paymentIntent, order);
+      } catch (verifyErr) {
+        if (verifyErr instanceof StripePaymentVerificationError) {
+          console.error('verify-payment: PI mismatch', verifyErr.message, { orderId: order.id });
+          return res.status(400).json({ error: 'Payment verification failed for this order.' });
+        }
+        throw verifyErr;
+      }
+
+      if (!isPaymentIntentPaidOrProcessing(paymentIntent.status)) {
         return res.status(402).json({
           error: 'Payment has not been completed.',
+          paymentStatus: paymentIntent.status,
+        });
+      }
+
+      if (paymentIntent.status === 'processing') {
+        return res.status(202).json({
+          order: mapOrder(order),
+          confirmed: false,
           paymentStatus: paymentIntent.status,
         });
       }

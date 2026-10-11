@@ -18,6 +18,17 @@ export function isStripeConfigured(): boolean {
   return getStripe() !== null && !isPlaceholder(process.env.STRIPE_WEBHOOK_SECRET);
 }
 
+/** Checkout + TWINT/card: secret + publishable; production also requires webhook secret. */
+export function isStripeCheckoutReady(): boolean {
+  if (!getStripe() || !getStripePublishableKey()) {
+    return false;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return !isPlaceholder(process.env.STRIPE_WEBHOOK_SECRET);
+  }
+  return true;
+}
+
 export function getStripePublishableKey(): string | null {
   const key = process.env.STRIPE_PUBLISHABLE_KEY;
   if (isPlaceholder(key)) return null;
