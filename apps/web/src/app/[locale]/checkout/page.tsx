@@ -11,23 +11,34 @@ import { apiFetch } from '@/lib/api';
 import { confirmOrderPaymentWithRetry } from '@/lib/payment';
 import { ProductImage } from '@/components/ProductImage';
 import { OrderDTO, ShippingRateDTO } from '@swisswall/types';
-import { 
-  User, 
-  ChevronRight, 
-  ShieldCheck, 
-  Truck, 
-  CreditCard, 
-  CheckCircle2, 
-  MapPin, 
+import {
+  User,
+  ChevronRight,
+  ShieldCheck,
+  Truck,
+  CreditCard,
+  CheckCircle2,
+  MapPin,
   ArrowLeft,
   Loader2,
   AlertTriangle,
-  FileText
+  FileText,
+  Smartphone,
+  Lock,
 } from 'lucide-react';
+
+/** Re-enable when discount codes are live in admin. */
+const SHOW_CHECKOUT_COUPON = false;
 import { SiteHeader } from '@/components/SiteHeader';
 import { CheckoutStripePayment } from '@/components/CheckoutStripePayment';
 import { parseStreetAndNumber } from '@/lib/address-line';
-import { sanitizeDigits, sanitizePersonOrPlaceName, sanitizePhone } from '@/lib/numeric-input';
+import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
+import { PhoneCountryInput } from '@/components/PhoneCountryInput';
+import {
+  formatPhoneE164,
+  isLocalPhoneValid,
+  splitStoredPhone,
+} from '@/lib/phone-countries';
 import { resolveCheckoutError } from '@/lib/checkout-error-i18n';
 import {
   SHIPPING_COUNTRY_CODES,
@@ -65,7 +76,8 @@ function CheckoutContent() {
   const [paymentMethod, setPaymentMethod] = useState('twint');
   const [guestEmail, setGuestEmail] = useState('');
   const [streetLine, setStreetLine] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState<ShippingCountryCode>('CH');
+  const [phoneLocal, setPhoneLocal] = useState('');
   const [address, setAddress] = useState({
     firstName: '',
     lastName: '',
@@ -132,6 +144,7 @@ function CheckoutContent() {
     if (address.country !== 'CH') {
       setPaymentMethod('card');
     }
+    setPhoneCountry(address.country);
   }, [address.country]);
 
   useEffect(() => {
@@ -142,7 +155,9 @@ function CheckoutContent() {
         lastName: user.lastName,
       }));
       if (user.phone) {
-        setPhone(user.phone);
+        const split = splitStoredPhone(user.phone);
+        setPhoneCountry(split.country);
+        setPhoneLocal(split.local);
       }
     }
   }, [user]);
@@ -214,8 +229,7 @@ function CheckoutContent() {
       setError(tCheckout('streetRequired'));
       return;
     }
-    const phoneDigits = phone.replace(/\D/g, '');
-    if (phoneDigits.length < 6) {
+    if (!isLocalPhoneValid(phoneCountry, phoneLocal)) {
       setError(tCheckout('phoneRequired'));
       return;
     }
@@ -224,7 +238,7 @@ function CheckoutContent() {
       ...address,
       street,
       houseNumber,
-      phone: phone.trim(),
+      phone: formatPhoneE164(phoneCountry, phoneLocal),
     };
 
     setLoading(true);
@@ -576,16 +590,15 @@ function CheckoutContent() {
                     <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">
                       {tCommon('phone')}
                     </label>
-                    <input
+                    <PhoneCountryInput
+                      country={phoneCountry}
+                      onCountryChange={setPhoneCountry}
+                      localDigits={phoneLocal}
+                      onLocalDigitsChange={setPhoneLocal}
                       placeholder={tCheckout('phonePlaceholder')}
-                      value={phone}
-                      onChange={(e) => setPhone(sanitizePhone(e.target.value))}
-                      type="tel"
-                      autoComplete="tel"
-                      inputMode="tel"
-                      className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800"
                       required
                     />
+                    <p className="text-xs text-zinc-400 font-light pl-1">{tCheckout('phoneCountryHint')}</p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -630,12 +643,13 @@ function CheckoutContent() {
                     <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('country')}</label>
                     <select
                       value={address.country}
-                      onChange={(e) =>
-                        setAddress({
-                          ...address,
-                          country: e.target.value as ShippingCountryCode,
-                        })
-                      }
+                      onChange={(e) => {
+                        const country = e.target.value as ShippingCountryCode;
+                        setAddress({ ...address, country });
+                        if (country !== 'CH') {
+                          setPaymentMethod('card');
+                        }
+                      }}
                       className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
                     >
                       {SHIPPING_COUNTRY_CODES.map((c) => (
@@ -681,40 +695,88 @@ function CheckoutContent() {
                     </div>
                   )}
 
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('coupon')}</label>
-                    <div className="flex gap-2">
-                      <input
-                        value={couponCode}
-                        onChange={(e) => {
-                          setCouponCode(e.target.value.toUpperCase());
-                          setAppliedCouponCode('');
-                          setDiscountAmount(0);
-                        }}
-                        placeholder="SUMMER10"
-                        className="flex-1 bg-[#F8F8F6] border border-zinc-200 rounded-xl px-4 py-3 text-sm"
-                      />
-                      <button type="button" onClick={applyCoupon} className="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold uppercase">
-                        {tCheckout('applyCoupon')}
+                  {SHOW_CHECKOUT_COUPON ? (
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">
+                        {tCheckout('coupon')}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          value={couponCode}
+                          onChange={(e) => {
+                            setCouponCode(e.target.value.toUpperCase());
+                            setAppliedCouponCode('');
+                            setDiscountAmount(0);
+                          }}
+                          placeholder="SUMMER10"
+                          className="flex-1 bg-[#F8F8F6] border border-zinc-200 rounded-xl px-4 py-3 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyCoupon}
+                          className="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold uppercase"
+                        >
+                          {tCheckout('applyCoupon')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-3 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">
+                      {tCheckout('paymentLabel')}
+                    </label>
+                    <div
+                      className={`grid gap-3 ${address.country === 'CH' ? 'sm:grid-cols-2' : 'grid-cols-1'}`}
+                    >
+                      {address.country === 'CH' ? (
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('twint')}
+                          className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-4 text-left transition-all ${
+                            paymentMethod === 'twint'
+                              ? 'border-[#C8B89A] bg-[#C8B89A]/10 shadow-sm'
+                              : 'border-zinc-200 bg-white hover:border-zinc-300'
+                          }`}
+                        >
+                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1A1A1A] text-white shrink-0">
+                            <Smartphone className="h-5 w-5" />
+                          </span>
+                          <span>
+                            <span className="block text-sm font-semibold text-zinc-900">TWINT</span>
+                            <span className="block text-[11px] text-zinc-500 font-light mt-0.5">
+                              {tCheckout('paymentTwintShort')}
+                            </span>
+                          </span>
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('card')}
+                        className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-4 text-left transition-all ${
+                          paymentMethod === 'card'
+                            ? 'border-[#C8B89A] bg-[#C8B89A]/10 shadow-sm'
+                            : 'border-zinc-200 bg-white hover:border-zinc-300'
+                        }`}
+                      >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-[#C8B89A] shrink-0">
+                          <CreditCard className="h-5 w-5" />
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold text-zinc-900">
+                            {address.country === 'CH'
+                              ? tCheckout('payCard')
+                              : tCheckout('payCardStripe')}
+                          </span>
+                          <span className="block text-[11px] text-zinc-500 font-light mt-0.5">
+                            {tCheckout('paymentStripeHint')}
+                          </span>
+                        </span>
                       </button>
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('paymentLabel')}</label>
-                    <select
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full bg-[#F8F8F6] border border-zinc-200 rounded-xl px-4 py-3.5 text-sm"
-                    >
-                      {address.country === 'CH' && (
-                        <>
-                          <option value="twint">{tCheckout('payTwint')}</option>
-                          <option value="card">{tCheckout('payCard')}</option>
-                        </>
-                      )}
-                      {address.country !== 'CH' && <option value="card">{tCheckout('payCardStripe')}</option>}
-                    </select>
+                    {address.country !== 'CH' ? (
+                      <p className="text-xs text-zinc-500 font-light pl-1">{tCheckout('paymentCardOnlyAbroad')}</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -738,55 +800,86 @@ function CheckoutContent() {
 
             {/* STEP 3: Payment Section */}
             {paymentStep === 'payment' && order && (
-              <div className="bg-white rounded-3xl border border-zinc-200/50 p-6 sm:p-8 space-y-6 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-1 bg-[#1A1A1A]/80" />
-                
-                <div className="flex items-center gap-3 border-b border-zinc-100 pb-4">
-                  <div className="p-2.5 bg-zinc-50 border border-zinc-200/40 text-[#C8B89A] rounded-xl">
-                    <CreditCard className="w-5 h-5" />
+              <div className="bg-white rounded-3xl border border-zinc-200/60 shadow-lg shadow-zinc-200/40 overflow-hidden relative">
+                <div className="h-1.5 bg-gradient-to-r from-[#1A1A1A] via-[#C8B89A] to-[#1A1A1A]" />
+
+                <div className="p-6 sm:p-8 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-3 bg-gradient-to-br from-zinc-900 to-zinc-700 text-[#C8B89A] rounded-2xl shadow-md">
+                        {paymentMethod === 'twint' ? (
+                          <Smartphone className="w-6 h-6" />
+                        ) : (
+                          <CreditCard className="w-6 h-6" />
+                        )}
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold text-zinc-900 tracking-tight">
+                          {tCheckout('paymentTitle')}
+                        </h2>
+                        <p className="text-sm text-zinc-500 font-light mt-1 max-w-md">
+                          {tCheckout('paymentDescription')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-100 bg-[#F8F8F6]/80 px-5 py-4 min-w-[12rem]">
+                      <p className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
+                        {tCheckout('orderSummary')}
+                      </p>
+                      <p className="font-mono text-xs text-zinc-600 mt-1">{order.orderNumber}</p>
+                      <p className="text-2xl font-light text-zinc-950 mt-2">{formatCHF(order.totalChf)}</p>
+                      <p className="text-[11px] text-zinc-500 mt-1">
+                        {paymentMethod === 'twint'
+                          ? 'TWINT'
+                          : address.country === 'CH'
+                            ? tCheckout('payCard')
+                            : tCheckout('payCardStripe')}{' '}
+                        · Stripe
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-zinc-900">{tCheckout('paymentTitle')}</h2>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">{tCheckout('paymentStripeHint')}</p>
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  <p className="text-sm text-zinc-500 font-light leading-relaxed bg-[#F8F8F6] p-4 rounded-2xl border border-zinc-100">
-                    {tCheckout('paymentDescription')}
-                  </p>
+                  <div className="rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-white to-[#F8F8F6]/90 p-5 sm:p-6 space-y-5">
+                    {clientSecret && stripePublishableKey && stripeReturnUrl ? (
+                      <CheckoutStripePayment
+                        key={`${clientSecret}-${paymentMethod}`}
+                        publishableKey={stripePublishableKey}
+                        clientSecret={clientSecret}
+                        locale={locale}
+                        paymentMethod={paymentMethod}
+                        returnUrl={stripeReturnUrl}
+                        paying={paying}
+                        setPaying={setPaying}
+                        payLabel={
+                          paymentMethod === 'twint' ? tCheckout('payTwint') : tCheckout('payNow')
+                        }
+                        processingLabel={tCheckout('processing')}
+                        twintHint={
+                          paymentMethod === 'twint' ? tCheckout('twintRedirectHint') : undefined
+                        }
+                        onSuccess={completePaymentOnServer}
+                        onError={(message) =>
+                          setError(resolveCheckoutError(message, tCheckout))
+                        }
+                      />
+                    ) : (
+                      <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                        {tCheckout('paymentUnavailable')}
+                      </p>
+                    )}
 
-                  {clientSecret && stripePublishableKey && stripeReturnUrl ? (
-                    <CheckoutStripePayment
-                      key={`${clientSecret}-${paymentMethod}`}
-                      publishableKey={stripePublishableKey}
-                      clientSecret={clientSecret}
-                      locale={locale}
-                      paymentMethod={paymentMethod}
-                      returnUrl={stripeReturnUrl}
-                      paying={paying}
-                      setPaying={setPaying}
-                      payLabel={
-                        paymentMethod === 'twint' ? tCheckout('payTwint') : tCheckout('payNow')
-                      }
-                      processingLabel={tCheckout('processing')}
-                      twintHint={
-                        paymentMethod === 'twint' ? tCheckout('twintRedirectHint') : undefined
-                      }
-                      onSuccess={completePaymentOnServer}
-                      onError={(message) =>
-                        setError(resolveCheckoutError(message, tCheckout))
-                      }
-                    />
-                  ) : (
-                    <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-4">
-                      {tCheckout('paymentUnavailable')}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-2 text-zinc-400 pl-1">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">{tCheckout('sslSecure')}</span>
+                    <div className="flex flex-wrap items-center justify-center gap-4 pt-2 border-t border-zinc-100/80">
+                      <div className="flex items-center gap-2 text-zinc-600">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <span className="text-[10px] uppercase font-bold tracking-wider">
+                          {tCheckout('sslSecure')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-zinc-600">
+                        <Lock className="w-4 h-4 text-zinc-500" />
+                        <span className="text-[10px] uppercase font-bold tracking-wider">Stripe</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

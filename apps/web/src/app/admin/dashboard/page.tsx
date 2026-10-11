@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { DashboardStatsDTO } from '@swisswall/types';
 import { Loader2, TrendingUp, Package, Users, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { formatAdminCountry } from '@/lib/shipping-geo';
 import { adminRowLabelClass, adminRowValueClass } from '@/lib/admin-ui';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
+import {
+  getCatalogPageCount,
+  getCatalogPageSlice,
+  scrollToCatalogAnchor,
+} from '@/lib/products-catalog';
+import { ADMIN_LIST_PAGE_SIZE, adminCatalogPagerLabels } from '@/lib/admin-catalog-pager';
 
 function formatCHF(value: number) {
   return new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(value);
@@ -15,6 +22,13 @@ function formatCHF(value: number) {
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStatsDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recentOrdersPage, setRecentOrdersPage] = useState(1);
+  const recentOrdersAnchorRef = useRef<HTMLDivElement>(null);
+
+  const handleRecentOrdersPageChange = useCallback((page: number) => {
+    setRecentOrdersPage(page);
+    requestAnimationFrame(() => scrollToCatalogAnchor(recentOrdersAnchorRef.current));
+  }, []);
 
   useEffect(() => {
     apiFetch<DashboardStatsDTO>('/api/admin/dashboard/stats')
@@ -22,6 +36,20 @@ export default function AdminDashboardPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const recentOrdersLength = stats?.recentOrders.length ?? 0;
+
+  const visibleRecentOrders = useMemo(() => {
+    if (!stats) return [];
+    return getCatalogPageSlice(stats.recentOrders, recentOrdersPage, ADMIN_LIST_PAGE_SIZE);
+  }, [stats, recentOrdersPage]);
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(recentOrdersLength, ADMIN_LIST_PAGE_SIZE);
+    if (maxPage > 0 && recentOrdersPage > maxPage) {
+      setRecentOrdersPage(maxPage);
+    }
+  }, [recentOrdersLength, recentOrdersPage]);
 
   if (loading) {
     return (
@@ -117,21 +145,37 @@ export default function AdminDashboardPage() {
             Shiko të gjitha →
           </Link>
         </div>
+        <div
+          ref={recentOrdersAnchorRef}
+          className="scroll-mt-28 h-0 w-full pointer-events-none"
+          aria-hidden
+        />
         {stats.recentOrders.length === 0 ? (
           <p className="px-6 py-8 text-sm text-zinc-500">Nuk ka porosi ende.</p>
         ) : (
-          <div className="divide-y divide-zinc-100">
-            {stats.recentOrders.map((order) => (
-              <Link
-                key={order.id}
-                href={`/admin/orders/${order.id}`}
-                className="flex justify-between gap-4 px-6 py-3.5 hover:bg-[#F8F8F6] text-sm transition-colors"
-              >
-                <span className="font-medium text-zinc-900 font-mono">{order.orderNumber}</span>
-                <span className={adminRowValueClass}>{formatCHF(order.totalChf)}</span>
-              </Link>
-            ))}
-          </div>
+          <>
+            <div key={recentOrdersPage} className="divide-y divide-zinc-100">
+              {visibleRecentOrders.map((order) => (
+                <Link
+                  key={order.id}
+                  href={`/admin/orders/${order.id}`}
+                  className="flex justify-between gap-4 px-6 py-3.5 hover:bg-[#F8F8F6] text-sm transition-colors"
+                >
+                  <span className="font-medium text-zinc-900 font-mono">{order.orderNumber}</span>
+                  <span className={adminRowValueClass}>{formatCHF(order.totalChf)}</span>
+                </Link>
+              ))}
+            </div>
+            <div className="px-4 pb-2">
+              <ProductsCatalogPager
+                totalProducts={stats.recentOrders.length}
+                currentPage={recentOrdersPage}
+                onPageChange={handleRecentOrdersPageChange}
+                pageSize={ADMIN_LIST_PAGE_SIZE}
+                labels={adminCatalogPagerLabels.orders}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>

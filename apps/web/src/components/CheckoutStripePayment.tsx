@@ -111,13 +111,13 @@ function StripePayButton({
   }, [isTwint]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {isTwint && twintHint ? (
-        <p className="text-xs text-zinc-500 font-light bg-[#F8F8F6] border border-zinc-100 rounded-xl px-4 py-3">
+        <p className="text-sm text-zinc-600 font-light leading-relaxed rounded-xl border border-[#C8B89A]/30 bg-[#C8B89A]/5 px-4 py-3">
           {twintHint}
         </p>
       ) : null}
-      <div className="rounded-2xl border border-zinc-200 bg-[#F8F8F6] p-4 min-h-[120px]">
+      <div className="rounded-2xl border border-zinc-200/90 bg-white shadow-inner shadow-zinc-100/80 p-5 sm:p-6 min-h-[140px]">
         <PaymentElement
           onReady={() => setReady(true)}
           options={paymentElementOptions}
@@ -127,9 +127,9 @@ function StripePayButton({
         type="button"
         onClick={handlePay}
         disabled={paying || !ready || !stripe}
-        className="w-full sm:w-auto bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-widest disabled:opacity-50 transition-all duration-300 shadow-md flex justify-center items-center gap-2"
+        className="w-full bg-[#1A1A1A] hover:bg-[#C8B89A] text-white hover:text-[#1A1A1A] px-8 py-4 rounded-2xl text-sm font-semibold tracking-wide disabled:opacity-50 transition-all duration-300 shadow-lg shadow-zinc-900/15 flex justify-center items-center gap-2"
       >
-        {paying && <Loader2 className="w-4 h-4 animate-spin" />}
+        {paying && <Loader2 className="w-5 h-5 animate-spin" />}
         {paying ? processingLabel : payLabel}
       </button>
     </div>
@@ -177,8 +177,39 @@ export function CheckoutStripePayment(props: CheckoutStripePaymentProps) {
         theme: 'stripe' as const,
         variables: {
           colorPrimary: '#1A1A1A',
-          colorBackground: '#F8F8F6',
+          colorBackground: '#ffffff',
+          colorText: '#18181b',
+          colorTextSecondary: '#71717a',
+          colorDanger: '#b91c1c',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontSizeBase: '15px',
+          spacingUnit: '4px',
           borderRadius: '12px',
+        },
+        rules: {
+          '.Input': {
+            border: '1px solid #e4e4e7',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            padding: '12px 14px',
+          },
+          '.Input:focus': {
+            border: '1px solid #C8B89A',
+            boxShadow: '0 0 0 3px rgba(200, 184, 154, 0.25)',
+          },
+          '.Label': {
+            fontWeight: '600',
+            fontSize: '12px',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+          },
+          '.Tab': {
+            border: '1px solid #e4e4e7',
+            boxShadow: 'none',
+          },
+          '.Tab--selected': {
+            border: '2px solid #C8B89A',
+            backgroundColor: 'rgba(200, 184, 154, 0.08)',
+          },
         },
       },
     }),

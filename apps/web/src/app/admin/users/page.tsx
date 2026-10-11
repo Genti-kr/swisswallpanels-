@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { UserDTO } from '@swisswall/types';
 import {
@@ -14,6 +14,13 @@ import {
   ShoppingBag,
   Building,
 } from 'lucide-react';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
+import {
+  getCatalogPageCount,
+  getCatalogPageSlice,
+  scrollToCatalogAnchor,
+} from '@/lib/products-catalog';
+import { ADMIN_LIST_PAGE_SIZE, adminCatalogPagerLabels } from '@/lib/admin-catalog-pager';
 
 const roleStyles: Record<string, string> = {
   SUPERADMIN: 'bg-zinc-900 text-[#C8B89A] border-zinc-800',
@@ -37,18 +44,40 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<(UserDTO & { orderCount?: number; isLocked?: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [catalogPage, setCatalogPage] = useState(1);
+  const catalogAnchorRef = useRef<HTMLDivElement>(null);
 
-  const load = () => {
+  const load = useCallback((searchTerm: string) => {
     setLoading(true);
-    const q = search ? `?search=${encodeURIComponent(search)}` : '';
+    const q = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : '';
     apiFetch<{ items: typeof users }>(`/api/admin/users${q}`)
-      .then((res) => setUsers(res.items))
+      .then((res) => {
+        setUsers(res.items);
+        setCatalogPage(1);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  };
+  }, []);
 
   useEffect(() => {
-    load();
+    load('');
+  }, [load]);
+
+  const visibleUsers = useMemo(
+    () => getCatalogPageSlice(users, catalogPage, ADMIN_LIST_PAGE_SIZE),
+    [users, catalogPage]
+  );
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(users.length, ADMIN_LIST_PAGE_SIZE);
+    if (maxPage > 0 && catalogPage > maxPage) {
+      setCatalogPage(maxPage);
+    }
+  }, [users.length, catalogPage]);
+
+  const handleCatalogPageChange = useCallback((page: number) => {
+    setCatalogPage(page);
+    requestAnimationFrame(() => scrollToCatalogAnchor(catalogAnchorRef.current));
   }, []);
 
   const toggleLocked = async (id: string, isLocked: boolean) => {
@@ -56,7 +85,7 @@ export default function AdminUsersPage() {
       method: 'PATCH',
       body: JSON.stringify({ isLocked: !isLocked }),
     });
-    load();
+    load(search);
   };
 
   const totalUsers = users.length;
@@ -103,7 +132,7 @@ export default function AdminUsersPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            load();
+            load(search);
           }}
           className="flex gap-3 flex-1 max-w-md w-full"
         >
@@ -136,7 +165,16 @@ export default function AdminUsersPage() {
           <p className="text-zinc-500 font-light">Nuk u gjet asnjë përdorues.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden shadow-sm">
+        <>
+          <div
+            ref={catalogAnchorRef}
+            className="scroll-mt-28 h-0 w-full pointer-events-none"
+            aria-hidden
+          />
+          <div
+            key={catalogPage}
+            className="bg-white rounded-2xl border border-zinc-100 overflow-hidden shadow-sm"
+          >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50/80 text-left text-[10px] uppercase tracking-[0.15em] text-zinc-500">
@@ -151,7 +189,7 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {visibleUsers.map((user) => (
                   <tr
                     key={user.id}
                     className="border-t border-zinc-50 hover:bg-[#F8F8F6]/60 transition-colors"
@@ -254,6 +292,15 @@ export default function AdminUsersPage() {
             </table>
           </div>
         </div>
+
+          <ProductsCatalogPager
+            totalProducts={users.length}
+            currentPage={catalogPage}
+            onPageChange={handleCatalogPageChange}
+            pageSize={ADMIN_LIST_PAGE_SIZE}
+            labels={adminCatalogPagerLabels.users}
+          />
+        </>
       )}
     </div>
   );

@@ -27,7 +27,7 @@ router.get('/stats', requireAuth(['ADMIN', 'SUPERADMIN']), async (req: Authentic
         prisma.order.count({ where: { paymentStatus: 'PENDING', createdAt: { lt: new Date(Date.now() - 2 * 60 * 60 * 1000) } } }),
         prisma.product.count({ where: { stockQuantity: { lt: 3 }, isActive: true } }),
         prisma.order.findMany({
-          take: 10,
+          take: 500,
           orderBy: { createdAt: 'desc' },
           include: { items: true, user: true },
         }),

@@ -17,7 +17,7 @@ const listQuerySchema = z.object({
   country: z.string().optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(100).default(15),
 });
 
 const statusSchema = z.object({

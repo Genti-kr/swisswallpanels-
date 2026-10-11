@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth-store';
 import { apiFetch } from '@/lib/api';
 import {
@@ -18,6 +18,13 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
+import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
+import {
+  getCatalogPageCount,
+  getCatalogPageSlice,
+  scrollToCatalogAnchor,
+} from '@/lib/products-catalog';
+import { ADMIN_LIST_PAGE_SIZE, adminCatalogPagerLabels } from '@/lib/admin-catalog-pager';
 
 type OrderItem = {
   id: string;
@@ -85,6 +92,41 @@ export default function AdminFinancePage() {
   const [to, setTo] = useState('');
   const [country, setCountry] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const transactionsAnchorRef = useRef<HTMLDivElement>(null);
+
+  const filteredOrders = useMemo(() => {
+    if (!summary) return [];
+    const term = searchTerm.toLowerCase();
+    return summary.orders.filter((order) => {
+      return (
+        order.orderNumber.toLowerCase().includes(term) ||
+        order.country.toLowerCase().includes(term) ||
+        order.paymentMethod.toLowerCase().includes(term)
+      );
+    });
+  }, [summary, searchTerm]);
+
+  const visibleTransactions = useMemo(
+    () => getCatalogPageSlice(filteredOrders, transactionsPage, ADMIN_LIST_PAGE_SIZE),
+    [filteredOrders, transactionsPage]
+  );
+
+  useEffect(() => {
+    setTransactionsPage(1);
+  }, [searchTerm, from, to, country, summary?.orders.length]);
+
+  useEffect(() => {
+    const maxPage = getCatalogPageCount(filteredOrders.length, ADMIN_LIST_PAGE_SIZE);
+    if (maxPage > 0 && transactionsPage > maxPage) {
+      setTransactionsPage(maxPage);
+    }
+  }, [filteredOrders.length, transactionsPage]);
+
+  const handleTransactionsPageChange = useCallback((page: number) => {
+    setTransactionsPage(page);
+    requestAnimationFrame(() => scrollToCatalogAnchor(transactionsAnchorRef.current));
+  }, []);
 
   // Initialize dates
   useEffect(() => {
@@ -161,16 +203,6 @@ export default function AdminFinancePage() {
   // Calculate percentages and metrics
   const countryTotal = Object.values(summary.byCountry).reduce((sum, v) => sum + v, 0) || 1;
   const paymentTotal = Object.values(summary.byPaymentMethod).reduce((sum, v) => sum + v, 0) || 1;
-
-  // Filter transactions locally
-  const filteredOrders = summary.orders.filter((order) => {
-    const term = searchTerm.toLowerCase();
-    return (
-      order.orderNumber.toLowerCase().includes(term) ||
-      order.country.toLowerCase().includes(term) ||
-      order.paymentMethod.toLowerCase().includes(term)
-    );
-  });
 
   const kpis = [
     {
@@ -451,6 +483,11 @@ export default function AdminFinancePage() {
             />
           </div>
         </div>
+        <div
+          ref={transactionsAnchorRef}
+          className="scroll-mt-28 h-0 w-full pointer-events-none"
+          aria-hidden
+        />
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm text-zinc-600">
             <thead>
@@ -463,7 +500,7 @@ export default function AdminFinancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {filteredOrders.map((order) => (
+              {visibleTransactions.map((order) => (
                 <tr key={order.id} className="hover:bg-zinc-50/40 transition-colors">
                   <td className="px-6 py-4">
                     <Link
@@ -507,6 +544,17 @@ export default function AdminFinancePage() {
             </tbody>
           </table>
         </div>
+        {filteredOrders.length > 0 ? (
+          <div className="px-4 pb-4">
+            <ProductsCatalogPager
+              totalProducts={filteredOrders.length}
+              currentPage={transactionsPage}
+              onPageChange={handleTransactionsPageChange}
+              pageSize={ADMIN_LIST_PAGE_SIZE}
+              labels={adminCatalogPagerLabels.finance}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );
