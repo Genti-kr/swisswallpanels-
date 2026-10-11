@@ -25,6 +25,7 @@ import {
   scrollToCatalogAnchor,
 } from '@/lib/products-catalog';
 import { ADMIN_LIST_PAGE_SIZE, adminCatalogPagerLabels } from '@/lib/admin-catalog-pager';
+import { formatAdminCountryWithCode, formatAdminPaymentMethod } from '@/lib/admin-order-display';
 
 type OrderItem = {
   id: string;
@@ -399,9 +400,8 @@ export default function AdminFinancePage() {
                   return (
                     <div key={code} className="space-y-1.5 group">
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium text-zinc-700 flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-[10px] font-bold text-zinc-600">{code}</span>
-                          {code === 'CH' ? 'Zvicër' : code === 'DE' ? 'Gjermani' : code === 'FR' ? 'Francë' : code === 'IT' ? 'Itali' : code}
+                        <span className="font-medium text-zinc-700">
+                          {formatAdminCountryWithCode(code)}
                         </span>
                         <span className="font-semibold text-zinc-900">{formatCHF(value)}</span>
                       </div>
@@ -439,9 +439,8 @@ export default function AdminFinancePage() {
                   return (
                     <div key={method} className="space-y-1.5 group">
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium text-zinc-700 flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-[10px] font-bold text-zinc-600 uppercase">{method}</span>
-                          {method === 'STRIPE' ? 'Stripe' : method === 'PAYPAL' ? 'PayPal' : method === 'BANK' ? 'Transfer Bankar' : method === 'CASH' ? 'Para në dorë' : method}
+                        <span className="font-medium text-zinc-700">
+                          {formatAdminPaymentMethod(method)}
                         </span>
                         <span className="font-semibold text-zinc-900">{formatCHF(value)}</span>
                       </div>
@@ -521,12 +520,12 @@ export default function AdminFinancePage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700">
-                      {order.country}
+                      {formatAdminCountryWithCode(order.country)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-[10px] font-bold text-zinc-600 uppercase">
-                      {order.paymentMethod}
+                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-[10px] font-semibold text-zinc-700">
+                      {formatAdminPaymentMethod(order.paymentMethod)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right font-semibold text-zinc-950">

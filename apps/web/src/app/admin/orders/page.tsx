@@ -8,6 +8,12 @@ import { ClipboardList, Loader2, Package, Eye } from 'lucide-react';
 import { ProductsCatalogPager } from '@/components/ProductsCatalogPager';
 import { scrollToCatalogAnchor } from '@/lib/products-catalog';
 import { ADMIN_LIST_PAGE_SIZE, adminCatalogPagerLabels } from '@/lib/admin-catalog-pager';
+import {
+  formatAdminCountryWithCode,
+  formatAdminPaymentMethod,
+  orderShippingCountry,
+  orderShippingPhone,
+} from '@/lib/admin-order-display';
 
 const statusStyles: Record<string, string> = {
   PENDING: 'bg-amber-50 text-amber-700 border-amber-100',
@@ -135,6 +141,9 @@ export default function AdminOrdersPage() {
                   <tr>
                     <th className="px-6 py-4 font-semibold">Nr. Porosisë</th>
                     <th className="px-6 py-4 font-semibold">Klienti</th>
+                    <th className="px-6 py-4 font-semibold">Vendi</th>
+                    <th className="px-6 py-4 font-semibold">Telefoni</th>
+                    <th className="px-6 py-4 font-semibold">Pagesa</th>
                     <th className="px-6 py-4 font-semibold">Totali</th>
                     <th className="px-6 py-4 font-semibold">Statusi</th>
                     <th className="px-6 py-4 font-semibold">Data</th>
@@ -159,6 +168,17 @@ export default function AdminOrdersPage() {
                         {order.user?.email && (
                           <div className="text-xs text-zinc-400 mt-0.5">{order.user.email}</div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 text-xs text-zinc-600">
+                        {formatAdminCountryWithCode(orderShippingCountry(order))}
+                      </td>
+                      <td className="px-6 py-4 text-xs text-zinc-600 font-mono max-w-[9rem] truncate">
+                        {orderShippingPhone(order) || '—'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex px-2 py-0.5 rounded-md bg-zinc-100 text-[10px] font-semibold text-zinc-700">
+                          {formatAdminPaymentMethod(order.paymentMethod)}
+                        </span>
                       </td>
                       <td className="px-6 py-4 font-medium text-zinc-900">
                         {formatCHF(order.totalChf)}

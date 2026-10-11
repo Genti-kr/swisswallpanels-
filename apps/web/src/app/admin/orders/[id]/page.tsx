@@ -18,7 +18,14 @@ import {
 } from 'lucide-react';
 import { OrderItemsList } from '@/components/OrderItemsList';
 import { ORDER_STATUS_STYLES, formatDashboardDateTime } from '@/lib/dashboard-utils';
-import { formatAdminCanton, formatAdminCountry } from '@/lib/shipping-geo';
+import { formatAdminCanton } from '@/lib/shipping-geo';
+import { ShippingCountryFlag } from '@/components/ShippingCountryFlag';
+import {
+  formatAdminCountryWithCode,
+  formatAdminPaymentMethod,
+  isShippingCountryForFlag,
+  telHrefFromDisplayPhone,
+} from '@/lib/admin-order-display';
 import { adminRowLabelClass, adminRowValueClass, adminSelectClass, adminTextareaClass } from '@/lib/admin-ui';
 import { isOrderDeletable } from '@/lib/order-delete';
 import { useAuth } from '@/lib/auth-store';
@@ -85,8 +92,25 @@ function AddressBlock({
             ? `, ${formatAdminCanton(address.canton)}`
             : ''}
         </p>
-        <p>{formatAdminCountry(address.country)}</p>
-        {address.phone ? <p className="text-zinc-600 pt-2">{address.phone}</p> : null}
+        <p className="flex items-center gap-2 pt-0.5">
+          {isShippingCountryForFlag(address.country) ? (
+            <ShippingCountryFlag code={address.country} />
+          ) : null}
+          <span>{formatAdminCountryWithCode(address.country)}</span>
+        </p>
+        {address.phone ? (
+          <p className="text-zinc-600 pt-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-0.5">
+              Telefoni
+            </span>
+            <a
+              href={telHrefFromDisplayPhone(address.phone)}
+              className="font-medium text-zinc-800 hover:text-[#C8B89A] transition-colors"
+            >
+              {address.phone}
+            </a>
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -274,7 +298,10 @@ export default function AdminOrderDetailPage() {
             {paymentStatusLabels[order.paymentStatus ?? ''] || order.paymentStatus || '—'}
           </p>
           <p className="text-xs text-zinc-600 mt-2">
-            Metoda: <span className="font-medium text-zinc-800">{order.paymentMethod || '—'}</span>
+            Metoda:{' '}
+            <span className="font-medium text-zinc-800">
+              {formatAdminPaymentMethod(order.paymentMethod)}
+            </span>
           </p>
         </div>
         <div className="bg-white rounded-2xl border border-zinc-100 p-5 shadow-sm">
