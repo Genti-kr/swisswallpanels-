@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
@@ -16,14 +16,12 @@ import {
   ChevronRight,
   ShieldCheck,
   Truck,
-  CreditCard,
   CheckCircle2,
   MapPin,
   ArrowLeft,
   Loader2,
   AlertTriangle,
   FileText,
-  Smartphone,
   Lock,
 } from 'lucide-react';
 
@@ -34,7 +32,8 @@ import { CheckoutStripePayment } from '@/components/CheckoutStripePayment';
 import { parseStreetAndNumber } from '@/lib/address-line';
 import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
 import { PhoneCountryInput } from '@/components/PhoneCountryInput';
-import { ShippingCountryFlag } from '@/components/ShippingCountryFlag';
+import { FlagCountryDropdown } from '@/components/FlagCountryDropdown';
+import { CheckoutPaymentLogo } from '@/components/CheckoutPaymentLogo';
 import {
   formatPhoneE164,
   isLocalPhoneValid,
@@ -61,6 +60,23 @@ function CheckoutContent() {
   const tGeo = useTranslations('Geo');
   const tProducts = useTranslations('Products');
   const t = useTranslations();
+
+  const shippingCountryOptions = useMemo(
+    () =>
+      SHIPPING_COUNTRY_CODES.map((c) => ({
+        value: c,
+        label: tGeo(`countries.${c}`),
+      })),
+    [tGeo]
+  );
+
+  const phoneCountryLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        SHIPPING_COUNTRY_CODES.map((c) => [c, tGeo(`countries.${c}`)])
+      ) as Record<ShippingCountryCode, string>,
+    [tGeo]
+  );
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -597,6 +613,7 @@ function CheckoutContent() {
                       localDigits={phoneLocal}
                       onLocalDigitsChange={setPhoneLocal}
                       placeholder={tCheckout('phonePlaceholder')}
+                      countryLabels={phoneCountryLabels}
                       required
                     />
                     <p className="text-xs text-zinc-400 font-light pl-1">{tCheckout('phoneCountryHint')}</p>
@@ -641,35 +658,24 @@ function CheckoutContent() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('country')}</label>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-4 top-1/2 z-[1] -translate-y-1/2">
-                        <ShippingCountryFlag code={address.country} className="h-4 w-[1.35rem] rounded-[3px] object-cover border border-zinc-200/70 shadow-sm shrink-0" />
-                      </span>
-                      <select
-                        value={address.country}
-                        onChange={(e) => {
-                          const country = e.target.value as ShippingCountryCode;
-                          setAddress({ ...address, country });
-                          if (country !== 'CH') {
-                            setPaymentMethod('card');
-                          }
-                        }}
-                        className="w-full appearance-none bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl pl-11 pr-10 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
-                      >
-                        {SHIPPING_COUNTRY_CODES.map((c) => (
-                          <option key={c} value={c}>
-                            {tGeo(`countries.${c}`)}
-                          </option>
-                        ))}
-                      </select>
-                      <span
-                        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"
-                        aria-hidden
-                      >
-                        ▾
-                      </span>
-                    </div>
+                    <label
+                      htmlFor="checkout-shipping-country"
+                      className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1"
+                    >
+                      {tCheckout('country')}
+                    </label>
+                    <FlagCountryDropdown
+                      id="checkout-shipping-country"
+                      value={address.country}
+                      options={shippingCountryOptions}
+                      onChange={(country) => {
+                        setAddress({ ...address, country });
+                        if (country !== 'CH') {
+                          setPaymentMethod('card');
+                        }
+                      }}
+                      ariaLabel={tCheckout('country')}
+                    />
                   </div>
 
                   {address.country === 'CH' && (
@@ -751,8 +757,8 @@ function CheckoutContent() {
                               : 'border-zinc-200 bg-white hover:border-zinc-300'
                           }`}
                         >
-                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1A1A1A] text-white shrink-0">
-                            <Smartphone className="h-5 w-5" />
+                          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-950 shrink-0 p-1.5">
+                            <CheckoutPaymentLogo kind="twint" className="h-9 w-9 object-contain" />
                           </span>
                           <span>
                             <span className="block text-sm font-semibold text-zinc-900">TWINT</span>
@@ -771,8 +777,8 @@ function CheckoutContent() {
                             : 'border-zinc-200 bg-white hover:border-zinc-300'
                         }`}
                       >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-[#C8B89A] shrink-0">
-                          <CreditCard className="h-5 w-5" />
+                        <span className="flex h-12 w-14 items-center justify-center rounded-xl bg-white border border-zinc-100 shrink-0 px-1">
+                          <CheckoutPaymentLogo kind="card" className="h-7 w-full max-w-[3.5rem] object-contain" />
                         </span>
                         <span>
                           <span className="block text-sm font-semibold text-zinc-900">
@@ -818,12 +824,21 @@ function CheckoutContent() {
                 <div className="p-6 sm:p-8 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex items-start gap-3">
-                      <div className="p-3 bg-gradient-to-br from-zinc-900 to-zinc-700 text-[#C8B89A] rounded-2xl shadow-md">
-                        {paymentMethod === 'twint' ? (
-                          <Smartphone className="w-6 h-6" />
-                        ) : (
-                          <CreditCard className="w-6 h-6" />
-                        )}
+                      <div
+                        className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-md shrink-0 p-2 ${
+                          paymentMethod === 'twint'
+                            ? 'bg-zinc-950'
+                            : 'bg-white border border-zinc-200'
+                        }`}
+                      >
+                        <CheckoutPaymentLogo
+                          kind={paymentMethod === 'twint' ? 'twint' : 'card'}
+                          className={
+                            paymentMethod === 'twint'
+                              ? 'h-10 w-10 object-contain'
+                              : 'h-8 w-full max-w-[4rem] object-contain'
+                          }
+                        />
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold text-zinc-900 tracking-tight">

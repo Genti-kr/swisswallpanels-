@@ -1,12 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { ShippingCountryCode } from '@/lib/shipping-geo';
 import {
   PHONE_COUNTRY_OPTIONS,
   normalizeLocalPhoneDigits,
   phoneCountryForShipping,
 } from '@/lib/phone-countries';
-import { ShippingCountryFlag } from '@/components/ShippingCountryFlag';
+import { FlagCountryDropdown } from '@/components/FlagCountryDropdown';
 
 type PhoneCountryInputProps = {
   country: ShippingCountryCode;
@@ -16,6 +17,8 @@ type PhoneCountryInputProps = {
   placeholder?: string;
   id?: string;
   required?: boolean;
+  /** Localized country names for dropdown hints (optional). */
+  countryLabels?: Partial<Record<ShippingCountryCode, string>>;
 };
 
 export function PhoneCountryInput({
@@ -26,40 +29,30 @@ export function PhoneCountryInput({
   placeholder,
   id = 'phone-local',
   required,
+  countryLabels,
 }: PhoneCountryInputProps) {
   const selected = phoneCountryForShipping(country);
 
+  const dialOptions = useMemo(
+    () =>
+      PHONE_COUNTRY_OPTIONS.map((opt) => ({
+        value: opt.country,
+        label: opt.dialCode,
+        hint: countryLabels?.[opt.country],
+      })),
+    [countryLabels]
+  );
+
   return (
     <div className="flex gap-2">
-      <div className="relative shrink-0 w-[8.5rem] sm:w-[9rem]">
-        <label htmlFor={`${id}-country`} className="sr-only">
-          Country code
-        </label>
-        <span className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2">
-          <ShippingCountryFlag code={country} />
-        </span>
-        <select
-          id={`${id}-country`}
-          value={country}
-          onChange={(e) => {
-            const next = e.target.value as ShippingCountryCode;
-            onCountryChange(next);
-          }}
-          className="relative w-full appearance-none bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl pl-10 pr-8 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800"
-        >
-          {PHONE_COUNTRY_OPTIONS.map((opt) => (
-            <option key={opt.country} value={opt.country}>
-              {opt.dialCode}
-            </option>
-          ))}
-        </select>
-        <span
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"
-          aria-hidden
-        >
-          ▾
-        </span>
-      </div>
+      <FlagCountryDropdown
+        id={`${id}-country`}
+        value={country}
+        options={dialOptions}
+        onChange={onCountryChange}
+        compact
+        ariaLabel="Country calling code"
+      />
       <input
         id={id}
         type="tel"
