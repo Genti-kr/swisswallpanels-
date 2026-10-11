@@ -6,6 +6,7 @@ import {
   normalizeLocalPhoneDigits,
   phoneCountryForShipping,
 } from '@/lib/phone-countries';
+import { ShippingCountryFlag } from '@/components/ShippingCountryFlag';
 
 type PhoneCountryInputProps = {
   country: ShippingCountryCode;
@@ -30,10 +31,13 @@ export function PhoneCountryInput({
 
   return (
     <div className="flex gap-2">
-      <div className="relative shrink-0 w-[7.25rem] sm:w-[7.75rem]">
+      <div className="relative shrink-0 w-[8.5rem] sm:w-[9rem]">
         <label htmlFor={`${id}-country`} className="sr-only">
           Country code
         </label>
+        <span className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2">
+          <ShippingCountryFlag code={country} />
+        </span>
         <select
           id={`${id}-country`}
           value={country}
@@ -41,11 +45,11 @@ export function PhoneCountryInput({
             const next = e.target.value as ShippingCountryCode;
             onCountryChange(next);
           }}
-          className="w-full appearance-none bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl pl-3 pr-8 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800"
+          className="relative w-full appearance-none bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl pl-10 pr-8 py-3 text-sm focus:outline-none transition-all font-light text-zinc-800"
         >
           {PHONE_COUNTRY_OPTIONS.map((opt) => (
             <option key={opt.country} value={opt.country}>
-              {opt.flag} {opt.dialCode}
+              {opt.dialCode}
             </option>
           ))}
         </select>

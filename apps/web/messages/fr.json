@@ -204,7 +204,7 @@
     "streetPlaceholder": "p. ex. Rue du Rhône 42",
     "streetHint": "Indiquez la rue et le numéro sur une seule ligne.",
     "phonePlaceholder": "79 123 45 67",
-    "phoneCountryHint": "Choisissez l’indicatif (🇨🇭 +41 par défaut). Saisissez le numéro sans 0 initial.",
+    "phoneCountryHint": "Choisissez l’indicatif (+41 Suisse par défaut). Saisissez le numéro sans 0 initial.",
     "streetRequired": "Veuillez indiquer votre adresse (rue et numéro).",
     "phoneRequired": "Veuillez indiquer un numéro de téléphone valide pour la livraison.",
     "number": "Numéro",

@@ -204,7 +204,7 @@
     "streetPlaceholder": "e.g. Bahnhofstrasse 12",
     "streetHint": "Enter street name and house number in one line.",
     "phonePlaceholder": "79 123 45 67",
-    "phoneCountryHint": "Choose country code (default 🇨🇭 +41 for Switzerland). Enter number without leading 0.",
+    "phoneCountryHint": "Choose country code (+41 Switzerland by default). Enter number without leading 0.",
     "streetRequired": "Please enter your street address.",
     "phoneRequired": "Please enter a valid phone number for delivery.",
     "number": "Number",

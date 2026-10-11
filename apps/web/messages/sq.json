@@ -204,7 +204,7 @@
     "streetPlaceholder": "p.sh. Bahnhofstrasse 12",
     "streetHint": "Shkruani emrin e rrugës dhe numrin e shtëpisë në një rresht.",
     "phonePlaceholder": "79 123 45 67",
-    "phoneCountryHint": "Zgjidh kodin e shtetit (🇨🇭 +41 për Zvicër). Shkruaj numrin pa 0 në fillim.",
+    "phoneCountryHint": "Zgjidh kodin e shtetit (+41 Zvicër si parazgjedhje). Shkruaj numrin pa 0 në fillim.",
     "streetRequired": "Ju lutemi shkruani adresën (rruga dhe numri).",
     "phoneRequired": "Ju lutemi shkruani një numër telefoni të vlefshëm për dërgesën.",
     "number": "Nr.",

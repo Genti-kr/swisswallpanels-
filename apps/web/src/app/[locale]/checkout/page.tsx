@@ -34,6 +34,7 @@ import { CheckoutStripePayment } from '@/components/CheckoutStripePayment';
 import { parseStreetAndNumber } from '@/lib/address-line';
 import { sanitizeDigits, sanitizePersonOrPlaceName } from '@/lib/numeric-input';
 import { PhoneCountryInput } from '@/components/PhoneCountryInput';
+import { ShippingCountryFlag } from '@/components/ShippingCountryFlag';
 import {
   formatPhoneE164,
   isLocalPhoneValid,
@@ -641,23 +642,34 @@ function CheckoutContent() {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 pl-1">{tCheckout('country')}</label>
-                    <select
-                      value={address.country}
-                      onChange={(e) => {
-                        const country = e.target.value as ShippingCountryCode;
-                        setAddress({ ...address, country });
-                        if (country !== 'CH') {
-                          setPaymentMethod('card');
-                        }
-                      }}
-                      className="w-full bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl px-4 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
-                    >
-                      {SHIPPING_COUNTRY_CODES.map((c) => (
-                        <option key={c} value={c}>
-                          {tGeo(`countries.${c}`)}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-4 top-1/2 z-[1] -translate-y-1/2">
+                        <ShippingCountryFlag code={address.country} className="h-4 w-[1.35rem] rounded-[3px] object-cover border border-zinc-200/70 shadow-sm shrink-0" />
+                      </span>
+                      <select
+                        value={address.country}
+                        onChange={(e) => {
+                          const country = e.target.value as ShippingCountryCode;
+                          setAddress({ ...address, country });
+                          if (country !== 'CH') {
+                            setPaymentMethod('card');
+                          }
+                        }}
+                        className="w-full appearance-none bg-[#F8F8F6] border border-zinc-200 focus:border-[#C8B89A] focus:bg-white rounded-xl pl-11 pr-10 py-3.5 text-sm focus:outline-none transition-all font-light text-zinc-800 cursor-pointer"
+                      >
+                        {SHIPPING_COUNTRY_CODES.map((c) => (
+                          <option key={c} value={c}>
+                            {tGeo(`countries.${c}`)}
+                          </option>
+                        ))}
+                      </select>
+                      <span
+                        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"
+                        aria-hidden
+                      >
+                        ▾
+                      </span>
+                    </div>
                   </div>
 
                   {address.country === 'CH' && (

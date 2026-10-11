@@ -3,16 +3,15 @@ import type { ShippingCountryCode } from '@/lib/shipping-geo';
 export type PhoneCountryOption = {
   country: ShippingCountryCode;
   dialCode: string;
-  flag: string;
   /** Example local part (without leading 0 for CH). */
   exampleLocal: string;
 };
 
 export const PHONE_COUNTRY_OPTIONS: PhoneCountryOption[] = [
-  { country: 'CH', dialCode: '+41', flag: '🇨🇭', exampleLocal: '79 123 45 67' },
-  { country: 'DE', dialCode: '+49', flag: '🇩🇪', exampleLocal: '151 23456789' },
-  { country: 'FR', dialCode: '+33', flag: '🇫🇷', exampleLocal: '6 12 34 56 78' },
-  { country: 'IT', dialCode: '+39', flag: '🇮🇹', exampleLocal: '312 345 6789' },
+  { country: 'CH', dialCode: '+41', exampleLocal: '79 123 45 67' },
+  { country: 'DE', dialCode: '+49', exampleLocal: '151 23456789' },
+  { country: 'FR', dialCode: '+33', exampleLocal: '6 12 34 56 78' },
+  { country: 'IT', dialCode: '+39', exampleLocal: '312 345 6789' },
 ];
 
 export function phoneCountryForShipping(country: ShippingCountryCode): PhoneCountryOption {
