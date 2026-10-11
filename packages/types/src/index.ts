@@ -195,6 +195,9 @@ export interface OrderItemDTO {
   id: string;
   productId: string;
   productName: string;
+  productSku?: string | null;
+  /** Current product slug (admin order detail); may be null if product was removed. */
+  productSlug?: string | null;
   variantName?: string | null;
   imageUrl?: string | null;
   quantity: number;

@@ -132,7 +132,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
       include: {
-        items: true,
+        items: { include: { product: { select: { slug: true } } } },
         statusHistory: { orderBy: { createdAt: 'desc' } },
         user: { select: { id: true, email: true, firstName: true, lastName: true, phone: true } },
       },

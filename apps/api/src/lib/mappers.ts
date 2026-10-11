@@ -186,16 +186,20 @@ export function mapOrderItem(item: {
   id: string;
   productId: string;
   productName: string;
+  productSku?: string | null;
   variantName: string | null;
   imageUrl?: string | null;
   quantity: number;
   unitPriceChf: Decimal;
   totalChf: Decimal;
+  product?: { slug: string } | null;
 }): OrderItemDTO {
   return {
     id: item.id,
     productId: item.productId,
     productName: item.productName,
+    productSku: item.productSku ?? null,
+    productSlug: item.product?.slug ?? null,
     variantName: item.variantName,
     imageUrl: item.imageUrl ?? null,
     quantity: item.quantity,

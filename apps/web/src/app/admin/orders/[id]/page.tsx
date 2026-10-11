@@ -360,6 +360,7 @@ export default function AdminOrderDetailPage() {
           Artikujt
         </h2>
         <OrderItemsList
+          variant="admin"
           items={order.items}
           formatLineTotal={(item) => formatCHF(item.totalChf)}
           formatUnitPrice={(item) => formatCHF(item.unitPriceChf)}
