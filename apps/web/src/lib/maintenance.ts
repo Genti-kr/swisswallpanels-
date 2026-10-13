@@ -8,6 +8,7 @@ export function isMaintenanceBypassPath(pathname: string): boolean {
   if (pathname.startsWith('/_next')) return true;
   if (pathname.startsWith('/uploads')) return true;
   if (pathname === '/favicon.ico') return true;
+  if (pathname === '/robots.txt' || pathname === '/sitemap.xml') return true;
   if (pathname.endsWith('/maintenance')) return true;
   return false;
 }
